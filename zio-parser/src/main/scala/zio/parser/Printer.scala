@@ -29,10 +29,6 @@ sealed trait Printer[+Err, +Out, -Value, +Result] { self =>
   ): Printer[Err, Out, Value2, Result2] =
     Printer.Transform(self, to, from)
 
-  /** Ignores the printer's result and input and use 'result' and 'value' instead */
-  final def as[Result2](result: Result2, value: Value): Printer[Err, Out, Result2, Result2] =
-    Printer.Ignore(self, result, value)
-
   /** Maps the printer's result with function 'to' and its input value with 'from'. Both functions can fail the printer.
     */
   final def transformEither[Err2, Value2, Result2](
@@ -245,6 +241,10 @@ sealed trait Printer[+Err, +Out, -Value, +Result] { self =>
   final def as[Result2](result: => Result2): Printer[Err, Out, Value, Result2] =
     self.map(_ => result)
 
+  /** Ignores the printer's result and input and use 'result' and 'value' instead */
+  final def printedAs[Result2](result: Result2, value: Value): Printer[Err, Out, Result2, Result2] =
+    Printer.Ignore(self, result, value)
+
   /** Ignores the result of this printer and return unit instead */
   final def unit: Printer[Err, Out, Value, Unit] = as(())
 
@@ -411,7 +411,7 @@ object Printer {
   // Generic variants
   /** Printer that emits the given value */
   def apply[Out](value: => Out)(implicit ev: Out =!= Char): Printer[String, Out, Unit, Unit] =
-    exactly(value).as((), value)
+    exactly(value).printedAs((), value)
 
   /** Printer that emits the input if it is equals to 'value'. Otherwise fails */
   def exactly[Out](value: Out)(implicit ev: Out =!= Char): Printer[String, Out, Out, Out] =
@@ -472,7 +472,7 @@ object Printer {
 
   /** Prints a specific string 'str' and results in 'value' */
   def string[Result](str: String, value: Result): Printer[Nothing, Char, Result, Result] =
-    regexDiscard(Regex.string(str), Chunk.fromArray(str.toCharArray)).as(value, ())
+    regexDiscard(Regex.string(str), Chunk.fromArray(str.toCharArray)).printedAs(value, ())
 
   /** Printer that does not print anything and results in unit */
   def unit: Printer[Nothing, Nothing, Any, Unit] = succeed(())

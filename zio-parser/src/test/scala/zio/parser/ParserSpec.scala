@@ -7,8 +7,8 @@ import zio.test._
 import zio.test.environment.TestEnvironment
 
 object ParserSpec extends DefaultRunnableSpec {
-  private val charA: Syntax[String, Char, Char, Char, Char] = Syntax.char('a', "not a").as('a', ())
-  private val charB: Syntax[String, Char, Char, Char, Char] = Syntax.char('b', "not b").as('b', ())
+  private val charA: Syntax[String, Char, Char, Char, Char] = Syntax.char('a', "not a").as('a')
+  private val charB: Syntax[String, Char, Char, Char, Char] = Syntax.char('b', "not b").as('b')
 
   override def spec: ZSpec[TestEnvironment, Any] = {
     suite("Parsing")(
@@ -64,7 +64,7 @@ object ParserSpec extends DefaultRunnableSpec {
             ),
             parserTest(
               "s ~ (s ~> s)",
-              Syntax.char('h').as('h', ()) ~ (Syntax.char('e') ~> Syntax.char('l').as('l', ())),
+              Syntax.char('h').as('h') ~ (Syntax.char('e') ~> Syntax.char('l').as('l')),
               "hel"
             )(
               isRight(equalTo(('h', 'l')))
@@ -90,8 +90,8 @@ object ParserSpec extends DefaultRunnableSpec {
             )(
               isRight(equalTo("123"))
             ),
-            parserTest("s <* s", Syntax.anyChar <~ Syntax.anyChar.as((), '?'), "he")(isRight(equalTo('h'))),
-            parserTest("s *> s", Syntax.anyChar.as((), '?') ~> Syntax.anyChar, "he")(isRight(equalTo('e'))),
+            parserTest("s <* s", Syntax.anyChar <~ Syntax.anyChar.printedAs((), '?'), "he")(isRight(equalTo('h'))),
+            parserTest("s *> s", Syntax.anyChar.printedAs((), '?') ~> Syntax.anyChar, "he")(isRight(equalTo('e'))),
             parserTest(
               "s | s, left passing",
               charA | charB,
@@ -206,10 +206,10 @@ object ParserSpec extends DefaultRunnableSpec {
               )
             ),
             suite("atLeast")(
-              parserTest("atLeast 3, passing", Syntax.char('a').as('a', ()).atLeast(3), "aaabc")(
+              parserTest("atLeast 3, passing", Syntax.char('a').as('a').atLeast(3), "aaabc")(
                 isRight(equalTo(Chunk('a', 'a', 'a')))
               ),
-              parserTest("atLeast 3, failing", Syntax.char('a').as('a', ()).atLeast(3), "aabca")(
+              parserTest("atLeast 3, failing", Syntax.char('a').as('a').atLeast(3), "aabca")(
                 isLeft(equalTo(ParserError.UnexpectedEndOfInput))
               )
             ),
@@ -370,7 +370,7 @@ object ParserSpec extends DefaultRunnableSpec {
                       'b',
                       "not b"
                     )
-                    .as('b', ())).backtrack <> Syntax.anyChar).manualBacktracking,
+                    .as('b')).backtrack <> Syntax.anyChar).manualBacktracking,
                 "ac"
               )(
                 isRight(equalTo('a'))

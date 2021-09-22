@@ -174,11 +174,11 @@ object ParserOp       {
 
   sealed trait PairTransformation
   object PairTransformation {
-    case object ToPair                       extends PairTransformation
-    case object KeepFirst                    extends PairTransformation
-    case object KeepSecond                   extends PairTransformation
-    case object IgnoreFirstKeepSecond        extends PairTransformation
-    case object IgnoreFirstWrapSecondAsRight extends PairTransformation
+    final case class Zip(zip: (Any, Any) => Any) extends PairTransformation
+    case object KeepFirst                        extends PairTransformation
+    case object KeepSecond                       extends PairTransformation
+    case object IgnoreFirstKeepSecond            extends PairTransformation
+    case object IgnoreFirstWrapSecondAsRight     extends PairTransformation
   }
 
   private final case class CompilerState(
@@ -271,11 +271,11 @@ object ParserOp       {
           pushBranchPosition = false
         )
 
-      case Parser.Zip(left, right) =>
+      case Parser.Zip(left, right, zip) =>
         val compiledLeft  = compile(left, state)
         val compiledRight = compile(right, state)
         PushOp4(
-          TransformLast2Results(PairTransformation.ToPair),
+          TransformLast2Results(PairTransformation.Zip(zip.asInstanceOf[(Any, Any) => Any])),
           compiledRight,
           SkipOnFailure2,
           compiledLeft,

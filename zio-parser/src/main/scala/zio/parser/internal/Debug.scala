@@ -71,7 +71,7 @@ object Debug {
           case Parser.CaptureString(inner)                 =>
             printIndented("CaptureString")
             printParserTree(inner, state.visit(syntax).in)
-          case Parser.Zip(left, right)                     =>
+          case Parser.Zip(left, right, _)                  =>
             printIndented(s"Zip")
             val leftSt = printParserTree(left, state.visit(syntax).in)
             printParserTree(right, state.mergeVisited(leftSt).in)

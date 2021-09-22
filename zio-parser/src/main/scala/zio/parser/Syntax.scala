@@ -92,23 +92,6 @@ class Syntax[+Err, -In, +Out, -Value, +Result] private (
       (d0: Value2) => from.lift(d0).fold[Either[Err2, Value]](Left(failure))(Right.apply)
     )
 
-  /** Symbolic alias for zip */
-  final def ~[Err2 >: Err, In2 <: In, Out2 >: Out, Value2, Result2](
-      that: => Syntax[Err2, In2, Out2, Value2, Result2]
-  ): Syntax[Err2, In2, Out2, (Value, Value2), (Result, Result2)] =
-    zip(that)
-
-  /** Concatenates this syntax with 'that' syntax. In case both parser succeeds, the result is a pair of the results.
-    * The printer destructures a pair and prints the left value with this, the right value with 'that'.
-    */
-  final def zip[Err2 >: Err, In2 <: In, Out2 >: Out, Value2, Result2](
-      that: => Syntax[Err2, In2, Out2, Value2, Result2]
-  ): Syntax[Err2, In2, Out2, (Value, Value2), (Result, Result2)] =
-    new Syntax(
-      asParser.zip(that.asParser),
-      asPrinter.zip(that.asPrinter)
-    )
-
   /** Symbolic alias for zipLeft */
   final def <~[Err2 >: Err, In2 <: In, Out2 >: Out](
       that: => Syntax[Err2, In2, Out2, Unit, Any]
@@ -304,8 +287,8 @@ class Syntax[+Err, -In, +Out, -Value, +Result] private (
       right: Syntax[Err2, In2, Out2, Unit, Any]
   ): Syntax[Err2, In2, Out2, Value, Result] =
     (left ~ self ~ right).transform(
-      { case ((_, value), _) => value },
-      (value: Value) => (((), value), ())
+      { case (_, value, _) => value },
+      (value: Value) => value
     )
 
   /** Surrounds this parser with the 'other' parser. The result is this parser's result. */
@@ -313,8 +296,8 @@ class Syntax[+Err, -In, +Out, -Value, +Result] private (
       other: Syntax[Err2, In2, Out2, Unit, Any]
   ): Syntax[Err2, In2, Out2, Value, Result] =
     (other ~ self ~ other).transform(
-      { case ((_, value), _) => value },
-      (value: Value) => (((), value), ())
+      { case (_, value, _) => value },
+      (value: Value) => value
     )
 
   /** Maps the error with the given function 'f' */

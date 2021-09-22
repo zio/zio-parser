@@ -31,7 +31,7 @@ object PrinterSpec extends DefaultRunnableSpec {
           isLeft(equalTo("bad"))
         ),
         printerTest("s ~ s", Syntax.anyChar ~ Syntax.anyChar, ('x', 'y'))(isRight(equalTo("xy"))),
-        printerTest("s ~ s ~ s", Syntax.anyChar ~ Syntax.anyChar ~ Syntax.anyChar, (('x', 'y'), 'z'))(
+        printerTest("s ~ s ~ s", Syntax.anyChar ~ Syntax.anyChar ~ Syntax.anyChar, ('x', 'y', 'z'))(
           isRight(equalTo("xyz"))
         ),
         printerTest(

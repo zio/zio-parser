@@ -30,8 +30,8 @@ class Zipping extends ParserBenchmark[Zips] {
     val sep   = Syntax.char(',')
     val tuple = (item <~ sep) ~ (item <~ sep) ~ (item <~ sep) ~ item
     val zip   = tuple.transform(
-      { case (((as, bs), cs), ds) => Zip(as, bs, cs, ds) },
-      (zip: Zip) => (((zip.a, zip.b), zip.c), zip.d)
+      { case (as, bs, cs, ds) => Zip(as, bs, cs, ds) },
+      (zip: Zip) => (zip.a, zip.b, zip.c, zip.d)
     )
     val line  = zip <~ Syntax.char('\n')
     val lines = line.repeat0.transform[Zips, Zips](Zips.apply, z => Chunk.fromIterable(z.zips)).manualBacktracking

@@ -42,8 +42,8 @@ object JsonZioParser {
 
   val keyValueSep   = Syntax.char(':').surroundedBy(whitespaces)
   lazy val keyValue = (str ~ keyValueSep ~ json).transform[(String, Json), (String, Json)](
-    { case ((key, _), value) => (key.value, value) },
-    { case (key, value) => ((Json.Str(key), ()), value) }
+    { case (key, value) => (key.value, value) },
+    { case (key, value) => (Json.Str(key), value) }
   )
   val obj           = (Syntax.char('{') ~>
     keyValue.repeatWithSep0(listSep).surroundedBy(whitespaces) <~

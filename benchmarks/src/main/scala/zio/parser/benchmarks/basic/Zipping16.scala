@@ -28,24 +28,26 @@ class Zipping16 extends ParserBenchmark[Zips16] {
     val tuple =
       (item <~ sep) ~ (item <~ sep) ~ (item <~ sep) ~ (item <~ sep) ~ (item <~ sep) ~ (item <~ sep) ~ (item <~ sep) ~ (item <~ sep) ~ (item <~ sep) ~ (item <~ sep) ~ (item <~ sep) ~ (item <~ sep) ~ (item <~ sep) ~ (item <~ sep) ~ (item <~ sep) ~ item
     val zip   = tuple.transform(
-      { case (((((((((((((((as, bs), cs), ds), es), fs), gs), hs), is), js), ks), ls), ms), ns), os), ps) =>
+      { case (as, bs, cs, ds, es, fs, gs, hs, is, js, ks, ls, ms, ns, os, ps) =>
         Zip16(as, bs, cs, ds, es, fs, gs, hs, is, js, ks, ls, ms, ns, os, ps)
       },
       (zip: Zip16) =>
         (
-          (
-            (
-              (
-                (
-                  ((((((((((zip.a, zip.b), zip.c), zip.d), zip.e), zip.f), zip.g), zip.h), zip.i), zip.j), zip.k),
-                  zip.l
-                ),
-                zip.m
-              ),
-              zip.n
-            ),
-            zip.o
-          ),
+          zip.a,
+          zip.b,
+          zip.c,
+          zip.d,
+          zip.e,
+          zip.f,
+          zip.g,
+          zip.h,
+          zip.i,
+          zip.j,
+          zip.k,
+          zip.l,
+          zip.m,
+          zip.n,
+          zip.o,
           zip.p
         )
     )

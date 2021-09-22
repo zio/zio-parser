@@ -26,7 +26,7 @@ import java.util.concurrent.TimeUnit
 @Fork(value = 1)
 class CharParserMicroBenchmarks {
 
-  type String10 = (((((((((String, String), String), String), String), String), String), String), String), String)
+  type String10 = (String, String, String, String, String, String, String, String, String, String)
   var skipAndTransformSyntax: Syntax[Nothing, Char, Char, String, String]                    = _
   var skipAndTransformOrElseSyntax: Syntax[String, Char, Char, String, String]               = _
   var skipAndTransformZipSyntax: Syntax[String, Char, Char, String10, String10]              = _

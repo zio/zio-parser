@@ -234,8 +234,8 @@ final class CharParserImpl[Err, Result](parser: InitialParser, source: String) {
               strategy == PairTransformation.IgnoreFirstKeepSecond)
           ) {
             strategy match {
-              case PairTransformation.ToPair                       =>
-                lastSuccess1 = (lastSuccess2, lastSuccess1)
+              case PairTransformation.Zip(zip)                     =>
+                lastSuccess1 = zip(lastSuccess2, lastSuccess1).asInstanceOf[AnyRef]
               case PairTransformation.KeepFirst                    =>
                 lastSuccess1 = lastSuccess2
               case PairTransformation.KeepSecond                   =>

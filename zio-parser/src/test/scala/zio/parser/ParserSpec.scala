@@ -60,7 +60,7 @@ object ParserSpec extends DefaultRunnableSpec {
             ),
             parserTest("s ~ s", Syntax.anyChar ~ Syntax.anyChar, "he")(isRight(equalTo(('h', 'e')))),
             parserTest("s ~ s ~ s", Syntax.anyChar ~ Syntax.anyChar ~ Syntax.anyChar, "hel")(
-              isRight(equalTo((('h', 'e'), 'l')))
+              isRight(equalTo(('h', 'e', 'l')))
             ),
             parserTest(
               "s ~ (s ~> s)",

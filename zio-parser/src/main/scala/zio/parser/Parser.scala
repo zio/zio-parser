@@ -4,7 +4,7 @@ import zio.parser.Parser.{ErasedParser, ParserError}
 import zio.parser.internal.recursive
 import zio.parser.internal.stacksafe.ParserOp.InitialParser
 import zio.parser.internal.stacksafe.{CharParserImpl, ParserOp}
-import zio.{Chunk, ChunkBuilder}
+import zio.{Chunk, ChunkBuilder, Zippable}
 
 import scala.collection.mutable
 
@@ -55,16 +55,16 @@ sealed trait Parser[+Err, -In, +Result] { self =>
     transformEither[Option[Err], Result2](value => to(value).toRight(None))
 
   /** Symbolic alias for zip */
-  final def ~[Err2 >: Err, In2 <: In, Result2](
+  final def ~[Err2 >: Err, In2 <: In, Result2, ZippedResult](
       that: => Parser[Err2, In2, Result2]
-  ): Parser[Err2, In2, (Result, Result2)] =
+  )(implicit zippable: Zippable.Out[Result, Result2, ZippedResult]): Parser[Err2, In2, ZippedResult] =
     zip(that)
 
   /** Concatenates this parser with 'that' parser. In case both parser succeeds, the result is a pair of the results. */
-  final def zip[Err2 >: Err, In2 <: In, Result2](
+  final def zip[Err2 >: Err, In2 <: In, Result2, ZippedResult](
       that: => Parser[Err2, In2, Result2]
-  ): Parser[Err2, In2, (Result, Result2)] =
-    Parser.Zip(Parser.Lazy(() => self), Parser.Lazy(() => that))
+  )(implicit zippable: Zippable.Out[Result, Result2, ZippedResult]): Parser[Err2, In2, ZippedResult] =
+    Parser.Zip(Parser.Lazy(() => self), Parser.Lazy(() => that), zippable.zip)
 
   /** Symbolic alias for zipLeft */
   final def <~[Err2 >: Err, In2 <: In, Result2](
@@ -212,13 +212,13 @@ sealed trait Parser[+Err, -In, +Result] { self =>
       left: Parser[Err2, In2, Any],
       right: Parser[Err2, In2, Any]
   ): Parser[Err2, In2, Result]                                       =
-    (left ~ self ~ right).map { case ((_, value), _) => value }
+    (left ~ self ~ right).map { case (_, value, _) => value }
 
   /** Surrounds this parser with the 'other' parser. The result is this parser's result. */
   final def surroundedBy[Err2 >: Err, In2 <: In](
       other: Parser[Err2, In2, Any]
   ): Parser[Err2, In2, Result]                                       =
-    (other ~ self ~ other).map { case ((_, value), _) => value }
+    (other ~ self ~ other).map { case (_, value, _) => value }
 
   /** Maps the error with the given function 'f' */
   final def mapError[Err2](f: Err => Err2): Parser[Err2, In, Result] =
@@ -768,30 +768,31 @@ object Parser {
     override protected lazy val needsBacktrack: Boolean = parser.needsBacktrack
   }
 
-  final case class Zip[Err, Err2, In, In2, Result, Result2](
+  final case class Zip[Err, Err2, In, In2, Result, Result2, ZippedResult](
       left: Parser[Err, In, Result],
-      right: Parser[Err2, In2, Result2]
-  ) extends Parser[Err2, In2, (Result, Result2)] {
+      right: Parser[Err2, In2, Result2],
+      zip: (Result, Result2) => ZippedResult
+  ) extends Parser[Err2, In2, ZippedResult] {
 
     override protected def optimizeNode(
         state: OptimizerState
-    ): Parser[Err2, In2, (Result, Result2)] = Zip(left.runOptimizeNode(state), right.runOptimizeNode(state))
+    ): Parser[Err2, In2, ZippedResult] = Zip(left.runOptimizeNode(state), right.runOptimizeNode(state), zip)
 
     override protected def stripNode(
         state: OptimizerState
-    ): Parser[Err2, In2, (Result, Result2)] = Zip(left.runStripNode(state), right.runOptimizeNode(state))
+    ): Parser[Err2, In2, ZippedResult] = Zip(left.runStripNode(state), right.runOptimizeNode(state), zip)
 
-    override protected def parseRec(state: recursive.ParserState): (Result, Result2) = {
+    override protected def parseRec(state: recursive.ParserState): ZippedResult = {
       val l = left.parseRec(state)
       if (state.error == null) {
         val r = right.parseRec(state)
         if (!state.discard && state.error == null) {
-          (l, r)
+          zip(l, r)
         } else {
-          null.asInstanceOf[(Result, Result2)]
+          null.asInstanceOf[ZippedResult]
         }
       } else {
-        null.asInstanceOf[(Result, Result2)]
+        null.asInstanceOf[ZippedResult]
       }
     }
 

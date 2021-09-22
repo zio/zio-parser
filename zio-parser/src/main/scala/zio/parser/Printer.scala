@@ -3,7 +3,7 @@ package zio.parser
 import zio.parser.Parser.ParserError
 import zio.parser.internal.PrinterImpl
 import zio.parser.target.{ChunkTarget, Target}
-import zio.{=!=, Chunk}
+import zio.{=!=, Chunk, Unzippable, Zippable}
 
 /** A Printer takes a value of type 'Value' and either produces a stream of 'Out' elements and a result value of type
   * 'Result', or fails with a custom error of type 'Err'.
@@ -67,20 +67,6 @@ sealed trait Printer[+Err, +Out, -Value, +Result] { self =>
       to.andThen(Right.apply),
       (d0: Value2) => from.lift(d0).fold[Either[Err2, Value]](Left(failure))(Right.apply)
     )
-
-  /** Symbolic alias for zip */
-  final def ~[Err2 >: Err, Out2 >: Out, Value2, Result2](
-      that: => Printer[Err2, Out2, Value2, Result2]
-  ): Printer[Err2, Out2, (Value, Value2), (Result, Result2)] =
-    zip(that)
-
-  /** Take a pair to be printed, print the left value with this, and the right value with 'that'. The result is a pair
-    * of both printer's results.
-    */
-  final def zip[Err2 >: Err, Out2 >: Out, Value2, Result2](
-      that: => Printer[Err2, Out2, Value2, Result2]
-  ): Printer[Err2, Out2, (Value, Value2), (Result, Result2)] =
-    Printer.Zip(Printer.Lazy(() => self), Printer.Lazy(() => that))
 
   /** Symbolic alias for zipLeft */
   final def <~[Err2 >: Err, Out2 >: Out](
@@ -198,8 +184,8 @@ sealed trait Printer[+Err, +Out, -Value, +Result] { self =>
       right: Printer[Err2, Out2, Unit, Any]
   ): Printer[Err2, Out2, Value, Result] =
     (left ~ self ~ right).transform(
-      { case ((_, value), _) => value },
-      (value: Value) => (((), value), ())
+      { case (_, value, _) => value },
+      (value: Value) => value
     )
 
   /** Surround this printer with 'other', which will get Unit as value to be printed. */
@@ -207,8 +193,8 @@ sealed trait Printer[+Err, +Out, -Value, +Result] { self =>
       other: Printer[Err2, Out2, Unit, Any]
   ): Printer[Err2, Out2, Value, Result] =
     (other ~ self ~ other).transform(
-      { case ((_, value), _) => value },
-      (value: Value) => (((), value), ())
+      { case (_, value, _) => value },
+      (value: Value) => value
     )
 
   /** Maps the error with function 'f' */
@@ -327,10 +313,12 @@ object Printer {
       from: Value
   ) extends Printer[Err2, Out, Value2, Result2]
 
-  final case class Zip[Err, Err2, Out, Out2, Value2, Value, Result, Result2](
+  final case class Zip[Err, Err2, Out, Out2, Value2, Value, Result, Result2, ZippedValue, ZippedResult](
       left: Printer[Err, Out, Value, Result],
-      right: Printer[Err2, Out2, Value2, Result2]
-  ) extends Printer[Err2, Out2, (Value, Value2), (Result, Result2)]
+      right: Printer[Err2, Out2, Value2, Result2],
+      unzipValue: ZippedValue => (Value, Value2),
+      zipResult: (Result, Result2) => ZippedResult
+  ) extends Printer[Err2, Out2, ZippedValue, ZippedResult]
 
   final case class ZipLeft[Err, Err2, Out, Out2, Value2, Value, Result, Result2](
       left: Printer[Err, Out, Value, Result],

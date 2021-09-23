@@ -20,7 +20,7 @@ object JsonExample extends DefaultRunnableSpec {
   }
 
   val whitespace  = Syntax.charIn(' ', '\t', '\r', '\n')
-  val whitespaces = whitespace.*.printedAs((), Chunk(' '))
+  val whitespaces = whitespace.*.asPrinted((), Chunk(' '))
 
   val quote        = Syntax.char('\"')
   val escapedChar  = Syntax.charNotIn('\"') // TODO: real escaping support

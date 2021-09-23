@@ -21,8 +21,8 @@ class ZioLuceneQueryParser(
       .transform(_.toString, (s: String) => s(0)) | escapedChar) ?? "term start"
   val termChar      = (termStartChar | Syntax.charIn('-', '+').transform(_.toString, (s: String) => s(0))) ?? "term char"
   val whitespace    = Syntax.charIn(whitespaceChars.toSeq: _*).unit(' ') ?? "whitespace"
-  val whitespaces   = whitespace.repeat0.printedAs((), Chunk(())) ?? "any whitespace"
-  val whitespaces1  = whitespace.repeat.printedAs((), Chunk(())) ?? "at least 1 whitespace"
+  val whitespaces   = whitespace.repeat0.asPrinted((), Chunk(())) ?? "any whitespace"
+  val whitespaces1  = whitespace.repeat.asPrinted((), Chunk(())) ?? "at least 1 whitespace"
   val quotedChar    =
     (Syntax.charNotIn('\"', '\\').transform(_.toString, (s: String) => s(0)) | escapedChar) ?? "quoted char"
 

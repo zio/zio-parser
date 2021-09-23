@@ -55,7 +55,7 @@ package object parser {
     def as[Result2](value: => Result2): Syntax[Err, In, Out, Result2, Result2] =
       Syntax.from(
         self.asParser.as(value),
-        self.asPrinter.printedAs(value, ())
+        self.asPrinter.asPrinted(value, ())
       )
   }
 

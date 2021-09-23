@@ -242,7 +242,7 @@ sealed trait Printer[+Err, +Out, -Value, +Result] { self =>
     self.map(_ => result)
 
   /** Ignores the printer's result and input and use 'result' and 'value' instead */
-  final def printedAs[Result2](result: Result2, value: Value): Printer[Err, Out, Result2, Result2] =
+  final def asPrinted[Result2](result: Result2, value: Value): Printer[Err, Out, Result2, Result2] =
     Printer.Ignore(self, result, value)
 
   /** Ignores the result of this printer and return unit instead */
@@ -411,7 +411,7 @@ object Printer {
   // Generic variants
   /** Printer that emits the given value */
   def apply[Out](value: => Out)(implicit ev: Out =!= Char): Printer[String, Out, Unit, Unit] =
-    exactly(value).printedAs((), value)
+    exactly(value).asPrinted((), value)
 
   /** Printer that emits the input if it is equals to 'value'. Otherwise fails */
   def exactly[Out](value: Out)(implicit ev: Out =!= Char): Printer[String, Out, Out, Out] =
@@ -472,7 +472,7 @@ object Printer {
 
   /** Prints a specific string 'str' and results in 'value' */
   def string[Result](str: String, value: Result): Printer[Nothing, Char, Result, Result] =
-    regexDiscard(Regex.string(str), Chunk.fromArray(str.toCharArray)).printedAs(value, ())
+    regexDiscard(Regex.string(str), Chunk.fromArray(str.toCharArray)).asPrinted(value, ())
 
   /** Printer that does not print anything and results in unit */
   def unit: Printer[Nothing, Nothing, Any, Unit] = succeed(())

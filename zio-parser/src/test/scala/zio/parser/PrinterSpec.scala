@@ -48,8 +48,8 @@ object PrinterSpec extends DefaultRunnableSpec {
         )(
           isLeft(equalTo("not a"))
         ),
-        printerTest("s <* s", Syntax.anyChar <~ Syntax.anyChar.printedAs((), '?'), 'x')(isRight(equalTo("x?"))),
-        printerTest("s *> s", Syntax.anyChar.printedAs((), '?') ~> Syntax.anyChar, 'x')(isRight(equalTo("?x"))),
+        printerTest("s <* s", Syntax.anyChar <~ Syntax.anyChar.asPrinted((), '?'), 'x')(isRight(equalTo("x?"))),
+        printerTest("s *> s", Syntax.anyChar.asPrinted((), '?') ~> Syntax.anyChar, 'x')(isRight(equalTo("?x"))),
         printerTest("s | s, left passing", charA | charB, 'a')(
           isRight(equalTo("a"))
         ),

@@ -46,10 +46,10 @@ class Syntax[+Err, -In, +Out, -Value, +Result] private (
     )
 
   /** Sets the result to 'result' and the value to be printed to 'value' */
-  final def printedAs[Result2](result: Result2, value: Value): Syntax[Err, In, Out, Result2, Result2] =
+  final def asPrinted[Result2](result: Result2, value: Value): Syntax[Err, In, Out, Result2, Result2] =
     new Syntax(
       asParser.as(result),
-      asPrinter.printedAs(result, value)
+      asPrinter.asPrinted(result, value)
     )
 
   /** Maps the parser's successful result with the given function 'to', and maps the value to be printed with the given
@@ -367,7 +367,7 @@ class Syntax[+Err, -In, +Out, -Value, +Result] private (
   final def unit(printed: Value): Syntax[Err, In, Out, Unit, Unit] =
     new Syntax(
       self.asParser.unit,
-      self.asPrinter.printedAs((), printed)
+      self.asPrinter.asPrinted((), printed)
     )
 
   /** Converts a Chunk syntax to a List syntax */

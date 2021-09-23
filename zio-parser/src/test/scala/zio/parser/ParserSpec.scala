@@ -90,8 +90,8 @@ object ParserSpec extends DefaultRunnableSpec {
             )(
               isRight(equalTo("123"))
             ),
-            parserTest("s <* s", Syntax.anyChar <~ Syntax.anyChar.printedAs((), '?'), "he")(isRight(equalTo('h'))),
-            parserTest("s *> s", Syntax.anyChar.printedAs((), '?') ~> Syntax.anyChar, "he")(isRight(equalTo('e'))),
+            parserTest("s <* s", Syntax.anyChar <~ Syntax.anyChar.asPrinted((), '?'), "he")(isRight(equalTo('h'))),
+            parserTest("s *> s", Syntax.anyChar.asPrinted((), '?') ~> Syntax.anyChar, "he")(isRight(equalTo('e'))),
             parserTest(
               "s | s, left passing",
               charA | charB,

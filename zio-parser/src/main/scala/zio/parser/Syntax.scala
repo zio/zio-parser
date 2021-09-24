@@ -46,10 +46,10 @@ class Syntax[+Err, -In, +Out, -Value, +Result] private (
     )
 
   /** Sets the result to 'result' and the value to be printed to 'value' */
-  final def as[Result2](result: Result2, value: Value): Syntax[Err, In, Out, Result2, Result2] =
+  final def asPrinted[Result2](result: Result2, value: Value): Syntax[Err, In, Out, Result2, Result2] =
     new Syntax(
       asParser.as(result),
-      asPrinter.as(result, value)
+      asPrinter.asPrinted(result, value)
     )
 
   /** Maps the parser's successful result with the given function 'to', and maps the value to be printed with the given
@@ -356,18 +356,19 @@ class Syntax[+Err, -In, +Out, -Value, +Result] private (
   final def map[Result2](f: Result => Result2): Syntax[Err, In, Out, Value, Result2] =
     self.transformEither(f.andThen(Right.apply), (value: Value) => Right(value))
 
-  /** Ignores the rseult of the syntax and result in 'value' instead */
-  final def as[Result2](value: => Result2): Syntax[Err, In, Out, Value, Result2] =
+  /** Syntax that does not do anything and results in unit */
+  final def unit: Syntax[Err, In, Out, Value, Unit] =
     new Syntax(
-      asParser.as(value),
-      asPrinter.as(value)
+      self.asParser.unit,
+      self.asPrinter.unit
     )
 
-  /** Syntax that does not do anything and results in unit */
-  final def unit: Syntax[Err, In, Out, Value, Unit] = as(())
-
   /** Syntax that does not consume any input but prints 'printed' and results in unit */
-  final def unit(printed: Value): Syntax[Err, In, Out, Unit, Unit] = as((), printed)
+  final def unit(printed: Value): Syntax[Err, In, Out, Unit, Unit] =
+    new Syntax(
+      self.asParser.unit,
+      self.asPrinter.asPrinted((), printed)
+    )
 
   /** Converts a Chunk syntax to a List syntax */
   final def toList[Item](implicit
@@ -577,7 +578,7 @@ object Syntax {
 
   /** Syntax that parses/prints a specific string 'str', and results in 'value' */
   def string[Result](str: String, value: Result): Syntax[String, Char, Char, Result, Result] =
-    regexDiscard(Regex.string(str), s"Not '$str'", Chunk.fromArray(str.toCharArray)).as(value, ())
+    regexDiscard(Regex.string(str), s"Not '$str'", Chunk.fromArray(str.toCharArray)).as(value)
 
   /** Syntax that results in unit */
   lazy val unit: Syntax[Nothing, Any, Nothing, Any, Unit] = succeed(())

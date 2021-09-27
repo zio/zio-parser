@@ -1,6 +1,7 @@
 package zio
 
 import scala.reflect.ClassTag
+import zio.parser.internal.{Zippable, Unzippable}
 
 package object parser {
 

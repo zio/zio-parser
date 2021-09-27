@@ -280,7 +280,7 @@ object CalibanParser {
       { case (index, name, arguments) =>
         Directive(name, arguments.getOrElse(Map()), index)
       },
-      (directive: Directive) => (directive.index, directive.name, optMap(directive.arguments))
+      (directive: Directive) => (directive.name, optMap(directive.arguments))
     )
   lazy val directives: CalibanSyntax[List[Directive], List[Directive]] =
     directive.repeatWithSep(whitespaceWithComment).toList
@@ -364,7 +364,7 @@ object CalibanParser {
         index
       )
     },
-    (f: Field) => (f.index, f.alias, f.name, optMap(f.arguments), optColl(f.directives), optColl(f.selectionSet))
+    (f: Field) => (f.alias, f.name, optMap(f.arguments), optColl(f.directives), optColl(f.selectionSet))
   )
 
   lazy val fragmentName: CalibanSyntax[String, String] =

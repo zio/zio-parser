@@ -1,9 +1,10 @@
 package zio.parser
 
 import zio.parser.Parser.ParserError
+import zio.parser.internal.{Zippable, Unzippable}
 import zio.parser.internal.PrinterImpl
 import zio.parser.target.{ChunkTarget, Target}
-import zio.{=!=, Chunk, Unzippable, Zippable}
+import zio.{=!=, Chunk}
 
 /** A Printer takes a value of type 'Value' and either produces a stream of 'Out' elements and a result value of type
   * 'Result', or fails with a custom error of type 'Err'.

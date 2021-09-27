@@ -1,7 +1,7 @@
 package zio.parser
 
 import zio.parser.Parser.{ErasedParser, ParserError}
-import zio.parser.internal.Zippable
+import zio.parser.internal.PZippable
 import zio.parser.internal.recursive
 import zio.parser.internal.stacksafe.ParserOp.InitialParser
 import zio.parser.internal.stacksafe.{CharParserImpl, ParserOp}
@@ -58,13 +58,13 @@ sealed trait Parser[+Err, -In, +Result] { self =>
   /** Symbolic alias for zip */
   final def ~[Err2 >: Err, In2 <: In, Result2, ZippedResult](
       that: => Parser[Err2, In2, Result2]
-  )(implicit zippable: Zippable.Out[Result, Result2, ZippedResult]): Parser[Err2, In2, ZippedResult] =
+  )(implicit zippable: PZippable.Out[Result, Result2, ZippedResult]): Parser[Err2, In2, ZippedResult] =
     zip(that)
 
   /** Concatenates this parser with 'that' parser. In case both parser succeeds, the result is a pair of the results. */
   final def zip[Err2 >: Err, In2 <: In, Result2, ZippedResult](
       that: => Parser[Err2, In2, Result2]
-  )(implicit zippable: Zippable.Out[Result, Result2, ZippedResult]): Parser[Err2, In2, ZippedResult] =
+  )(implicit zippable: PZippable.Out[Result, Result2, ZippedResult]): Parser[Err2, In2, ZippedResult] =
     Parser.Zip(Parser.Lazy(() => self), Parser.Lazy(() => that), zippable.zip)
 
   /** Symbolic alias for zipLeft */

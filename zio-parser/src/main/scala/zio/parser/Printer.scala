@@ -1,7 +1,7 @@
 package zio.parser
 
 import zio.parser.Parser.ParserError
-import zio.parser.internal.{Zippable, Unzippable}
+import zio.parser.internal.{PZippable, PUnzippable}
 import zio.parser.internal.PrinterImpl
 import zio.parser.target.{ChunkTarget, Target}
 import zio.{=!=, Chunk}

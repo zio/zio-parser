@@ -58,13 +58,18 @@ object PrinterSpec extends DefaultRunnableSpec {
         ),
         printerTest("s | s, failing", charA | charB, 'c')(
           isLeft(equalTo("Not the expected character (b)"))
-        ),
-        printerTest(
-          "s | s, left failing inside",
-          (Syntax.string("hello", 'h') ~ Syntax.string("world", 'w')) |
-            (Syntax.string("hello", 'h') ~ Syntax.string("all", 'a')),
-          ('h', 'a')
-        )(isRight(equalTo("helloall"))),
+        ), {
+          val hello = Syntax.string("hello", 'h')
+          val world = Syntax.string("world", 'w')
+          val all   = Syntax.string("all", 'a')
+          val a     = hello ~ world
+          val b     = hello ~ all
+          printerTest(
+            "s | s, left failing inside",
+            a | b,
+            ('h', 'a')
+          )(isRight(equalTo("helloall")))
+        },
         printerTest("s <+> s, left passing", charA <+> charB, Left('a'))(
           isRight(equalTo("a"))
         ),

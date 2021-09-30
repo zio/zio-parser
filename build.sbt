@@ -15,7 +15,8 @@ val scalacOptions213 = Seq(
 
 val scalacOptions3 = Seq(
   "-deprecation",
-  "-Ykind-projector"
+  "-Ykind-projector",
+  "-explain"
 )
 
 ThisBuild / scalaVersion := scala213
@@ -59,9 +60,6 @@ lazy val zioParser = (project in file("zio-parser"))
       "dev.zio" %% "zio-test-sbt" % zioVersion % Test
     ),
     testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
-    scalacOptions ++= Seq(
-      "-deprecation"
-    )
   )
 
 lazy val benchmarks = (project in file("benchmarks"))

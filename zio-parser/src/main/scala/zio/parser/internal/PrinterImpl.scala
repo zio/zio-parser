@@ -137,9 +137,9 @@ class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Res
               })
           }
 
-        case Printer.Zip(left, right)      =>
+        case Printer.Zip(left, right, unzipValue, zipResult) =>
           val oldInput         = input
-          val (valueA, valueB) = input.asInstanceOf[(Any, Any)]
+          val (valueA, valueB) = unzipValue.asInstanceOf[Any => (Any, Any)](input)
           current = left
           input = valueA
 
@@ -150,13 +150,18 @@ class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Res
               val k2 = Cont((rightResult: Either[Any, Any]) =>
                 rightResult match {
                   case Left(failure)      => (Printer.Fail(failure), oldInput, None)
-                  case Right(rightResult) => (Printer.Succeed((leftResult, rightResult)), oldInput, None)
+                  case Right(rightResult) =>
+                    (
+                      Printer.Succeed(zipResult.asInstanceOf[(Any, Any) => Any](leftResult, rightResult)),
+                      oldInput,
+                      None
+                    )
                 }
               )
               (right.asInstanceOf[ErasedPrinter], valueB, Some(k2))
           }
           stack.push(k1)
-        case Printer.ZipLeft(left, right)  =>
+        case Printer.ZipLeft(left, right)                    =>
           val oldInput = input
           val valueA   = input
           val valueB   = ()
@@ -176,7 +181,7 @@ class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Res
               (right.asInstanceOf[ErasedPrinter], valueB, Some(k2))
           }
           stack.push(k1)
-        case Printer.ZipRight(left, right) =>
+        case Printer.ZipRight(left, right)                   =>
           val oldInput = input
           val valueA   = ()
           val valueB   = input

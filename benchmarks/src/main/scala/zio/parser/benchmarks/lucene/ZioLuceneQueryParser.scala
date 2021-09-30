@@ -100,8 +100,8 @@ class ZioLuceneQueryParser(
             case Boundary.Unbound                 => ("*", BoundType.Exclusive)
           }
         )).transform(
-        { case ((lower, _), upper) => Query.Range(lower, upper) },
-        (r: Query.Range) => ((r.lower, ()), r.upper)
+        { case (lower, upper) => Query.Range(lower, upper) },
+        (r: Query.Range) => (r.lower, r.upper)
       )
     ) ?? "range"
 

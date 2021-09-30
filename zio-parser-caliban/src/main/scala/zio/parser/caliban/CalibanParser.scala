@@ -277,10 +277,10 @@ object CalibanParser {
 
   lazy val directive: CalibanSyntax[Directive, Directive]              =
     (Syntax.index ~ ((Syntax.char('@') ~> name) <~ whitespaceWithComment) ~ arguments.?).transform(
-      { case ((index, name), arguments) =>
+      { case (index, name, arguments) =>
         Directive(name, arguments.getOrElse(Map()), index)
       },
-      (directive: Directive) => ((directive.index, directive.name), optMap(directive.arguments))
+      (directive: Directive) => (directive.name, optMap(directive.arguments))
     )
   lazy val directives: CalibanSyntax[List[Directive], List[Directive]] =
     directive.repeatWithSep(whitespaceWithComment).toList
@@ -313,12 +313,14 @@ object CalibanParser {
   lazy val argumentDefinition: CalibanSyntax[InputValueDefinition, InputValueDefinition]              =
     (((stringValue <~ whitespaceWithComment1).? ~ name <~ wrapWhitespaces(Syntax.char(':'))) ~
       (type_ <~ whitespaceWithComment) ~ ((defaultValue <~ whitespaceWithComment).? ~ directives.?)).transform(
-      { case (((description, name), type_), (defaultValue, directives)) =>
+      { case (description, name, type_, (defaultValue, directives)) =>
         InputValueDefinition(description.map(_.value), name, type_, defaultValue, directives.getOrElse(Nil))
       },
       (d: InputValueDefinition) =>
         (
-          ((d.description.map(StringValue.apply), d.name), d.ofType),
+          d.description.map(StringValue.apply),
+          d.name,
+          d.ofType,
           (d.defaultValue, optColl(d.directives))
         )
     )
@@ -329,28 +331,21 @@ object CalibanParser {
     (((stringValue <~ whitespaceWithComment).? ~ (name <~ whitespaceWithComment)) ~
       (argumentDefinitions <~ whitespaceWithComment).? ~
       ((Syntax.char(':') <~ whitespaceWithComment) ~> type_ <~ whitespaceWithComment) ~ directives.?).transform(
-      { case ((((description, name), args), type_), directives) =>
+      { case (description, name, args, type_, directives) =>
         FieldDefinition(description.map(_.value), name, args.getOrElse(Nil), type_, directives.getOrElse(Nil))
       },
       (d: FieldDefinition) =>
-        (
-          (((d.description.map(StringValue.apply), d.name), optColl(d.args)), d.ofType),
-          optColl(d.directives)
-        )
+        (d.description.map(StringValue.apply), d.name, optColl(d.args), d.ofType, optColl(d.directives))
     )
 
   lazy val variableDefinition: CalibanSyntax[VariableDefinition, VariableDefinition] =
     ((variable <~ wrapWhitespaces(Syntax.char(':'))) ~
       (type_ <~ whitespaceWithComment) ~
       ((defaultValue <~ whitespaceWithComment).? ~ directives.?)).transform(
-      { case ((v, t), (default, dirs)) =>
+      { case (v, t, (default, dirs)) =>
         VariableDefinition(v.name, t, default, dirs.getOrElse(Nil))
       },
-      (d: VariableDefinition) =>
-        (
-          (VariableValue(d.name), d.variableType),
-          (d.defaultValue, optColl(d.directives))
-        )
+      (d: VariableDefinition) => (VariableValue(d.name), d.variableType, (d.defaultValue, optColl(d.directives)))
     )
 
   lazy val variableDefinitions: CalibanSyntax[Chunk[VariableDefinition], Chunk[VariableDefinition]] =
@@ -359,7 +354,7 @@ object CalibanParser {
   lazy val field: CalibanSyntax[Field, Field] = (((Syntax.index ~ (alias <~ whitespaceWithComment).?) ~
     name <~ whitespaceWithComment) ~ (arguments <~ whitespaceWithComment).? ~
     (directives <~ whitespaceWithComment).? ~ selectionSet.?).transform(
-    { case (((((index, alias), name), args), dirs), sels) =>
+    { case (index, alias, name, args, dirs, sels) =>
       Field(
         alias,
         name,
@@ -369,8 +364,7 @@ object CalibanParser {
         index
       )
     },
-    (f: Field) =>
-      (((((f.index, f.alias), f.name), optMap(f.arguments)), optColl(f.directives)), optColl(f.selectionSet))
+    (f: Field) => (f.alias, f.name, optMap(f.arguments), optColl(f.directives), optColl(f.selectionSet))
   )
 
   lazy val fragmentName: CalibanSyntax[String, String] =
@@ -390,10 +384,10 @@ object CalibanParser {
   lazy val inlineFragment: CalibanSyntax[InlineFragment, InlineFragment] =
     (Syntax.string("...", ()) ~> whitespaceWithComment ~>
       (typeCondition <~ whitespaceWithComment).? ~ (directives <~ whitespaceWithComment).? ~ selectionSet).transform(
-      { case ((typeCondition, dirs), sel) =>
+      { case (typeCondition, dirs, sel) =>
         InlineFragment(typeCondition, dirs.getOrElse(Nil), sel)
       },
-      (f: InlineFragment) => ((f.typeCondition, optColl(f.dirs)), f.selectionSet)
+      (f: InlineFragment) => (f.typeCondition, optColl(f.dirs), f.selectionSet)
     )
 
   lazy val operationType: CalibanSyntax[OperationType, OperationType] =
@@ -405,7 +399,7 @@ object CalibanParser {
     ((operationType <~ whitespaceWithComment) ~ ((name <~ whitespaceWithComment).? ~
       (variableDefinitions <~ whitespaceWithComment).?) ~
       (directives <~ whitespaceWithComment).? ~ selectionSet).transform(
-      { case (((operationType, (name, variableDefinitions)), directives), selection) =>
+      { case (operationType, (name, variableDefinitions), directives, selection) =>
         OperationDefinition(
           operationType,
           name,
@@ -416,7 +410,9 @@ object CalibanParser {
       },
       (d: OperationDefinition) =>
         (
-          ((d.operationType, (d.name, optColl(Chunk.fromIterable(d.variableDefinitions)))), optColl(d.directives)),
+          d.operationType,
+          (d.name, optColl(Chunk.fromIterable(d.variableDefinitions))),
+          optColl(d.directives),
           d.selectionSet
         )
     ) |
@@ -429,10 +425,10 @@ object CalibanParser {
   lazy val fragmentDefinition: CalibanSyntax[FragmentDefinition, FragmentDefinition] =
     ((Syntax.string("fragment", ()) ~> whitespaceWithComment1 ~> fragmentName <~ whitespaceWithComment1) ~
       (typeCondition <~ whitespaceWithComment) ~ (directives <~ whitespaceWithComment).? ~ selectionSet).transform(
-      { case (((name, typeCondition), dirs), sel) =>
+      { case (name, typeCondition, dirs, sel) =>
         FragmentDefinition(name, typeCondition, dirs.getOrElse(Nil), sel)
       },
-      (d: FragmentDefinition) => (((d.name, d.typeCondition), optColl(d.directives)), d.selectionSet)
+      (d: FragmentDefinition) => (d.name, d.typeCondition, optColl(d.directives), d.selectionSet)
     )
 
   private def objectTypeDefinition(
@@ -441,7 +437,7 @@ object CalibanParser {
     ((Syntax.string("type", ()) ~> whitespaceWithComment1 ~> name <~ whitespaceWithComment1) ~
       ((implements <~ whitespaceWithComment).? ~ (directives <~ whitespaceWithComment).?) ~
       wrapBrackets(fieldDefinition.repeatWithSep0(whitespaceWithComment))).transform(
-      { case ((name, (implements, directives)), fields) =>
+      { case (name, (implements, directives), fields) =>
         ObjectTypeDefinition(
           description,
           name,
@@ -451,7 +447,7 @@ object CalibanParser {
         )
       },
       (d: ObjectTypeDefinition) =>
-        ((d.name, (optColl(d.implements), optColl(d.directives))), Chunk.fromIterable(d.fields))
+        (d.name, (optColl(d.implements), optColl(d.directives)), Chunk.fromIterable(d.fields))
     )
 
   lazy val implements: CalibanSyntax[List[NamedType], List[NamedType]] =
@@ -469,10 +465,10 @@ object CalibanParser {
       (directives <~ whitespaceWithComment).? ~ wrapBrackets(
         fieldDefinition.repeatWithSep0(whitespaceWithComment)
       )).transform(
-      { case ((name, directives), fields) =>
+      { case (name, directives, fields) =>
         InterfaceTypeDefinition(description, name, directives.getOrElse(Nil), fields.toList)
       },
-      (d: InterfaceTypeDefinition) => ((d.name, optColl(d.directives)), Chunk.fromIterable(d.fields))
+      (d: InterfaceTypeDefinition) => (d.name, optColl(d.directives), Chunk.fromIterable(d.fields))
     )
 
   private def inputObjectTypeDefinition(
@@ -483,18 +479,18 @@ object CalibanParser {
       ()
     ) ~> whitespaceWithComment1 ~> name <~ whitespaceWithComment) ~ (directives <~ whitespaceWithComment).? ~
       wrapBrackets(argumentDefinition.repeatWithSep0(whitespaceWithComment))).transform(
-      { case ((name, directives), fields) =>
+      { case (name, directives, fields) =>
         InputObjectTypeDefinition(description, name, directives.getOrElse(Nil), fields.toList)
       },
-      (d: InputObjectTypeDefinition) => ((d.name, optColl(d.directives)), Chunk.fromIterable(d.fields))
+      (d: InputObjectTypeDefinition) => (d.name, optColl(d.directives), Chunk.fromIterable(d.fields))
     )
 
   lazy val enumValueDefinition: CalibanSyntax[EnumValueDefinition, EnumValueDefinition] =
     ((stringValue <~ whitespaceWithComment).? ~ (name <~ whitespaceWithComment) ~ directives.?).transform(
-      { case ((description, enumValue), directives) =>
+      { case (description, enumValue, directives) =>
         EnumValueDefinition(description.map(_.value), enumValue, directives.getOrElse(Nil))
       },
-      (d: EnumValueDefinition) => ((d.description.map(StringValue.apply), d.enumValue), optColl(d.directives))
+      (d: EnumValueDefinition) => (d.description.map(StringValue.apply), d.enumValue, optColl(d.directives))
     )
 
   lazy val enumName: CalibanSyntax[String, String] =
@@ -507,10 +503,10 @@ object CalibanParser {
       (directives <~ whitespaceWithComment).? ~ wrapBrackets(
         enumValueDefinition.repeatWithSep0(whitespaceWithComment)
       )).transform(
-      { case ((name, directives), enumValuesDefinition) =>
+      { case (name, directives, enumValuesDefinition) =>
         EnumTypeDefinition(description, name, directives.getOrElse(Nil), enumValuesDefinition.toList)
       },
-      (d: EnumTypeDefinition) => ((d.name, optColl(d.directives)), Chunk.fromIterable(d.enumValuesDefinition))
+      (d: EnumTypeDefinition) => (d.name, optColl(d.directives), Chunk.fromIterable(d.enumValuesDefinition))
     )
 
   private def unionTypeDefinition(
@@ -520,8 +516,8 @@ object CalibanParser {
       String,
       Char,
       Char,
-      (((String, Option[List[Directive]]), NamedType), Chunk[NamedType]),
-      (((String, Option[List[Directive]]), NamedType), Chunk[NamedType])
+      (String, Option[List[Directive]], NamedType, Chunk[NamedType]),
+      (String, Option[List[Directive]], NamedType, Chunk[NamedType])
     ] =
       (Syntax.string("union", ()) ~> whitespaceWithComment1 ~> name <~ whitespaceWithComment) ~
         ((directives <~ whitespaceWithComment).? <~ Syntax.char('=') <~ whitespaceWithComment) ~
@@ -532,15 +528,17 @@ object CalibanParser {
       { result =>
         println(s"RESULT $result")
         result match {
-          case okay @ (((name, directives), m), ms) =>
+          case okay @ (name, directives, m, ms) =>
             println(s"OKAY $okay")
             UnionTypeDefinition(description, name, directives.getOrElse(Nil), (m :: ms.toList).map(_.name))
         }
       },
       (d: UnionTypeDefinition) =>
         (
-          ((d.name, optColl(d.directives)), NamedType(d.memberTypes.head, false)),
-          Chunk.fromIterable(d.memberTypes.tail).map(NamedType(_, false))
+          d.name,
+          optColl(d.directives),
+          NamedType(d.memberTypes.head, nonNull = false),
+          Chunk.fromIterable(d.memberTypes.tail).map(NamedType(_, nonNull = false))
         )
     )
   }
@@ -626,7 +624,7 @@ object CalibanParser {
     ((name <~ whitespaceWithComment) ~ ((implements <~ whitespaceWithComment).? ~
       (directives <~ whitespaceWithComment).?) ~
       wrapBrackets(fieldDefinition.repeatWithSep0(whitespaceWithComment)).?).transform(
-      { case ((name, (implements, directives)), fields) =>
+      { case (name, (implements, directives), fields) =>
         ObjectTypeExtension(
           name,
           implements.getOrElse(Nil),
@@ -635,7 +633,7 @@ object CalibanParser {
         )
       },
       (ote: ObjectTypeExtension) =>
-        ((ote.name, (optColl(ote.implements), optColl(ote.directives))), optColl(Chunk.fromIterable(ote.fields)))
+        (ote.name, (optColl(ote.implements), optColl(ote.directives)), optColl(Chunk.fromIterable(ote.fields)))
     )
 
   lazy val objectTypeExtension: CalibanSyntax[ObjectTypeExtension, ObjectTypeExtension] =
@@ -663,13 +661,15 @@ object CalibanParser {
       ((Syntax.char('|') <~ whitespaceWithComment).?.unit(None) ~> (namedType <~ whitespaceWithComment).?) ~
       ((Syntax.char('|') <~ whitespaceWithComment) ~> namedType).repeatWithSep0(whitespaceWithComment))
       .transform(
-        { case (((name, directives), m), ms) =>
+        { case (name, directives, m, ms) =>
           val members = ms.toList
           UnionTypeExtension(name, directives.getOrElse(Nil), m.map(_ :: members).getOrElse(members).map(_.name))
         },
         (ute: UnionTypeExtension) =>
           (
-            ((ute.name, optColl(ute.directives)), ute.memberTypes.headOption.map(NamedType(_, nonNull = false))),
+            ute.name,
+            optColl(ute.directives),
+            ute.memberTypes.headOption.map(NamedType(_, nonNull = false)),
             Chunk.fromIterable(ute.memberTypes.tail).map(NamedType(_, nonNull = false))
           )
       )
@@ -681,11 +681,11 @@ object CalibanParser {
   lazy val enumTypeExtensionWithOptionalDirectivesAndValues: CalibanSyntax[EnumTypeExtension, EnumTypeExtension] =
     ((enumName <~ whitespaceWithComment) ~ (directives <~ whitespaceWithComment).? ~
       wrapBrackets(enumValueDefinition.repeatWithSep0(whitespaceWithComment)).?).transform(
-      { case ((name, directives), enumValuesDefinition) =>
+      { case (name, directives, enumValuesDefinition) =>
         EnumTypeExtension(name, directives.getOrElse(Nil), enumValuesDefinition.map(_.toList).getOrElse(Nil))
       },
       (ete: EnumTypeExtension) =>
-        ((ete.name, optColl(ete.directives)), optColl(Chunk.fromIterable(ete.enumValuesDefinition)))
+        (ete.name, optColl(ete.directives), optColl(Chunk.fromIterable(ete.enumValuesDefinition)))
     )
 
   lazy val enumTypeExtension: CalibanSyntax[EnumTypeExtension, EnumTypeExtension] =
@@ -695,11 +695,11 @@ object CalibanParser {
       : CalibanSyntax[InputObjectTypeExtension, InputObjectTypeExtension] =
     ((name <~ whitespaceWithComment) ~ (directives <~ whitespaceWithComment).? ~
       wrapBrackets(argumentDefinition.repeatWithSep0(whitespaceWithComment)).?).transform(
-      { case ((name, directives), fields) =>
+      { case (name, directives, fields) =>
         InputObjectTypeExtension(name, directives.getOrElse(Nil), fields.map(_.toList).getOrElse(Nil))
       },
       (iote: InputObjectTypeExtension) =>
-        ((iote.name, optColl(iote.directives)), optColl(Chunk.fromIterable(iote.fields)))
+        (iote.name, optColl(iote.directives), optColl(Chunk.fromIterable(iote.fields)))
     )
 
   lazy val inputObjectTypeExtension: CalibanSyntax[InputObjectTypeExtension, InputObjectTypeExtension] =
@@ -733,23 +733,20 @@ object CalibanParser {
       ((Syntax.char('|') <~ whitespaceWithComment).?.unit(None) ~> directiveLocation <~ whitespaceWithComment) ~
       (Syntax.char('|') ~> whitespaceWithComment ~> directiveLocation).repeatWithSep(whitespaceWithComment))
       .transform(
-        { case ((((description, name), args), firstLoc), otherLoc) =>
+        { case (description, name, args, firstLoc, otherLoc) =>
           DirectiveDefinition(description.map(_.value), name, args.getOrElse(Nil), otherLoc.toList.toSet + firstLoc)
         },
         (d: DirectiveDefinition) =>
           (
-            (((d.description.map(StringValue.apply), d.name), optColl(d.args)), d.locations.head),
+            d.description.map(StringValue.apply),
+            d.name,
+            optColl(d.args),
+            d.locations.head,
             Chunk.fromIterable(d.locations.tail)
           )
       )
 
   lazy val typeDefinition: CalibanSyntax[TypeDefinition, TypeDefinition] = {
-//    objectTypeDefinition(None).widen[TypeDefinition] |
-//      interfaceTypeDefinition(None).widen[TypeDefinition] |
-//      inputObjectTypeDefinition(None).widen[TypeDefinition] |
-//      enumTypeDefinition(None).widen[TypeDefinition] |
-//      unionTypeDefinition(None).widen[TypeDefinition] |
-//      scalarTypeDefinition(None).widen[TypeDefinition]
     val parser: Parser[String, Char, TypeDefinition]                   = (stringValue <~ whitespaceWithComment).?.asParser.flatMap {
       stringValOpt =>
         val description = stringValOpt.map(_.value)
@@ -890,8 +887,8 @@ object ZNumbers {
      *     plus = %x2B                ; +
      *     zero = %x30                ; 0
      */
-    val frac: CalibanSyntax[String, String]                      = Syntax.char('.') ~> digits
-    val exp: CalibanSyntax[((Char, Option[Char]), String), Unit] =
+    val frac: CalibanSyntax[String, String]                    = Syntax.char('.') ~> digits
+    val exp: CalibanSyntax[(Char, Option[Char], String), Unit] =
       (Syntax.charIn("eE") ~ Syntax.charIn("+-").? ~ digits).unit
 
     (signedIntString ~ frac.? ~ exp.?).string

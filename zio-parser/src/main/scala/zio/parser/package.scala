@@ -1,6 +1,7 @@
 package zio
 
 import scala.reflect.ClassTag
+import zio.parser.internal.{PZippable, PUnzippable}
 
 package object parser {
 
@@ -87,6 +88,32 @@ package object parser {
       )
   }
 
+  implicit class SyntaxOps[Err, In, Out, Value, Result](private val self: Syntax[Err, In, Out, Value, Result]) {
+
+    /** Symbolic alias for zip */
+    final def ~[Err2 >: Err, In2 <: In, Out2 >: Out, Value2, Result2, ZippedValue, ZippedResult](
+        that: => Syntax[Err2, In2, Out2, Value2, Result2]
+    )(implicit
+        unzippableValue: PUnzippable.In[Value, Value2, ZippedValue],
+        zippableResult: PZippable.Out[Result, Result2, ZippedResult]
+    ): Syntax[Err2, In2, Out2, ZippedValue, ZippedResult] =
+      zip(that)
+
+    /** Concatenates this syntax with 'that' syntax. In case both parser succeeds, the result is a pair of the results.
+      * The printer destructures a pair and prints the left value with this, the right value with 'that'.
+      */
+    final def zip[Err2 >: Err, In2 <: In, Out2 >: Out, Value2, Result2, ZippedValue, ZippedResult](
+        that: => Syntax[Err2, In2, Out2, Value2, Result2]
+    )(implicit
+        unzippableValue: PUnzippable.In[Value, Value2, ZippedValue],
+        zippableResult: PZippable.Out[Result, Result2, ZippedResult]
+    ): Syntax[Err2, In2, Out2, ZippedValue, ZippedResult] =
+      Syntax.from(
+        self.asParser.zip(that.asParser),
+        self.asPrinter.zip(that.asPrinter)
+      )
+  }
+
   implicit class ParserOps[Err, In, Result](private val self: Parser[Err, In, Result]) extends AnyVal {
 
     /** Combines this parser with that printer to get a syntax.
@@ -128,5 +155,26 @@ package object parser {
       */
     def zipRight[Result2](that: => Printer[Err, Out, Value, Result2]): Printer[Err, Out, Value, Result2] =
       Printer.ZipRight(Printer.Lazy(() => self), Printer.Lazy(() => that))
+
+    /** Symbolic alias for zip */
+    final def ~[Err2 >: Err, Out2 >: Out, Value2, Result2, ZippedValue, ZippedResult](
+        that: => Printer[Err2, Out2, Value2, Result2]
+    )(implicit
+        zippableValue: PUnzippable.In[Value, Value2, ZippedValue],
+        zippableResult: PZippable.Out[Result, Result2, ZippedResult]
+    ): Printer[Err2, Out2, ZippedValue, ZippedResult] =
+      zip(that)
+
+    /** Take a pair to be printed, print the left value with this, and the right value with 'that'. The result is a pair
+      * of both printer's results.
+      */
+    final def zip[Err2 >: Err, Out2 >: Out, Value2, Result2, ZippedValue, ZippedResult](
+        that: => Printer[Err2, Out2, Value2, Result2]
+    )(implicit
+        unzippableValue: PUnzippable.In[Value, Value2, ZippedValue],
+        zippableResult: PZippable.Out[Result, Result2, ZippedResult]
+    ): Printer[Err2, Out2, ZippedValue, ZippedResult] =
+      Printer.Zip(Printer.Lazy(() => self), Printer.Lazy(() => that), unzippableValue.unzip, zippableResult.zip)
+
   }
 }

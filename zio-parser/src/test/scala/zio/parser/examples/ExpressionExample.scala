@@ -35,10 +35,10 @@ object ExpressionExample extends DefaultRunnableSpec {
   lazy val subExpr: Syntax[String, Char, Char, Expr, Expr] =
     (expr ~ operator ~ expr)
       .transformTo[String, Expr, Expr](
-        { case ((a, op), b) =>
+        { case (a, op, b) =>
           Op(op, a, b)
         },
-        { case (op: Op) => ((op.a, op.operator), op.b) },
+        { case (op: Op) => (op.a, op.operator, op.b) },
         "Not valid sub expression"
       ) ?? "sub expression"
 

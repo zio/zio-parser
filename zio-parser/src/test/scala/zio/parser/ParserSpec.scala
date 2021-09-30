@@ -61,10 +61,9 @@ object ParserSpec extends DefaultRunnableSpec {
             parserTest("s ~ s", Syntax.anyChar ~ Syntax.anyChar, "he")(isRight(equalTo(('h', 'e')))),
             parserTest("s ~ s ~ s", Syntax.anyChar ~ Syntax.anyChar ~ Syntax.anyChar, "hel")(
               isRight(equalTo(('h', 'e', 'l')))
-            ),
-            {
+            ), {
               val a = Syntax.char('h').as(1, ())
-              val b = Syntax.char('e') ~>  Syntax.char('l').as(2, ())
+              val b = Syntax.char('e') ~> Syntax.char('l').as(2, ())
               parserTest(
                 "s ~ (s ~> s)",
                 a ~ b,

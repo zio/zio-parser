@@ -87,8 +87,8 @@ package object parser {
     final def ~[Err2 >: Err, In2 <: In, Out2 >: Out, Value2, Result2, ZippedValue, ZippedResult](
         that: => Syntax[Err2, In2, Out2, Value2, Result2]
     )(implicit
-      unzippableValue: PUnzippable.In[Value, Value2, ZippedValue],
-      zippableResult: PZippable.Out[Result, Result2, ZippedResult]
+        unzippableValue: PUnzippable.In[Value, Value2, ZippedValue],
+        zippableResult: PZippable.Out[Result, Result2, ZippedResult]
     ): Syntax[Err2, In2, Out2, ZippedValue, ZippedResult] =
       zip(that)
 
@@ -98,8 +98,8 @@ package object parser {
     final def zip[Err2 >: Err, In2 <: In, Out2 >: Out, Value2, Result2, ZippedValue, ZippedResult](
         that: => Syntax[Err2, In2, Out2, Value2, Result2]
     )(implicit
-      unzippableValue: PUnzippable.In[Value, Value2, ZippedValue],
-      zippableResult: PZippable.Out[Result, Result2, ZippedResult]
+        unzippableValue: PUnzippable.In[Value, Value2, ZippedValue],
+        zippableResult: PZippable.Out[Result, Result2, ZippedResult]
     ): Syntax[Err2, In2, Out2, ZippedValue, ZippedResult] =
       Syntax.from(
         self.asParser.zip(that.asParser),
@@ -153,8 +153,8 @@ package object parser {
     final def ~[Err2 >: Err, Out2 >: Out, Value2, Result2, ZippedValue, ZippedResult](
         that: => Printer[Err2, Out2, Value2, Result2]
     )(implicit
-      zippableValue: PUnzippable.In[Value, Value2, ZippedValue],
-      zippableResult: PZippable.Out[Result, Result2, ZippedResult]
+        zippableValue: PUnzippable.In[Value, Value2, ZippedValue],
+        zippableResult: PZippable.Out[Result, Result2, ZippedResult]
     ): Printer[Err2, Out2, ZippedValue, ZippedResult] =
       zip(that)
 
@@ -164,8 +164,8 @@ package object parser {
     final def zip[Err2 >: Err, Out2 >: Out, Value2, Result2, ZippedValue, ZippedResult](
         that: => Printer[Err2, Out2, Value2, Result2]
     )(implicit
-      unzippableValue: PUnzippable.In[Value, Value2, ZippedValue],
-      zippableResult: PZippable.Out[Result, Result2, ZippedResult]
+        unzippableValue: PUnzippable.In[Value, Value2, ZippedValue],
+        zippableResult: PZippable.Out[Result, Result2, ZippedResult]
     ): Printer[Err2, Out2, ZippedValue, ZippedResult] =
       Printer.Zip(Printer.Lazy(() => self), Printer.Lazy(() => that), unzippableValue.unzip, zippableResult.zip)
 

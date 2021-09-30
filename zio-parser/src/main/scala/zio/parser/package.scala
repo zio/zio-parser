@@ -16,7 +16,7 @@ package object parser {
     case object Recursive extends ParserImplementation
   }
 
-  implicit class AnyParserOps[Err, In](private val self: Parser[Err, In, Any]) extends AnyVal {
+  implicit final class AnyParserOps[Err, In](private val self: Parser[Err, In, Any]) extends AnyVal {
 
     /** Symbolic alias for zipRight
       */
@@ -33,7 +33,7 @@ package object parser {
       Parser.ZipRight(Parser.Lazy(() => self), Parser.Lazy(() => that))
   }
 
-  implicit class UnitSyntaxOps[Err, In, Out](private val self: Syntax[Err, In, Out, Unit, Any]) extends AnyVal {
+  implicit final class UnitSyntaxOps[Err, In, Out](private val self: Syntax[Err, In, Out, Unit, Any]) extends AnyVal {
 
     /** Symbolic alias for zipRight
       */
@@ -50,6 +50,13 @@ package object parser {
       Syntax.from(
         self.asParser ~> that.asParser,
         self.asPrinter ~> that.asPrinter
+      )
+
+    /** Ignores the result of the syntax and result in 'value' instead */
+    def as[Result2](value: => Result2): Syntax[Err, In, Out, Result2, Result2] =
+      Syntax.from(
+        self.asParser.as(value),
+        self.asPrinter.asPrinted(value, ())
       )
   }
 

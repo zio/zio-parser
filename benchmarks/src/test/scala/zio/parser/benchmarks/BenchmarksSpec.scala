@@ -40,7 +40,7 @@ object BenchmarksSpec extends DefaultRunnableSpec {
           assert(benchmark.zioParseStrippedRecursive())(isRight(anything))
         }
       )
-    ) @@ TestAspect.timeout(30.seconds)
+    ) @@ TestAspect.timeout(90.seconds)
 
   private def testParserBenchmark[T](
       name: String,

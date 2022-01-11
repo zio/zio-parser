@@ -4,6 +4,7 @@ import caliban.CalibanError.ParsingError
 import caliban.InputValue
 import caliban.InputValue._
 import caliban.Value._
+import caliban.parsing.SourceMapper
 import caliban.parsing.adt.Definition.ExecutableDefinition.{FragmentDefinition, OperationDefinition}
 import caliban.parsing.adt.Definition.TypeSystemDefinition.TypeDefinition._
 import caliban.parsing.adt.Definition.TypeSystemExtension.SchemaExtension
@@ -12,14 +13,13 @@ import caliban.parsing.adt.OperationType.{Mutation, Query}
 import caliban.parsing.adt.Selection.{Field, FragmentSpread, InlineFragment}
 import caliban.parsing.adt.Type.{ListType, NamedType}
 import caliban.parsing.adt._
-import caliban.parsing.SourceMapper
-import zio.test._
 import zio.test.Assertion._
 import zio.test.TestAspect._
+import zio.test._
 
 object CalibanParserSpec extends DefaultRunnableSpec {
 
-  def spec0 = suite("CalibanParserSpec")(
+  def spec0: Spec[Any, TestFailure[ParsingError], TestSuccess] = suite("CalibanParserSpec")(
     test("simple query with fields") {
       val query =
         """{
@@ -51,7 +51,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
     }
   )
 
-  def spec =
+  def spec: Spec[Annotations, TestFailure[ParsingError], TestSuccess] =
     suite("ParserSpec")(
       test("simple query with fields") {
         val query = """{

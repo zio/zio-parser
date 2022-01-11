@@ -1,7 +1,7 @@
 package zio.parser.internal
 
 import zio.parser.Parser.ErasedParser
-import zio.parser.{Regex, Parser}
+import zio.parser.{Parser, Regex}
 
 object Debug {
 

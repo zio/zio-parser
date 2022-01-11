@@ -44,7 +44,7 @@ lazy val root = (project in file("."))
   )
   .settings(
     crossScalaVersions := Nil,
-    publish / skip := false
+    publish / skip     := false
   )
 
 lazy val zioParser = (project in file("zio-parser"))
@@ -66,7 +66,7 @@ lazy val zioParser = (project in file("zio-parser"))
       "dev.zio" %% "zio-test"     % zioVersion % Test,
       "dev.zio" %% "zio-test-sbt" % zioVersion % Test
     ),
-    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
+    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
   )
   .enablePlugins(BuildInfoPlugin)
 
@@ -87,7 +87,7 @@ lazy val calibanParser = (project in file("zio-parser-caliban"))
 
 lazy val benchmarks = (project in file("benchmarks"))
   .settings(
-    scalaVersion := Scala213,
+    scalaVersion   := Scala213,
     publish / skip := true,
     libraryDependencies ++= Seq(
       "org.typelevel" %% "cats-parse"   % "0.3.6",
@@ -99,7 +99,7 @@ lazy val benchmarks = (project in file("benchmarks"))
       "dev.zio"       %% "zio-test"     % zioVersion % Test,
       "dev.zio"       %% "zio-test-sbt" % zioVersion % Test
     ),
-    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
+    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
   )
   .enablePlugins(JmhPlugin)
   .dependsOn(zioParser)

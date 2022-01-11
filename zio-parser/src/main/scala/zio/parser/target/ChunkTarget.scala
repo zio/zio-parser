@@ -1,7 +1,6 @@
 package zio.parser.target
 
 import zio.parser.internal.Stack
-
 import zio.{Chunk, ChunkBuilder}
 
 class ChunkTarget[Output] extends Target[Output] {

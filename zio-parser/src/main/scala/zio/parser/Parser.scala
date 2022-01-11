@@ -1,10 +1,9 @@
 package zio.parser
 
 import zio.parser.Parser.{ErasedParser, ParserError}
-import zio.parser.internal.PZippable
-import zio.parser.internal.recursive
 import zio.parser.internal.stacksafe.ParserOp.InitialParser
 import zio.parser.internal.stacksafe.{CharParserImpl, ParserOp}
+import zio.parser.internal.{PZippable, recursive}
 import zio.{Chunk, ChunkBuilder}
 
 import scala.collection.mutable

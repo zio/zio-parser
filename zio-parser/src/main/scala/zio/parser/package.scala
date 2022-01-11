@@ -1,7 +1,8 @@
 package zio
 
+import zio.parser.internal.{PUnzippable, PZippable}
+
 import scala.reflect.ClassTag
-import zio.parser.internal.{PZippable, PUnzippable}
 
 package object parser {
 

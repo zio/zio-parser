@@ -1,8 +1,7 @@
 package zio.parser.examples
 
 import zio.parser.Parser.ParserError
-import zio.parser.{Parser, Printer, Syntax}
-import zio.parser._
+import zio.parser.{Parser, Printer, Syntax, _}
 import zio.test.Assertion._
 import zio.test._
 
@@ -14,7 +13,7 @@ object ContextualExample extends DefaultRunnableSpec {
   case class Node(name: String, child: Option[Node])
 
   // Invertible syntax fragments
-  val openTag =
+  val openTag: Syntax[String, Char, Char, String, String] =
     (Syntax.char('<') ~> Syntax.anyChar
       .filter[String, Char](_.isLetterOrDigit, "not a letter/digit")
       .repeat

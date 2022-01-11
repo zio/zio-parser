@@ -1,10 +1,9 @@
 package zio.parser.examples
 
 import zio.Chunk
-import zio.parser._
-import zio.parser.Printer
-import zio.test._
+import zio.parser.{Printer, _}
 import zio.test.Assertion._
+import zio.test._
 
 object BashPrettyPrinterExample extends DefaultRunnableSpec {
   override def spec: ZSpec[TestEnvironment, Any] =
@@ -462,17 +461,17 @@ object BashPrettyPrinterExample extends DefaultRunnableSpec {
   def printS(s: String): Printer[Nothing, Char, Any, Unit] =
     Printer.printString(s)
 
-  val indentation = Printer.unit // TODO
+  val indentation                                = Printer.unit // TODO
   //Printer.anyString
 //    .statefulTransform(
 //      (value: String, _: Any) => Right((value)),
 //      (_: Any, state: BashPrinterState) => Right((" " * (state.indentation * state.indentationSize), state))
 //    )
   //.unit
-  val newline     = printS(System.lineSeparator()) ~> indentation
+  val newline: Printer[Nothing, Char, Any, Unit] = printS(System.lineSeparator()) ~> indentation
 
-  val space  = print(' ')
-  val dollar = print('$')
+  val space: Printer[Nothing, Char, Any, Unit]  = print(' ')
+  val dollar: Printer[Nothing, Char, Any, Unit] = print('$')
 
   def between(
       prefix: String,

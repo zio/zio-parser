@@ -5,7 +5,7 @@ import zio.test.Assertion._
 import zio.test._
 
 object RegexSpec extends DefaultRunnableSpec {
-  val keywordStrings =
+  val keywordStrings: List[String] =
     List(
       "abstract",
       "case",
@@ -48,17 +48,17 @@ object RegexSpec extends DefaultRunnableSpec {
       "yield"
     )
 
-  val keywordsChars = keywordStrings.map(_.toCharArray())
+  val keywordsChars: List[Array[Char]] = keywordStrings.map(_.toCharArray())
 
-  val keywordsRegex = keywordStrings.map(Regex.string(_)).reduce(_ | _)
+  val keywordsRegex: Regex = keywordStrings.map(Regex.string(_)).reduce(_ | _)
 
-  val fooRegex = Regex.Tabular(Regex.string("foo"))
+  val fooRegex: Regex.Tabular.Tabular = Regex.Tabular(Regex.string("foo"))
 
-  val fooOrBar = Regex.Tabular(Regex.string("foo") | Regex.string("bar"))
+  val fooOrBar: Regex.Tabular.Tabular = Regex.Tabular(Regex.string("foo") | Regex.string("bar"))
 
-  val aOrB = Regex.Tabular(Regex.string("a") | Regex.string("b"))
+  val aOrB: Regex.Tabular.Tabular = Regex.Tabular(Regex.string("a") | Regex.string("b"))
 
-  val keywords = Regex.Tabular(keywordsRegex)
+  val keywords: Regex.Tabular.Tabular = Regex.Tabular(keywordsRegex)
 
   override def spec: ZSpec[Environment, Any] =
     suite("RegexSpec")(

@@ -41,10 +41,10 @@ object CalibanParser {
   lazy val CR                                                                   = '\u000D'
   lazy val Comma                                                                = ','
   lazy val whitespace: CalibanSyntax[Char, Char]                                = Syntax.charIn(UnicodeBOM, Tab, Space, LF, CR, Comma)
-  lazy val comment                                                              =
+  lazy val comment: Syntax[String, Char, Char, Chunk[Char], Unit]               =
     Syntax.char('#') ~> Syntax.anyChar.repeatUntil(Syntax.char(LF) | Syntax.string(s"$CR$LF", ())).unit
-  lazy val whitespaceWithComment                                                = (whitespace | comment).*.unit(Chunk.empty)
-  lazy val whitespaceWithComment1                                               = (whitespace | comment).+.unit(Chunk.empty)
+  lazy val whitespaceWithComment: Syntax[String, Char, Char, Unit, Unit]        = (whitespace | comment).*.unit(Chunk.empty)
+  lazy val whitespaceWithComment1: Syntax[String, Char, Char, Unit, Unit]       = (whitespace | comment).+.unit(Chunk.empty)
   private def wrapBrackets[D1, D2](t: Syntax[String, Char, Char, D1, D2])       =
     (whitespaceWithComment ~> t <~ whitespaceWithComment).between(Syntax.char('{'), Syntax.char('}'))
   private def wrapParentheses[D1, D2](t: Syntax[String, Char, Char, D1, D2])    =
@@ -68,7 +68,18 @@ object CalibanParser {
       ('t', '\t')
     )
 
-    lazy val escapedToken = {
+    lazy val escapedToken: Syntax[
+      String,
+      Char,
+      Char,
+      Char with (Char, Char) with (Char, Char, (Char, Char)) with (
+          Char,
+          Char,
+          (Char, Char),
+          (Char, Char, (Char, Char))
+      ),
+      Unit
+    ] = {
       val escapes = Syntax.charIn(decodeTable.keys.toSeq: _*)
 
       val oct  = Syntax.charIn('0' to '7': _*)
@@ -908,22 +919,23 @@ object CalibanDemo extends ZIOAppDefault {
 //  val query = "\"\"\"H\"\"\""
 //  val query = "\"\"\"hello world\"\"\"".stripMargin
 
-  val args =
+  val args: String =
     """
 (id: "1000", int: 3, float: 3.14, bool: true, nope: null, enum: YES, list: [1,2,3])
 """.trim
 
-  val parsed = UIO(CalibanParser.stringValue.parseString(query))
-    //  val parsed = UIO(CalibanSyntax.stringValue.parse("\"\"\"hello\"\"\""))
-    .tap {
-      case Left(value)  => UIO.unit
-      case Right(value) =>
-        UIO(value.getClass).debug("CLASS")
-    }
+  val parsed: ZIO[Any, Nothing, Either[Parser.ParserError[String], StringValue]] =
+    UIO(CalibanParser.stringValue.parseString(query))
+      //  val parsed = UIO(CalibanSyntax.stringValue.parse("\"\"\"hello\"\"\""))
+      .tap {
+        case Left(value)  => UIO.unit
+        case Right(value) =>
+          UIO(value.getClass).debug("CLASS")
+      }
 
 //  Debug.printParserTree(CalibanParser.document.asParser.optimized)
 
-  override def run =
+  override def run: zio.URIO[Any, ExitCode] =
     parsed.debug("RESULT").exitCode
   //    parseQuery(query).debug("RESULT").exitCode
 }

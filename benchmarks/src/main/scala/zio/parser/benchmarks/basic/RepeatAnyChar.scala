@@ -27,7 +27,7 @@ class RepeatAnyChar extends ParserBenchmark[Chars] {
     Parser.anyChar.rep.map(nel => Chars(nel.toList))
   }
 
-  override final def fastParseP[_: fastparse.P]: fastparse.P[Chars] = {
+  override final def fastParseP[P: fastparse.P]: fastparse.P[Chars] = {
     import fastparse._
     import NoWhitespace._
 

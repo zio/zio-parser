@@ -4,13 +4,12 @@ import zio.Chunk
 import zio.parser.Parser.ParserError
 import zio.test.Assertion._
 import zio.test._
-import zio.test.environment.TestEnvironment
 
 object ParserSpec extends DefaultRunnableSpec {
   private val charA: Syntax[String, Char, Char, Char, Char] = Syntax.char('a', "not a").as('a')
   private val charB: Syntax[String, Char, Char, Char, Char] = Syntax.char('b', "not b").as('b')
 
-  override def spec: ZSpec[TestEnvironment, Any] = {
+  override def spec: ZSpec[Environment, Any] = {
     suite("Parsing")(
       List(ParserImplementation.StackSafe, ParserImplementation.Recursive).map { implementation =>
         def parserTest[E, T](name: String, syntax: Syntax[E, Char, Char, T, T], input: String)(

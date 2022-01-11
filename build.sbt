@@ -1,8 +1,8 @@
 val scala212 = "2.12.15"
-val scala213 = "2.13.6"
-val scala3   = "3.0.2"
+val scala213 = "2.13.8"
+val scala3   = "3.1.0"
 
-val zioVersion = "1.0.12"
+val zioVersion = "2.0.0-RC1"
 
 val scalacOptions212 = Seq(
   "-deprecation",
@@ -69,8 +69,8 @@ lazy val benchmarks = (project in file("benchmarks"))
     scalacOptions := scalacOptions213,
     publish / skip := true,
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-parse"   % "0.3.4",
-      "com.lihaoyi"   %% "fastparse"    % "2.3.2",
+      "org.typelevel" %% "cats-parse"   % "0.3.6",
+      "com.lihaoyi"   %% "fastparse"    % "2.3.3",
       "org.tpolecat"  %% "atto-core"    % "0.9.5",
       "org.parboiled" %% "parboiled"    % "2.3.0",
       "org.http4s"    %% "parsley"      % "1.5.0-M3",
@@ -89,7 +89,7 @@ lazy val calibanParser = (project in file("zio-parser-caliban"))
     name := "zio-parser-caliban",
     crossScalaVersions := Seq(scala212, scala213, scala3),
     libraryDependencies ++= Seq(
-      "com.github.ghostdogpr" %% "caliban"      % "1.1.0",
+      "com.github.ghostdogpr" %% "caliban"      % "1.3.1",
       "dev.zio"               %% "zio"          % zioVersion,
       "dev.zio"               %% "zio-streams"  % zioVersion,
       "dev.zio"               %% "zio-test"     % zioVersion % Test,

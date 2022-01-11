@@ -3,7 +3,6 @@ package zio.parser.examples
 import zio.Chunk
 import zio.parser._
 import zio.parser.Printer
-import zio.test.environment.TestEnvironment
 import zio.test._
 import zio.test.Assertion._
 

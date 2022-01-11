@@ -5,7 +5,6 @@ import zio.parser.{Parser, Printer, Syntax}
 import zio.parser._
 import zio.test.Assertion._
 import zio.test._
-import zio.test.environment.TestEnvironment
 
 object ContextualExample extends DefaultRunnableSpec {
 
@@ -44,7 +43,7 @@ object ContextualExample extends DefaultRunnableSpec {
   lazy val node: Syntax[String, Char, Char, Node, Node] =
     nodeParser <=> nodePrinter
 
-  override def spec: ZSpec[TestEnvironment, Any] =
+  override def spec: ZSpec[Environment, Any] =
     suite("Contextual example")(
       suite("Separate parser")(
         test("simple") {

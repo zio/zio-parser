@@ -5,7 +5,6 @@ import zio.parser._
 import zio.parser.Syntax
 import zio.parser.internal.Debug
 import zio.test.Assertion.{equalTo, isRight}
-import zio.test.environment.TestEnvironment
 import zio.test._
 
 object JsonExample extends DefaultRunnableSpec {
@@ -73,7 +72,7 @@ object JsonExample extends DefaultRunnableSpec {
 //  println("-----")
 //  Debug.printParserTree(json.asParser.optimized)
 
-  override def spec: ZSpec[TestEnvironment, Any] =
+  override def spec: ZSpec[Environment, Any] =
     suite("JSON example")(
       parsingTests("parsing with auto-backtrack", json.autoBacktracking),
       parsingTests("parsing with manual-backtrack", json.manualBacktracking)

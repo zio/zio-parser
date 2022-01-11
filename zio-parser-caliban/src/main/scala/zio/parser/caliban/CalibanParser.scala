@@ -896,7 +896,7 @@ object ZNumbers {
 
 }
 
-object CalibanDemo extends zio.App {
+object CalibanDemo extends ZIOAppDefault {
   //  val query = """{
   //                |  human(id: COOL) {
   //                |    name
@@ -923,7 +923,7 @@ object CalibanDemo extends zio.App {
 
 //  Debug.printParserTree(CalibanParser.document.asParser.optimized)
 
-  override def run(args: List[String]): URIO[zio.ZEnv, ExitCode] =
+  override def run =
     parsed.debug("RESULT").exitCode
   //    parseQuery(query).debug("RESULT").exitCode
 }

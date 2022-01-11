@@ -5,7 +5,6 @@ import zio.parser.Syntax
 import zio.parser.internal.Debug
 import zio.test.Assertion._
 import zio.test._
-import zio.test.environment.TestEnvironment
 
 object ExpressionExample extends DefaultRunnableSpec {
 
@@ -53,7 +52,7 @@ object ExpressionExample extends DefaultRunnableSpec {
     Const(3)
   )
 
-  override def spec: ZSpec[TestEnvironment, Any] =
+  override def spec: ZSpec[Environment, Any] =
     suite("Expression example")(
       test("Parses expression correctly") {
 //        Debug.printParserTree(expr.asParser.optimized)

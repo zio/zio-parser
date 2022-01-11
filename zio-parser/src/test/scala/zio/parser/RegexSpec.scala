@@ -1,11 +1,8 @@
 package zio.parser
 
-import zio.Chunk
-import zio.random.Random
-import zio.random
+import zio._
 import zio.test.Assertion._
 import zio.test._
-import zio.test.environment.TestEnvironment
 
 object RegexSpec extends DefaultRunnableSpec {
   val keywordStrings =
@@ -63,22 +60,22 @@ object RegexSpec extends DefaultRunnableSpec {
 
   val keywords = Regex.Tabular(keywordsRegex)
 
-  override def spec: ZSpec[TestEnvironment, Any] =
+  override def spec: ZSpec[Environment, Any] =
     suite("RegexSpec")(
       suite("string")(
         test("positive matches") {
-          assert(fooRegex.matches("foo"))(isTrue)
+          assertTrue(fooRegex.matches("foo"))
         },
         test("negative matches") {
-          assert(fooRegex.matches("bar"))(isFalse)
+          assertTrue(!(fooRegex.matches("bar")))
         },
         test("single-letter positive or") {
-          assert(aOrB.matches("a"))(isTrue) &&
-          assert(aOrB.matches("b"))(isTrue)
+          assertTrue(aOrB.matches("a")) &&
+          assertTrue(aOrB.matches("b"))
         },
         test("word positive or") {
-          assert(fooOrBar.matches("foo"))(isTrue) &&
-          assert(fooOrBar.matches("bar"))(isTrue)
+          assertTrue(fooOrBar.matches("foo")) &&
+          assertTrue(fooOrBar.matches("bar"))
         }
       ),
       suite("keywords") {
@@ -117,7 +114,7 @@ object RegexSpec extends DefaultRunnableSpec {
           ch => ch != 'a' && ch != 'b',
           Gen.fromIterable(List('a', 'b', 'c', 'd'))
         ),
-        singleChar("literal 1", Regex.string("X"), _ == 'X', Gen.anyASCIIChar)
+        singleChar("literal 1", Regex.string("X"), _ == 'X', Gen.asciiChar)
       ),
       suite("multi-char constructors passing")(
         multiCharPassing("alphaNumerics", Regex.alphaNumerics, Gen.alphaNumericChar),
@@ -130,58 +127,58 @@ object RegexSpec extends DefaultRunnableSpec {
         multiCharFailing("digits", Regex.digits, Gen.numericChar, 'a'),
         multiCharFailing("letters", Regex.letters, Gen.alphaChar, '0')
       ),
-      testM("literal0") {
+      test("literal0") {
         val r = Regex.string("").compile
-        check(Gen.anyString) { input =>
-          assert(r.test(0, input))(equalTo(0))
+        check(Gen.string) { input =>
+          assertTrue(r.test(0, input) == 0)
         }
       },
-      testM("literal+") {
-        check(Gen.string1(Gen.anyUnicodeChar)) { str =>
+      test("literal+") {
+        check(Gen.string1(Gen.unicodeChar)) { str =>
           val r = Regex.string(str).compile
 
           val bad = "not" + str
-          assert(r.test(0, str))(equalTo(str.length)) &&
-          assert(r.test(0, bad))(isLessThan(str.length))
+          assertTrue(r.test(0, str) == str.length) &&
+          assertTrue(r.test(0, bad) < str.length)
         }
       },
       suite("combinators")(
-        testM("string ~ string") {
-          check(Gen.string1(Gen.anyUnicodeChar), Gen.string1(Gen.anyUnicodeChar)) { (s1, s2) =>
+        test("string ~ string") {
+          check(Gen.string1(Gen.unicodeChar), Gen.string1(Gen.unicodeChar)) { (s1, s2) =>
             val r = (Regex.string(s1) ~ Regex.string(s2)).compile
-            assert(r.test(0, s1 ++ s2))(equalTo(s1.length + s2.length))
+            assertTrue(r.test(0, s1 ++ s2) == s1.length + s2.length)
           }
         },
         test("charIn & charIn") {
           val r = (Regex.charIn('a', 'b', 'c') & Regex.charIn('b')).compile
 
-          assert(r.test(0, "a"))(equalTo(Regex.NotMatched)) &&
-          assert(r.test(0, "b"))(equalTo(1))
+          assertTrue(r.test(0, "a") == Regex.NotMatched) &&
+          assertTrue(r.test(0, "b") == 1)
         },
-        testM("string | string") {
-          check(Gen.string1(Gen.anyUnicodeChar), Gen.string1(Gen.anyUnicodeChar)) { (s1, s2) =>
+        test("string | string") {
+          check(Gen.string1(Gen.unicodeChar), Gen.string1(Gen.unicodeChar)) { (s1, s2) =>
             val r = (Regex.string(s1) | Regex.string(s2)).compile
-            (assert(r.test(0, s1))(equalTo(s1.length)) &&
-            assert(r.test(0, s2))(equalTo(s2.length)))
+            (assertTrue(r.test(0, s1) == s1.length) &&
+            assertTrue(r.test(0, s2) == s2.length))
           }
         },
-        testM("atLeast") {
+        test("atLeast") {
           check(Gen.chunkOfBounded(1, 20)(Gen.numericChar), Gen.int(0, 20)) { (chunk, min) =>
             val r        = Regex.anyDigit.atLeast(min).compile
             val expected = if (chunk.length >= min) chunk.length else Regex.NeedMoreInput
-            assert(r.test(0, new String(chunk.toArray)))(equalTo(expected))
+            assertTrue(r.test(0, new String(chunk.toArray)) == expected)
           }
         },
-        testM("atMost") {
+        test("atMost") {
           check(Gen.int(0, 20), Gen.int(0, 20)) { (len, max) =>
             val s = "abc" * len
             val r = Regex.string("abc").atMost(max).compile
 
             val expected = math.min(len, max)
-            assert(r.test(0, s))(equalTo(expected))
+            assertTrue(r.test(0, s) == expected)
           }
         } @@ TestAspect.ignore, // TODO
-        testM("between") {
+        test("between") {
           check(Gen.int(0, 20), Gen.int(0, 20), Gen.int(0, 20)) { (len, a, b) =>
             val max = Math.max(a, b)
             val min = Math.min(a, b)
@@ -189,30 +186,22 @@ object RegexSpec extends DefaultRunnableSpec {
             val r   = Regex.string("x").between(min, max).compile
 
             val expected = if (len >= min) Math.min(len, max) else Regex.NeedMoreInput
-            assert(r.test(0, s))(equalTo(expected))
+            assertTrue(r.test(0, s) == expected)
           }
         } @@ TestAspect.ignore  // TODO
       ),
       suite("end of stream")(
         test("oneOf(a, b)") {
-          assert(
-            Regex.charIn('a', 'b').compile.test(0, "")
-          )(equalTo(Regex.NeedMoreInput))
+          assertTrue(Regex.charIn('a', 'b').compile.test(0, "") == Regex.NeedMoreInput)
         },
         test("oneOf(a)") {
-          assert(
-            Regex.char('a').compile.test(0, "")
-          )(equalTo(Regex.NeedMoreInput))
+          assertTrue(Regex.char('a').compile.test(0, "") == Regex.NeedMoreInput)
         },
         test("anyChar.atLeast(0)") {
-          assert(
-            Regex.anyChar.atLeast(0).compile.test(0, "")
-          )(equalTo(0))
+          assertTrue(Regex.anyChar.atLeast(0).compile.test(0, "") == 0)
         },
         test("char(x).atLeast(0)") {
-          assert(
-            Regex.char('x').atLeast(0).compile.test(0, "")
-          )(equalTo(0))
+          assertTrue(Regex.char('x').atLeast(0).compile.test(0, "") == 0)
         }
       ),
       test("test") {
@@ -220,11 +209,11 @@ object RegexSpec extends DefaultRunnableSpec {
       }
     )
 
-  private def singleChar(name: String, r: Regex, test: Char => Boolean, gen: Gen[Random, Char] = Gen.anyChar) =
+  private def singleChar(name: String, r: Regex, test: Char => Boolean, gen: Gen[Random, Char] = Gen.char) =
     testM(name) {
       val compiled = r.compile
       check(gen) { ch =>
-        assert(compiled.test(0, ch.toString) == 1)(equalTo(test(ch)))
+        assertTrue(compiled.test(0, ch.toString) == 1 == test(ch))
       }
     }
 
@@ -232,15 +221,15 @@ object RegexSpec extends DefaultRunnableSpec {
     testM(name) {
       val compiled = r.compile
       check(Gen.chunkOf1(gen)) { input =>
-        assert(compiled.test(0, new String(input.toArray)))(equalTo(input.length))
+        assertTrue(compiled.test(0, new String(input.toArray)) == input.length)
       }
     }
 
   private def multiCharFailing(name: String, r: Regex, gen: Gen[Random, Char], counterexample: Char) =
     testM(name) {
       val compiled = r.compile
-      checkM(Gen.chunkOf1(gen)) { input =>
-        random.nextIntBetween(0, input.length).map { injectionPoint =>
+      check(Gen.chunkOf1(gen)) { input =>
+        Random.nextIntBetween(0, input.length).map { injectionPoint =>
           val injected = (input.take(injectionPoint) :+ counterexample) ++ input.drop(injectionPoint)
           val expected =
             if (injectionPoint == 0)
@@ -248,7 +237,7 @@ object RegexSpec extends DefaultRunnableSpec {
             else
               injectionPoint
           val result   = compiled.test(0, new String(injected.toArray))
-          assert(result)(equalTo(expected))
+          assertTrue(result == expected)
         }
       }
     }

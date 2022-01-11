@@ -7,36 +7,36 @@ import zio.Chunk
 object JsonFastParse {
   def stringChars(c: Char) = c != '\"' && c != '\\'
 
-  def space[_: P]      = P(CharsWhileIn(" \r\n", 0))
-  def digits[_: P]     = P(CharsWhileIn("0-9"))
-  def exponent[_: P]   = P(CharIn("eE") ~ CharIn("+\\-").? ~ digits)
-  def fractional[_: P] = P("." ~ digits)
-  def integral[_: P]   = P("0" | CharIn("1-9") ~ digits.?)
+  def space[P0: P]      = P(CharsWhileIn(" \r\n", 0))
+  def digits[P0: P]     = P(CharsWhileIn("0-9"))
+  def exponent[P0: P]   = P(CharIn("eE") ~ CharIn("+\\-").? ~ digits)
+  def fractional[P0: P] = P("." ~ digits)
+  def integral[P0: P]   = P("0" | CharIn("1-9") ~ digits.?)
 
-  def number[_: P] =
+  def number[P0: P] =
     P(CharIn("+\\-").? ~ integral ~ fractional.? ~ exponent.?).!.map(x => Json.Num(BigDecimal(x)))
 
-  def `null`[_: P]  = P("null").map(_ => Json.Null)
-  def `false`[_: P] = P("false").map(_ => Json.Bool(false))
-  def `true`[_: P]  = P("true").map(_ => Json.Bool(true))
+  def `null`[P0: P]  = P("null").map(_ => Json.Null)
+  def `false`[P0: P] = P("false").map(_ => Json.Bool(false))
+  def `true`[P0: P]  = P("true").map(_ => Json.Bool(true))
 
-  def hexDigit[_: P]      = P(CharIn("0-9a-fA-F"))
-  def unicodeEscape[_: P] = P("u" ~ hexDigit ~ hexDigit ~ hexDigit ~ hexDigit)
-  def escape[_: P]        = P("\\" ~ (CharIn("\"/\\\\bfnrt") | unicodeEscape))
+  def hexDigit[P0: P]      = P(CharIn("0-9a-fA-F"))
+  def unicodeEscape[P0: P] = P("u" ~ hexDigit ~ hexDigit ~ hexDigit ~ hexDigit)
+  def escape[P0: P]        = P("\\" ~ (CharIn("\"/\\\\bfnrt") | unicodeEscape))
 
-  def strChars[_: P] = P(CharsWhile(stringChars))
-  def string[_: P]   =
+  def strChars[P0: P] = P(CharsWhile(stringChars))
+  def string[P0: P]   =
     P(space ~ "\"" ~/ (strChars | escape).rep.! ~ "\"").map(Json.Str.apply)
 
-  def array[_: P] =
+  def array[P0: P] =
     P("[" ~/ jsonExpr.rep(sep = ","./) ~ space ~ "]").map(values => Json.Arr(Chunk.fromIterable(values)))
 
-  def pair[_: P] = P(string.map(_.value) ~/ ":" ~/ jsonExpr)
+  def pair[P0: P] = P(string.map(_.value) ~/ ":" ~/ jsonExpr)
 
-  def obj[_: P] =
+  def obj[P0: P] =
     P("{" ~/ pair.rep(sep = ","./) ~ space ~ "}").map(pairs => Json.Obj(Chunk.fromIterable(pairs)))
 
-  def jsonExpr[_: P]: P[Json] = P(
+  def jsonExpr[P0: P]: P[Json] = P(
     space ~ (obj | array | string | `true` | `false` | `null` | number) ~ space
   )
 }

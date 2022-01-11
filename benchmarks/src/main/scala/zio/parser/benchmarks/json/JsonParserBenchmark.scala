@@ -20,7 +20,7 @@ abstract class JsonParserBenchmark(fileName: String) extends ParserBenchmark[Jso
 
   override final val catParser: Parser0[Json] = JsonCatsParse.parser
 
-  override final def fastParseP[_: P]: P[Json] = JsonFastParse.jsonExpr
+  override final def fastParseP[P0: P]: P[Json] = JsonFastParse.jsonExpr
 
   override final val attoParser: Parser[Json] = JsonAttoParse.jexpr
 

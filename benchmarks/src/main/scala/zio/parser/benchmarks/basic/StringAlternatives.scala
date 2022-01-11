@@ -52,7 +52,7 @@ class StringAlternatives extends ParserBenchmark[Tokens] {
     token.rep0.map(Tokens.apply)
   }
 
-  override final def fastParseP[_: fastparse.P]: fastparse.P[Tokens] = {
+  override final def fastParseP[P: fastparse.P]: fastparse.P[Tokens] = {
     import fastparse._
     import NoWhitespace._
 

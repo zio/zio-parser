@@ -20,7 +20,7 @@ import zio.test.TestAspect._
 object CalibanParserSpec extends DefaultRunnableSpec {
 
   def spec0 = suite("CalibanParserSpec")(
-    testM("simple query with fields") {
+    test("simple query with fields") {
       val query =
         """{
           |  hero {
@@ -53,7 +53,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
 
   def spec =
     suite("ParserSpec")(
-      testM("simple query with fields") {
+      test("simple query with fields") {
         val query = """{
                       |  hero {
                       |    name
@@ -81,7 +81,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("arguments") {
+      test("arguments") {
         val query = """{
                       |  human(id: "1000") {
                       |    name
@@ -107,7 +107,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("aliases") {
+      test("aliases") {
         val query = """{
                       |  empireHero: hero(episode: EMPIRE) {
                       |    name
@@ -140,7 +140,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("input values") {
+      test("input values") {
         val query = """{
                       |  human(id: "1000", int: 3, float: 3.14, bool: true, nope: null, enum: YES, list: [1,2,3], obj: {
                       |   name: "name"
@@ -174,7 +174,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("block strings") {
+      test("block strings") {
         val query = "{ sendEmail(message: \"\"\"\n  Hello,\n    World!\n\n  Yours,\n    GraphQL. \"\"\") }"
         assertM(CalibanParser.parseQuery(query))(
           equalTo(
@@ -191,7 +191,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("variables") {
+      test("variables") {
         val query = """query getZuckProfile($devicePicSize: Int = 60) {
                       |  user(id: 4) {
                       |    id
@@ -223,7 +223,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("directives") {
+      test("directives") {
         val query = """query myQuery($someTestM: Boolean) {
                       |  experimentalField @skip(if: $someTestM)
                       |}""".stripMargin.filter(_ != '\r')
@@ -245,7 +245,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("list and non-null types") {
+      test("list and non-null types") {
         val query = """query getZuckProfile($devicePicSize: [Int!]!) {
                       |  nothing
                       |}""".stripMargin.filter(_ != '\r')
@@ -267,7 +267,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("fragments") {
+      test("fragments") {
         val query = """query withFragments {
                       |  user(id: 4) {
                       |    friends(first: 10) {
@@ -331,7 +331,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("inline fragments") {
+      test("inline fragments") {
         val query = """query inlineFragmentTyping {
                       |  profiles(handles: ["zuck", "cocacola"]) {
                       |    handle
@@ -378,7 +378,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("inline fragments with directives") {
+      test("inline fragments with directives") {
         val query = """query inlineFragmentNoType($expandedInfo: Boolean) {
                       |  user(handle: "zuck") {
                       |    id
@@ -421,7 +421,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("mutation") {
+      test("mutation") {
         val query = """mutation {
                       |  likeStory(storyID: 12345) {
                       |    story {
@@ -455,17 +455,17 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("invalid syntax") {
+      test("invalid syntax") {
         val query = """{
                       |  hero {
                       |    name(
                       |  }
                       |}""".stripMargin.filter(_ != '\r')
-        assertM(CalibanParser.parseQuery(query).run)(
+        assertM(CalibanParser.parseQuery(query).exit)(
           fails(equalTo(ParsingError("Position 4:3, found \"}\\n}\"", locationInfo = Some(LocationInfo(3, 4)))))
         )
       } @@ ignore,
-      testM("type") {
+      test("type") {
         val gqltype =
           """type Hero {
             |"name desc" name(pad: Int!): String! @skip(if: $someTestM)
@@ -503,7 +503,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend schema with directives") {
+      test("extend schema with directives") {
         val gqlSchemaExtension = "extend schema @addedDirective"
         assertM(CalibanParser.parseQuery(gqlSchemaExtension))(
           equalTo(
@@ -521,7 +521,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend schema with directives and operations") {
+      test("extend schema with directives and operations") {
         val gqlSchemaExtension =
           """
             |extend schema @addedDirective {
@@ -546,7 +546,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend schema with operations") {
+      test("extend schema with operations") {
         val gqlSchemaExtension =
           """
             |extend schema {
@@ -571,7 +571,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend scalar with directives") {
+      test("extend scalar with directives") {
         val gqlScalarExtension = "extend scalar SomeScalar @foo(arg0: $someTestM)"
         assertM(CalibanParser.parseQuery(gqlScalarExtension))(
           equalTo(
@@ -587,7 +587,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend type with interfaces") {
+      test("extend type with interfaces") {
         val gqlTypeExtension = "extend type Hero implements SomeInterface"
         assertM(CalibanParser.parseQuery(gqlTypeExtension))(
           equalTo(
@@ -605,7 +605,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend type with interfaces and fields") {
+      test("extend type with interfaces and fields") {
         val gqlTypeExtension =
           """extend type Hero implements SomeInterface {
             |"name desc" name(pad: Int!): String! @skip(if: $someTestM)
@@ -642,7 +642,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend type with interfaces and directives") {
+      test("extend type with interfaces and directives") {
         val gqlTypeExtension = "extend type Hero implements SomeInterface @addedDirective"
         assertM(CalibanParser.parseQuery(gqlTypeExtension))(
           equalTo(
@@ -660,7 +660,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend type with interfaces, directives and fields") {
+      test("extend type with interfaces, directives and fields") {
         val gqlTypeExtension =
           """extend type Hero implements SomeInterface @addedDirective {
             |"name desc" name(pad: Int!): String! @skip(if: $someTestM)
@@ -697,7 +697,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend type with directives") {
+      test("extend type with directives") {
         val gqlTypeExtension = "extend type Hero @addedDirective"
         assertM(CalibanParser.parseQuery(gqlTypeExtension))(
           equalTo(
@@ -715,7 +715,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend type with directives and fields") {
+      test("extend type with directives and fields") {
         val gqlTypeExtension =
           """extend type Hero @addedDirective {
             |"name desc" name(pad: Int!): String! @skip(if: $someTestM)
@@ -752,7 +752,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend type with fields") {
+      test("extend type with fields") {
         val gqlTypeExtension =
           """extend type Hero {
             |"name desc" name(pad: Int!): String! @skip(if: $someTestM)
@@ -789,7 +789,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend interface with directives") {
+      test("extend interface with directives") {
         val gqlInterfaceExtension = "extend interface NamedEntity @addedDirective"
         assertM(CalibanParser.parseQuery(gqlInterfaceExtension))(
           equalTo(
@@ -806,7 +806,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend interface with directives and fields") {
+      test("extend interface with directives and fields") {
         val gqlInterfaceExtension =
           """
             |extend interface NamedEntity @addedDirective {
@@ -828,7 +828,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend interface with fields") {
+      test("extend interface with fields") {
         val gqlInterfaceExtension =
           """
             |extend interface NamedEntity {
@@ -850,7 +850,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend union with directives") {
+      test("extend union with directives") {
         val gqlUnionExtension = "extend union SearchResult @addedDirective"
         assertM(CalibanParser.parseQuery(gqlUnionExtension))(
           equalTo(
@@ -867,7 +867,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend union with directives and union members") {
+      test("extend union with directives and union members") {
         val gqlUnionExtension = "extend union SearchResult @addedDirective = Photo | Person"
         assertM(CalibanParser.parseQuery(gqlUnionExtension))(
           equalTo(
@@ -884,7 +884,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend union with union members") {
+      test("extend union with union members") {
         val gqlUnionExtension = "extend union SearchResult = Photo | Person"
         assertM(CalibanParser.parseQuery(gqlUnionExtension))(
           equalTo(
@@ -901,7 +901,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend enum with directives") {
+      test("extend enum with directives") {
         val gqlEnumExtension = "extend enum Direction @addedDirective"
         assertM(CalibanParser.parseQuery(gqlEnumExtension))(
           equalTo(
@@ -918,7 +918,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend enum with directives and values") {
+      test("extend enum with directives and values") {
         val gqlEnumExtension =
           """
             |extend enum Direction @addedDirective {
@@ -948,7 +948,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend enum with values") {
+      test("extend enum with values") {
         val gqlEnumExtension =
           """
             |extend enum Direction {
@@ -978,7 +978,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend input with directives") {
+      test("extend input with directives") {
         val gqlInputExtension = "extend input Point @addedDirective"
         assertM(CalibanParser.parseQuery(gqlInputExtension))(
           equalTo(
@@ -995,7 +995,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend input with directives and fields") {
+      test("extend input with directives and fields") {
         val gqlInputExtension =
           """
             |extend input Point @addedDirective {
@@ -1019,7 +1019,7 @@ object CalibanParserSpec extends DefaultRunnableSpec {
           )
         )
       },
-      testM("extend input with fields") {
+      test("extend input with fields") {
         val gqlInputExtension =
           """
             |extend input Point {

@@ -3,7 +3,6 @@ package zio.parser
 import zio.Chunk
 import zio.test.Assertion._
 import zio.test._
-import zio.test.environment.TestEnvironment
 
 object PrinterSpec extends DefaultRunnableSpec {
   private val charA: Syntax[String, Char, Char, Char, Char] =
@@ -12,7 +11,7 @@ object PrinterSpec extends DefaultRunnableSpec {
   private val charB: Syntax[String, Char, Char, Char, Char] =
     Syntax.charIn('b')
 
-  override def spec: ZSpec[TestEnvironment, Any] =
+  override def spec: ZSpec[Environment, Any] =
     suite("Printing")(
       suite("Invertible syntax")(
         printerTest("anyChar", Syntax.anyChar, 'x')(isRight(equalTo("x"))),

@@ -156,7 +156,7 @@ object ParserSpec extends DefaultRunnableSpec {
               (charA ~ charB).?,
               "ab"
             )(
-              isRight(isSome(equalTo('a', 'b')))
+              isRight(isSome(equalTo(('a', 'b'))))
             ),
             parserTest(
               "s?, not passing",

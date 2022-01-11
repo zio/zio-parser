@@ -1,6 +1,5 @@
 package zio.parser.examples
 
-import zio.parser.internal.Debug
 import zio.parser.{Syntax, _}
 import zio.test.Assertion._
 import zio.test._
@@ -25,8 +24,8 @@ object ExpressionExample extends DefaultRunnableSpec {
       "Not a constant"
     ) ?? "constant"
   val operator: Syntax[String, Char, Char, OpType, OpType] =
-    (Syntax.char('+').transformTo[String, OpType, OpType](_ => Add, { case Add => '+' }, "Not +") <>
-      Syntax.char('-').transformTo[String, OpType, OpType](_ => Sub, { case Sub => '-' }, "Not -")) ?? "operator"
+    (Syntax.charIn('+').transformTo[String, OpType, OpType](_ => Add, { case Add => '+' }, "Not +") <>
+      Syntax.charIn('-').transformTo[String, OpType, OpType](_ => Sub, { case Sub => '-' }, "Not -")) ?? "operator"
   val lparen: Syntax[String, Char, Char, Unit, Unit]       = Syntax.char('(')
   val rparen: Syntax[String, Char, Char, Unit, Unit]       = Syntax.char(')')
 

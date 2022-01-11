@@ -24,7 +24,7 @@ object PrinterSpec extends DefaultRunnableSpec {
         printerTest("transform", Syntax.anyChar.transform(_.toInt, (v: Int) => v.toChar), 66)(isRight(equalTo("B"))),
         printerTest(
           "transformEither, failing",
-          Syntax.anyChar.transformEither(_ => Left("bad"), (v: Int) => Left("bad")),
+          Syntax.anyChar.transformEither(_ => Left("bad"), (_: Int) => Left("bad")),
           100
         )(
           isLeft(equalTo("bad"))

@@ -6,6 +6,7 @@ import zio.parser.internal.stacksafe.{CharParserImpl, ParserOp}
 import zio.parser.internal.{PZippable, recursive}
 import zio.{Chunk, ChunkBuilder}
 
+import scala.annotation.nowarn
 import scala.collection.mutable
 
 /** A Parser consumes a stream of 'In's and either fails with a ParserError possibly holding a custom error of type
@@ -969,7 +970,7 @@ object Parser {
               CaptureString(
                 SkipRegex(
                   regexL | regexR,
-                  onFailureR.orElse(onFailureL)
+                  onFailureR.orElse(onFailureL): @nowarn
                 )
               ).asInstanceOf[Parser[Err2, In2, Result2]]
             case (_, _)                                                         =>

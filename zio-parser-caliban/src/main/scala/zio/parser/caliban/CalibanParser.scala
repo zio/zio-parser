@@ -18,7 +18,6 @@ import caliban.parsing.adt._
 import zio._
 import zio.parser._
 import zio.parser.caliban.CalibanParser.CalibanSyntax
-import zio.parser.internal.Debug
 
 object Numbers {
   val signedIntString = Syntax.digit.repeat.string
@@ -303,20 +302,26 @@ object CalibanParser {
     wrapBrackets(selection.repeatWithSep0(whitespaceWithComment)).toList
 
   lazy val namedType: CalibanSyntax[NamedType, NamedType] =
-    (name.filter((n: String) => n != "null", "Name cannot be 'null'") ~ Syntax.char('!').?).transform(
-      { case (name, nonNull) =>
-        NamedType(name, nonNull = nonNull.nonEmpty)
-      },
-      (named: NamedType) => (named.name, if (named.nonNull) Some('!') else None)
-    )
+    (name.filter((n: String) => n != "null", "Name cannot be 'null'") ~
+      Syntax
+        .charIn('!')
+        .?)
+      .transform(
+        { case (name, nonNull) =>
+          NamedType(name, nonNull = nonNull.nonEmpty)
+        },
+        (named: NamedType) => (named.name, if (named.nonNull) Some('!') else None)
+      )
 
   lazy val listType: CalibanSyntax[ListType, ListType] =
-    (wrapSquareBrackets(type_) ~ Syntax.char('!').?).transform(
-      { case (typ, nonNull) =>
-        ListType(typ, nonNull = nonNull.nonEmpty)
-      },
-      (lt: ListType) => (lt.ofType, if (lt.nonNull) Some('!') else None)
-    )
+    (wrapSquareBrackets(type_) ~
+      Syntax.charIn('!').?)
+      .transform(
+        { case (typ, nonNull) =>
+          ListType(typ, nonNull = nonNull.nonEmpty)
+        },
+        (lt: ListType) => (lt.ofType, if (lt.nonNull) Some('!') else None)
+      )
 
   lazy val type_ : CalibanSyntax[Type, Type] =
     namedType.widen[Type] | listType.widen[Type]

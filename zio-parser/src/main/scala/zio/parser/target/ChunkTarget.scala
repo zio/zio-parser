@@ -12,8 +12,10 @@ class ChunkTarget[Output] extends Target[Output] {
 
   def result: Chunk[Output] = builder.result()
 
-  override def write(value: Output): Unit =
+  override def write(value: Output): Unit = {
     currentBuilder += value
+    ()
+  }
 
   override def capture(): Capture = {
     val capture = ChunkTarget.Capture(ChunkBuilder.make[Output]())
@@ -33,6 +35,7 @@ class ChunkTarget[Output] extends Target[Output] {
       currentBuilder = builder
     }
     currentBuilder ++= capture.subBuilder.result()
+    ()
   }
 
   override def drop(capture: Capture): Unit = {

@@ -1,7 +1,7 @@
 package zio.parser.internal.stacksafe
 
 import zio.Chunk
-import zio.parser.Parser.{ErasedParser, ParserError, fail}
+import zio.parser.Parser.{ErasedParser, ParserError}
 import zio.parser.internal.Stack
 import zio.parser.{Parser, Regex}
 

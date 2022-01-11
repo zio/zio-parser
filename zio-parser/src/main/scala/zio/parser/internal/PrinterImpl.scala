@@ -5,6 +5,8 @@ import zio.parser.Parser.ParserError
 import zio.parser.Printer
 import zio.parser.target.Target
 
+import scala.annotation.nowarn
+
 /** Interpreter for Printer
   */
 class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Result]) {
@@ -30,7 +32,7 @@ class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Res
       }
 
     while (current != null) {
-      current match {
+      (current: @nowarn) match {
         case l @ Printer.Lazy(_) =>
           current = l.memoized
 

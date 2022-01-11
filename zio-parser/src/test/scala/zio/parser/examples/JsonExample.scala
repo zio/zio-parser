@@ -1,7 +1,6 @@
 package zio.parser.examples
 
 import zio.Chunk
-import zio.parser.internal.Debug
 import zio.parser.{Syntax, _}
 import zio.test.Assertion.{equalTo, isRight}
 import zio.test._

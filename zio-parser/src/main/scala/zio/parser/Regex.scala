@@ -3,8 +3,8 @@ package zio.parser
 import zio.Chunk
 
 import java.util.regex.Matcher
+import scala.annotation.nowarn
 import scala.collection.immutable.BitSet
-import scala.util.matching
 
 /** A model of a regular expression.
   */
@@ -185,7 +185,7 @@ object Regex {
                 var idx = idx0
 
                 while (i < compiledLen) {
-                  var current = compiled(i)
+                  val current = compiled(i)
 
                   idx = current(idx, input)
 
@@ -390,7 +390,7 @@ object Regex {
       def test(index: Int, input: String): Int = {
         var curLookup = self
         var curIdx    = index
-        var inputLen  = input.length
+        val inputLen  = input.length
         var returnV   = NeedMoreInput
 
         while (curIdx < inputLen) {
@@ -472,7 +472,7 @@ object Regex {
   }
 
   private[parser] object BuiltIn {
-    def apply(regex: Regex): Option[BuiltIn] =
+    @nowarn def apply(regex: Regex): Option[BuiltIn] =
       None // NOTE: enabling it makes the parser non-threadsafe
 //      val builder = new StringBuilder
 //      builder.append("\\G")
@@ -484,8 +484,10 @@ object Regex {
 //        )
 //      } else None
 
-    private def unicodeChar(ch: Char, builder: StringBuilder): Unit =
+    private def unicodeChar(ch: Char, builder: StringBuilder): Unit = {
       builder.append("\\x{%02x}".format(ch.toInt))
+      ()
+    }
 
     private def emitRegion(regionStart: Option[Int], last: Option[Int], builder: StringBuilder): Unit =
       regionStart match {

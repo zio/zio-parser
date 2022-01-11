@@ -4,8 +4,6 @@ import zio.parser.internal.Stack
 import zio.stream.ZStream
 import zio.{ChunkBuilder, Queue, Runtime, UIO, ZIO, ZQueue}
 
-import scala.collection.mutable
-
 class ZStreamTarget[R, Output](runtime: Runtime[R]) extends Target[Output] {
   private val queue: Queue[Output] = runtime.unsafeRun(ZQueue.unbounded[Output])
 
@@ -18,9 +16,10 @@ class ZStreamTarget[R, Output](runtime: Runtime[R]) extends Target[Output] {
 
   override def write(value: Output): Unit =
     if (currentBuilder == null) {
-      runtime.unsafeRun(queue.offer(value))
+      runtime.unsafeRun(queue.offer(value).unit)
     } else {
       currentBuilder += value
+      ()
     }
 
   override def capture(): Capture = {
@@ -38,9 +37,10 @@ class ZStreamTarget[R, Output](runtime: Runtime[R]) extends Target[Output] {
     if (!captureStack.isEmpty) {
       currentBuilder = captureStack.peek().subBuilder
       currentBuilder ++= capture.subBuilder.result()
+      ()
     } else {
       currentBuilder = null
-      runtime.unsafeRun(queue.offerAll(capture.subBuilder.result()))
+      runtime.unsafeRun(queue.offerAll(capture.subBuilder.result()).unit)
     }
   }
 

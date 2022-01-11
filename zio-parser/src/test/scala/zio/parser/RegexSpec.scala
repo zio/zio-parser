@@ -4,6 +4,8 @@ import zio._
 import zio.test.Assertion._
 import zio.test._
 
+import scala.annotation.nowarn
+
 object RegexSpec extends DefaultRunnableSpec {
   val keywordStrings: List[String] =
     List(
@@ -209,7 +211,7 @@ object RegexSpec extends DefaultRunnableSpec {
       }
     )
 
-  private def singleChar(name: String, r: Regex, test: Char => Boolean, gen: Gen[Random, Char] = Gen.char) =
+  @nowarn private def singleChar(name: String, r: Regex, test: Char => Boolean, gen: Gen[Random, Char] = Gen.char) =
     testM(name) {
       val compiled = r.compile
       check(gen) { ch =>
@@ -217,7 +219,7 @@ object RegexSpec extends DefaultRunnableSpec {
       }
     }
 
-  private def multiCharPassing(name: String, r: Regex, gen: Gen[Random, Char]) =
+  @nowarn private def multiCharPassing(name: String, r: Regex, gen: Gen[Random, Char]) =
     testM(name) {
       val compiled = r.compile
       check(Gen.chunkOf1(gen)) { input =>
@@ -225,7 +227,7 @@ object RegexSpec extends DefaultRunnableSpec {
       }
     }
 
-  private def multiCharFailing(name: String, r: Regex, gen: Gen[Random, Char], counterexample: Char) =
+  @nowarn private def multiCharFailing(name: String, r: Regex, gen: Gen[Random, Char], counterexample: Char) =
     testM(name) {
       val compiled = r.compile
       check(Gen.chunkOf1(gen)) { input =>

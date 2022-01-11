@@ -331,7 +331,7 @@ final class CharParserImpl[Err, Result](parser: InitialParser, source: String) {
           lastBuilder = ChunkBuilder.make(sizeHint)
           opStack.pop()
 
-        case ProcessRepeatedElement(parseElement, min, max) =>
+        case ProcessRepeatedElement(parseElement, min, _) =>
           if (lastSuccess1 != null) {
             // parsed an item
             lastBuilder += lastSuccess1

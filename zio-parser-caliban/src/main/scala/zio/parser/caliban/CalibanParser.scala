@@ -933,7 +933,7 @@ object CalibanDemo extends ZIOAppDefault {
     UIO(CalibanParser.stringValue.parseString(query))
       //  val parsed = UIO(CalibanSyntax.stringValue.parse("\"\"\"hello\"\"\""))
       .tap {
-        case Left(value)  => UIO.unit
+        case Left(_)      => UIO.unit
         case Right(value) =>
           UIO(value.getClass).debug("CLASS")
       }

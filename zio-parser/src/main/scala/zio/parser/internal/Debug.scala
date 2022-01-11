@@ -59,10 +59,10 @@ object Debug {
             printIndented(s"ParseRegexLastChar($onFailure)")
             printRegexTree(regex, state.visit(syntax).in)
             state
-          case Parser.TransformEither(inner, to)           =>
+          case Parser.TransformEither(inner, _)            =>
             printIndented(s"TransformEither")
             printParserTree(inner, state.visit(syntax).in)
-          case Parser.Transform(inner, to)                 =>
+          case Parser.Transform(inner, _)                  =>
             printIndented(s"Transform")
             printParserTree(inner, state.visit(syntax).in)
           case Parser.Ignore(inner, to)                    =>
@@ -83,7 +83,7 @@ object Debug {
             printIndented(s"ZipRight")
             val leftSt = printParserTree(left, state.visit(syntax).in)
             printParserTree(right, state.mergeVisited(leftSt).in)
-          case Parser.FlatMap(inner, f)                    =>
+          case Parser.FlatMap(inner, _)                    =>
             printIndented(s"FlatMap")
             printParserTree(inner, state.visit(syntax).in)
           case Parser.OrElseEither(left, right)            =>
@@ -106,10 +106,10 @@ object Debug {
           case Parser.SetAutoBacktrack(inner, enabled)     =>
             printIndented(s"SetAutoBacktrack($enabled)")
             printParserTree(inner, state.visit(syntax).in)
-          case Parser.MapError(inner, mapParserErr)        =>
+          case Parser.MapError(inner, _)                   =>
             printIndented(s"MapError")
             printParserTree(inner, state.visit(syntax).in)
-          case Parser.Not(inner, failure)                  =>
+          case Parser.Not(inner, _)                        =>
             printIndented("Not")
             printParserTree(inner, state.visit(syntax).in)
           case Parser.Index                                =>
@@ -128,7 +128,7 @@ object Debug {
       case Regex.Succeed                 =>
         printIndented("<Succeed>")
         state
-      case Regex.OneOf(bitset)           =>
+      case Regex.OneOf(_)                =>
         printIndented("<OneOf>")
         state
       case Regex.Sequence(first, second) =>

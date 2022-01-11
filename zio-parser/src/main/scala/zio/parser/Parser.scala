@@ -697,7 +697,7 @@ object Parser {
             parser0,
             to0.asInstanceOf[Any => Either[Err2, Result]].andThen(_.map(_ => to))
           )
-        case Transform(parser0, to0)       =>
+        case Transform(parser0, _)         =>
           Ignore(parser0, to)
         case Ignore(parser0, _)            =>
           Ignore(parser0, to)

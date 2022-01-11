@@ -325,8 +325,8 @@ object Regex {
 
       def |(that: Step): Step =
         (self, that) match {
-          case (left, Matched)           => Matched
-          case (Matched, right)          => Matched
+          case (_, Matched)              => Matched
+          case (Matched, _)              => Matched
           case (left, Error)             => left
           case (Error, right)            => right
           case (Jump(left), Jump(right)) => Jump(left | right)
@@ -334,9 +334,9 @@ object Regex {
         }
 
       override def toString(): String = self match {
-        case Matched      => "Matched"
-        case Error        => "Error"
-        case Jump(lookup) => "Jump(<lookup>)"
+        case Matched => "Matched"
+        case Error   => "Error"
+        case Jump(_) => "Jump(<lookup>)"
       }
     }
     object Step       {

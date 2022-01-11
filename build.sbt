@@ -44,7 +44,7 @@ lazy val root = (project in file("."))
   )
   .settings(
     crossScalaVersions := Nil,
-    publish / skip     := false
+    publish / skip     := true
   )
 
 lazy val zioParser = (project in file("zio-parser"))
@@ -75,6 +75,7 @@ lazy val calibanParser = (project in file("zio-parser-caliban"))
   .settings(dottySettings)
   .dependsOn(zioParser)
   .settings(
+    publish / skip := true,
     libraryDependencies ++= Seq(
       "com.github.ghostdogpr" %% "caliban"      % "1.3.1",
       "dev.zio"               %% "zio"          % zioVersion,

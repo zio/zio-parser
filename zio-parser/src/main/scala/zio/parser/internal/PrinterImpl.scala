@@ -58,7 +58,7 @@ class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Res
           output.write(input.asInstanceOf[Out])
           finish(Right(input))
 
-        case parseRegex @ Printer.ParseRegex(regex, Some(failure)) =>
+        case parseRegex @ Printer.ParseRegex(_, Some(failure)) =>
           val chunk = input.asInstanceOf[Chunk[Char]]
           if (parseRegex.compiledRegex.test(0, new String(chunk.toArray)) >= 0) {
             for (out <- input.asInstanceOf[Chunk[Out]])
@@ -67,16 +67,16 @@ class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Res
           } else {
             finish(Left(failure))
           }
-        case Printer.ParseRegex(_, None)                           =>
+        case Printer.ParseRegex(_, None)                       =>
           for (out <- input.asInstanceOf[Chunk[Out]])
             output.write(out)
           finish(Right(input))
-        case Printer.SkipRegex(regex, as)                          =>
+        case Printer.SkipRegex(_, as)                          =>
           for (out <- as.asInstanceOf[Chunk[Out]])
             output.write(out)
           finish(Right(()))
 
-        case parseRegex @ Printer.ParseRegexLastChar(regex, Some(failure)) =>
+        case parseRegex @ Printer.ParseRegexLastChar(_, Some(failure)) =>
           val char = input.asInstanceOf[Char]
           if (parseRegex.compiledRegex.test(0, char.toString) > 0) {
             output.write(input.asInstanceOf[Out])
@@ -84,7 +84,7 @@ class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Res
           } else {
             finish(Left(failure))
           }
-        case Printer.ParseRegexLastChar(_, None)                           =>
+        case Printer.ParseRegexLastChar(_, None)                       =>
           output.write(input.asInstanceOf[Out])
           finish(Right(input))
 
@@ -102,7 +102,7 @@ class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Res
             current = syntax
             stack.push(Cont {
               case Left(failure) => (Printer.Fail(failure), oldInput, None)
-              case Right(value)  =>
+              case Right(_)      =>
                 (Printer.Succeed(to), oldInput, None)
             })
           } else {
@@ -176,8 +176,8 @@ class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Res
             case Right(leftResult) =>
               val k2 = Cont((rightResult: Either[Any, Any]) =>
                 rightResult match {
-                  case Left(failure)      => (Printer.Fail(failure), oldInput, None)
-                  case Right(rightResult) => (Printer.Succeed(leftResult), oldInput, None)
+                  case Left(failure) => (Printer.Fail(failure), oldInput, None)
+                  case Right(_)      => (Printer.Succeed(leftResult), oldInput, None)
                 }
               )
               (right.asInstanceOf[ErasedPrinter], valueB, Some(k2))
@@ -191,9 +191,9 @@ class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Res
           input = valueA
 
           val k1 = Cont {
-            case Left(failure)     =>
+            case Left(failure) =>
               (Printer.Fail(failure), oldInput, None)
-            case Right(leftResult) =>
+            case Right(_)      =>
               val k2 = Cont((rightResult: Either[Any, Any]) =>
                 rightResult match {
                   case Left(failure)      => (Printer.Fail(failure), oldInput, None)

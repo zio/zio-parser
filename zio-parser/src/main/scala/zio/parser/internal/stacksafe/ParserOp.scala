@@ -212,7 +212,7 @@ object ParserOp       {
 
   private def compileParserNode(parser: ErasedParser, state: CompilerState): ParserOp = {
     parser match {
-      case l @ Parser.Lazy(inner)     =>
+      case l @ Parser.Lazy(_)         =>
         if (state.visited.contains(l.memoized.asInstanceOf[ErasedParser])) {
           Lazy(() => state.optimized(l.memoized.asInstanceOf[ErasedParser]))
         } else {
@@ -227,13 +227,13 @@ object ParserOp       {
       case Parser.Named(syntax, name) =>
         PushOp3(PopName, compile(syntax, state), PushName(name))
 
-      case sr @ Parser.SkipRegex(regex, onFailure) =>
+      case sr @ Parser.SkipRegex(_, onFailure) =>
         MatchRegex(sr.compiledRegex, RegexResultPush.Ignored, onFailure)
 
-      case pr @ Parser.ParseRegex(regex, onFailure) =>
+      case pr @ Parser.ParseRegex(_, onFailure) =>
         MatchRegex(pr.compiledRegex, RegexResultPush.MatchedChunk, onFailure)
 
-      case pr @ Parser.ParseRegexLastChar(regex, onFailure) =>
+      case pr @ Parser.ParseRegexLastChar(_, onFailure) =>
         MatchRegex(pr.compiledRegex, RegexResultPush.SingleChar, onFailure)
 
       case Parser.TransformEither(syntax, to) =>
@@ -355,7 +355,7 @@ object ParserOp       {
       case Parser.Backtrack(syntax) =>
         PushOp2(BacktrackOnFailure, compile(syntax, state), pushBranchPosition = true)
 
-      case Parser.SetAutoBacktrack(syntax, enabled) =>
+      case Parser.SetAutoBacktrack(syntax, _) =>
         // This node is removed by the optimization phase so we can ignore it
         compile(syntax, state)
 
@@ -394,55 +394,55 @@ object ParserOp       {
       }
 
       op match {
-        case PushOp2(a, b, pushBranchPosition)              =>
+        case PushOp2(a, b, pushBranchPosition)       =>
           collect(b, a :: opStack, if (pushBranchPosition) posCount + 1 else posCount, names, builderHints)
-        case PushOp3(a, b, c)                               =>
+        case PushOp3(a, b, c)                        =>
           collect(c, b :: a :: opStack, posCount, names, builderHints)
-        case PushOp4(a, b, c, d, pushBranchPosition)        =>
+        case PushOp4(a, b, c, d, pushBranchPosition) =>
           collect(d, c :: b :: a :: opStack, if (pushBranchPosition) posCount + 1 else posCount, names, builderHints)
-        case l @ Lazy(op)                                   =>
+        case l @ Lazy(_)                             =>
           collect(l.memoized, opStack, posCount, names, builderHints)
-        case PushResult(success, failure, popFirst)         =>
+        case PushResult(_, _, _)                     =>
           finish()
-        case PushCapturedResult()                           =>
+        case PushCapturedResult()                    =>
           finish()
-        case PushName(name)                                 =>
+        case PushName(name)                          =>
           collect(opStack.head, opStack.tail, posCount, name :: names, builderHints)
-        case PopName                                        =>
+        case PopName                                 =>
           collect(opStack.head, opStack.tail, posCount, names.tail, builderHints)
-        case ReadInputToResult                              =>
+        case ReadInputToResult                       =>
           finish()
-        case MatchSeq(sequence, as, createParserFailure)    =>
+        case MatchSeq(_, _, _)                       =>
           finish()
-        case MatchRegex(regex, pushAs, failAs)              =>
+        case MatchRegex(_, _, _)                     =>
           finish()
-        case TransformResultEither(f)                       =>
+        case TransformResultEither(_)                =>
           finish()
-        case TransformResult(onSuccess, onFailure)          =>
+        case TransformResult(_, _)                   =>
           finish()
-        case TransformResultFlipped(onSuccess, onFailure)   =>
+        case TransformResultFlipped(_, _)            =>
           finish()
-        case TransformLast2Results(strategy)                =>
+        case TransformLast2Results(_)                =>
           finish()
-        case TransformResultToOption(checkBranchPosition)   =>
+        case TransformResultToOption(_)              =>
           finish()
-        case PopResultPushOp(f)                             =>
+        case PopResultPushOp(_)                      =>
           finish()
-        case SkipOnFailure2                                 =>
+        case SkipOnFailure2                          =>
           finish()
-        case SkipOnSuccess2(checkBranchPosition, transform) =>
+        case SkipOnSuccess2(_, _)                    =>
           finish()
-        case PushChunkBuilder(sizeHint)                     =>
+        case PushChunkBuilder(sizeHint)              =>
           collect(opStack.head, opStack.tail, posCount, names, sizeHint :: builderHints)
-        case ProcessRepeatedElement(parseElement, min, max) =>
+        case ProcessRepeatedElement(_, _, _)         =>
           finish()
-        case Cut                                            =>
+        case Cut                                     =>
           finish()
-        case BacktrackOnFailure                             =>
+        case BacktrackOnFailure                      =>
           finish()
-        case PushCurrentPosition()                          =>
+        case PushCurrentPosition()                   =>
           finish()
-        case CheckEnd()                                     =>
+        case CheckEnd()                              =>
           finish()
       }
     }

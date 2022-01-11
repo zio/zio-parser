@@ -8,7 +8,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        scala: ['2.12.15', '2.13.6', '3.0.2']
+        scala: ['2.12.15', '2.13.8', '3.1.0']
     steps:
       - name: Checkout
         uses: actions/checkout@v2
@@ -21,5 +21,5 @@ jobs:
       - name: Build and test
         run: sbt ++${{ matrix.scala }} clean test
       - name: Build and test benchmarks
-        if: ${{ matrix.scala == '2.13.6' }}
+        if: ${{ matrix.scala == '2.13.8' }}
         run: sbt ++${{ matrix.scala }} benchmarks/test

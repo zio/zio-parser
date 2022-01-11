@@ -109,6 +109,7 @@ lazy val docs = project
   .in(file("zio-parser-docs"))
   .settings(stdSettings("zio-parser"))
   .settings(
+    scalaVersion                               := Scala213,
     publish / skip                             := true,
     moduleName                                 := "zio-parser-docs",
     scalacOptions -= "-Yno-imports",

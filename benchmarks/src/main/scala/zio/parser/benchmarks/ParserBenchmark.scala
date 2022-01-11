@@ -17,7 +17,7 @@ abstract class ParserBenchmark[T] {
   def loadInput(): String
   val zioSyntax: zio.parser.Syntax[String, Char, Char, T, T]
   val catParser: cats.parse.Parser0[T]
-  def fastParseP[_: fastparse.P]: fastparse.P[T]
+  def fastParseP[P: fastparse.P]: fastparse.P[T]
   val attoParser: atto.Parser[T]
   def runParboiledParser(input: String): Try[T]
   val parsley: org.http4s.parsley.Parsley[T]

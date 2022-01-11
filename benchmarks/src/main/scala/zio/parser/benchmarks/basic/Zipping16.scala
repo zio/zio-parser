@@ -74,7 +74,7 @@ class Zipping16 extends ParserBenchmark[Zips16] {
 
   // TODO: implement for all
 
-  override def fastParseP[_: fastparse.P]: fastparse.P[Zips16] = ???
+  override def fastParseP[P: fastparse.P]: fastparse.P[Zips16] = ???
 
   override val attoParser: atto.Parser[Zips16] = null
 

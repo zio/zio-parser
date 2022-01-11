@@ -1,12 +1,11 @@
 package zio.parser.benchmarks
 
-import zio.duration.durationInt
+import zio._
 import zio.parser.ParserImplementation
 import zio.parser.benchmarks.basic.{RepeatAnyChar, StringAlternatives, Zipping, Zipping16}
-import zio.parser.benchmarks.json.{BarBench, Bla25Bench, CountriesBench, JsonParserBenchmark, Qux2Bench, Ugh10kBench}
+import zio.parser.benchmarks.json._
 import zio.parser.benchmarks.lucene.LuceneQueryBenchmark
 import zio.test.Assertion.{anything, isRight}
-import zio.test.environment.TestEnvironment
 import zio.test._
 
 /** Tests whether the benchmark examples run with success */
@@ -41,7 +40,7 @@ object BenchmarksSpec extends DefaultRunnableSpec {
           assert(benchmark.zioParseStrippedRecursive())(isRight(anything))
         }
       )
-    ) @@ TestAspect.timeout(30.seconds)
+    ) @@ TestAspect.timeout(90.seconds)
 
   private def testParserBenchmark[T](
       name: String,

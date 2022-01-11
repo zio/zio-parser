@@ -1,11 +1,8 @@
 package zio.parser.examples
 
-import zio.parser._
-import zio.parser.Syntax
-import zio.parser.internal.Debug
+import zio.parser.{Syntax, _}
 import zio.test.Assertion._
 import zio.test._
-import zio.test.environment.TestEnvironment
 
 object ExpressionExample extends DefaultRunnableSpec {
 
@@ -17,7 +14,7 @@ object ExpressionExample extends DefaultRunnableSpec {
   case class Const(value: Int)                      extends Expr
   case class Op(operator: OpType, a: Expr, b: Expr) extends Expr
 
-  val const    = Syntax.anyChar
+  val const: Syntax[String, Char, Char, Expr, Expr]        = Syntax.anyChar
     .filter[String, Char](_.isDigit, "not a digit")
     .repeat
     .string
@@ -26,11 +23,11 @@ object ExpressionExample extends DefaultRunnableSpec {
       { case (n: Const) => n.value.toString },
       "Not a constant"
     ) ?? "constant"
-  val operator =
-    (Syntax.char('+').transformTo[String, OpType, OpType](_ => Add, { case Add => '+' }, "Not +") <>
-      Syntax.char('-').transformTo[String, OpType, OpType](_ => Sub, { case Sub => '-' }, "Not -")) ?? "operator"
-  val lparen   = Syntax.char('(')
-  val rparen   = Syntax.char(')')
+  val operator: Syntax[String, Char, Char, OpType, OpType] =
+    (Syntax.charIn('+').transformTo[String, OpType, OpType](_ => Add, { case Add => '+' }, "Not +") <>
+      Syntax.charIn('-').transformTo[String, OpType, OpType](_ => Sub, { case Sub => '-' }, "Not -")) ?? "operator"
+  val lparen: Syntax[String, Char, Char, Unit, Unit]       = Syntax.char('(')
+  val rparen: Syntax[String, Char, Char, Unit, Unit]       = Syntax.char(')')
 
   lazy val subExpr: Syntax[String, Char, Char, Expr, Expr] =
     (expr ~ operator ~ expr)
@@ -42,7 +39,7 @@ object ExpressionExample extends DefaultRunnableSpec {
         "Not valid sub expression"
       ) ?? "sub expression"
 
-  lazy val subExprInParens = (lparen ~> subExpr <~ rparen)
+  lazy val subExprInParens: Syntax[String, Char, Char, Expr, Expr] = (lparen ~> subExpr <~ rparen)
 
   lazy val expr: Syntax[String, Char, Char, Expr, Expr] =
     (subExprInParens | const) ?? "expression"
@@ -53,7 +50,7 @@ object ExpressionExample extends DefaultRunnableSpec {
     Const(3)
   )
 
-  override def spec: ZSpec[TestEnvironment, Any] =
+  override def spec: ZSpec[Environment, Any] =
     suite("Expression example")(
       test("Parses expression correctly") {
 //        Debug.printParserTree(expr.asParser.optimized)

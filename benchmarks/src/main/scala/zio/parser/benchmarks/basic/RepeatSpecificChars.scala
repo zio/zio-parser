@@ -17,7 +17,7 @@ class RepeatSpecificChars extends ParserBenchmark[String] {
     (Parser.charIn('a' to 'p')).rep(10000).string
   }
 
-  override final def fastParseP[_: fastparse.P]: fastparse.P[String] = null
+  override final def fastParseP[P: fastparse.P]: fastparse.P[String] = null
 
   override final val attoParser: atto.Parser[String] = null
 

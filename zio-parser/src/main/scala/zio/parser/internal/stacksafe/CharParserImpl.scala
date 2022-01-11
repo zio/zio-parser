@@ -1,10 +1,9 @@
 package zio.parser.internal.stacksafe
 
-import zio.parser.Regex
 import zio.parser.Parser.ParserError
-import zio.parser.internal.stacksafe.CharParserImpl.maxStoredPositions
-import zio.parser.internal.stacksafe.ParserOp.InitialParser
+import zio.parser.Regex
 import zio.parser.internal.Stack
+import zio.parser.internal.stacksafe.ParserOp.InitialParser
 import zio.{Chunk, ChunkBuilder}
 
 /** Stack safe interpreter for Parser

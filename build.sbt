@@ -1,50 +1,57 @@
-val scala212 = "2.12.15"
-val scala213 = "2.13.6"
-val scala3   = "3.0.2"
+import BuildHelper._
 
-val zioVersion = "1.0.12"
-
-val scalacOptions212 = Seq(
-  "-deprecation",
-  "-Ypartial-unification"
+inThisBuild(
+  List(
+    organization  := "dev.zio",
+    homepage      := Some(url("https://zio.github.io/zio-parser/")),
+    licenses      := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
+    developers    := List(
+      Developer(
+        "jdegoes",
+        "John De Goes",
+        "john@degoes.net",
+        url("http://degoes.net")
+      ),
+      Developer(
+        "vigoo",
+        "Daniel Vigovszky",
+        "daniel.vigovszky@gmail.com",
+        url("https://github.com/vigoo")
+      )
+    ),
+    pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
+    pgpPublicRing := file("/tmp/public.asc"),
+    pgpSecretRing := file("/tmp/secret.asc")
+  )
 )
 
-val scalacOptions213 = Seq(
-  "-deprecation"
+addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
+addCommandAlias("fix", "; all compile:scalafix test:scalafix; all scalafmtSbt scalafmtAll")
+addCommandAlias("check", "; scalafmtSbtCheck; scalafmtCheckAll; compile:scalafix --check; test:scalafix --check")
+
+addCommandAlias(
+  "testJVM",
+  ";zioParser/test; calibanParser/test"
 )
 
-val scalacOptions3 = Seq(
-  "-deprecation",
-  "-Ykind-projector",
-  "-explain"
-)
-
-ThisBuild / scalaVersion := scala213
-ThisBuild / version := "0.1.0-SNAPSHOT"
-ThisBuild / organization := "dev.zio"
-ThisBuild / organizationName := "zio"
-ThisBuild / scalacOptions ++= (CrossVersion.partialVersion(scalaVersion.value) match {
-  case Some((2, 12)) => scalacOptions212
-  case Some((2, 13)) => scalacOptions213
-  case Some((3, _))  => scalacOptions3
-  case _             => Nil
-})
+val zioVersion = "2.0.0-RC1"
 
 lazy val root = (project in file("."))
   .aggregate(
     zioParser,
     calibanParser,
+    docs
   )
   .settings(
     crossScalaVersions := Nil,
-    publish / skip := false
+    publish / skip     := false
   )
 
-
 lazy val zioParser = (project in file("zio-parser"))
+  .settings(stdSettings("zio-parser"))
+  .settings(dottySettings)
+  .settings(buildInfoSettings("zio.parser"))
   .settings(
-    name := "zio-parser",
-    crossScalaVersions := Seq(scala212, scala213, scala3),
     libraryDependencies ++=
       (CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((3, _)) => Seq.empty
@@ -59,37 +66,17 @@ lazy val zioParser = (project in file("zio-parser"))
       "dev.zio" %% "zio-test"     % zioVersion % Test,
       "dev.zio" %% "zio-test-sbt" % zioVersion % Test
     ),
-    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
+    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
   )
-
-lazy val benchmarks = (project in file("benchmarks"))
-  .settings(
-    scalaVersion := scala213,
-    crossScalaVersions := Seq(scala213),
-    scalacOptions := scalacOptions213,
-    publish / skip := true,
-    libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-parse"   % "0.3.4",
-      "com.lihaoyi"   %% "fastparse"    % "2.3.2",
-      "org.tpolecat"  %% "atto-core"    % "0.9.5",
-      "org.parboiled" %% "parboiled"    % "2.3.0",
-      "org.http4s"    %% "parsley"      % "1.5.0-M3",
-      "org.spartanz"  %% "parserz"      % "0.2.4",
-      "dev.zio"       %% "zio-test"     % zioVersion % Test,
-      "dev.zio"       %% "zio-test-sbt" % zioVersion % Test
-    ),
-    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework"),
-  )
-  .enablePlugins(JmhPlugin)
-  .dependsOn(zioParser)
+  .enablePlugins(BuildInfoPlugin)
 
 lazy val calibanParser = (project in file("zio-parser-caliban"))
+  .settings(stdSettings("zio-parser-caliban"))
+  .settings(dottySettings)
   .dependsOn(zioParser)
   .settings(
-    name := "zio-parser-caliban",
-    crossScalaVersions := Seq(scala212, scala213, scala3),
     libraryDependencies ++= Seq(
-      "com.github.ghostdogpr" %% "caliban"      % "1.1.0",
+      "com.github.ghostdogpr" %% "caliban"      % "1.3.1",
       "dev.zio"               %% "zio"          % zioVersion,
       "dev.zio"               %% "zio-streams"  % zioVersion,
       "dev.zio"               %% "zio-test"     % zioVersion % Test,
@@ -97,3 +84,39 @@ lazy val calibanParser = (project in file("zio-parser-caliban"))
     ),
     testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
   )
+
+lazy val benchmarks = (project in file("benchmarks"))
+  .settings(
+    scalaVersion   := Scala213,
+    publish / skip := true,
+    libraryDependencies ++= Seq(
+      "org.typelevel" %% "cats-parse"   % "0.3.6",
+      "com.lihaoyi"   %% "fastparse"    % "2.3.3",
+      "org.tpolecat"  %% "atto-core"    % "0.9.5",
+      "org.parboiled" %% "parboiled"    % "2.3.0",
+      "org.http4s"    %% "parsley"      % "1.5.0-M3",
+      "org.spartanz"  %% "parserz"      % "0.2.4",
+      "dev.zio"       %% "zio-test"     % zioVersion % Test,
+      "dev.zio"       %% "zio-test-sbt" % zioVersion % Test
+    ),
+    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
+  )
+  .enablePlugins(JmhPlugin)
+  .dependsOn(zioParser)
+
+lazy val docs = project
+  .in(file("zio-parser-docs"))
+  .settings(stdSettings("zio-parser"))
+  .settings(
+    publish / skip                             := true,
+    moduleName                                 := "zio-parser-docs",
+    scalacOptions -= "-Yno-imports",
+    scalacOptions -= "-Xfatal-warnings",
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(zioParser),
+    ScalaUnidoc / unidoc / target              := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
+    cleanFiles += (ScalaUnidoc / unidoc / target).value,
+    docusaurusCreateSite                       := docusaurusCreateSite.dependsOn(Compile / unidoc).value,
+    docusaurusPublishGhpages                   := docusaurusPublishGhpages.dependsOn(Compile / unidoc).value
+  )
+  .dependsOn(zioParser)
+  .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)

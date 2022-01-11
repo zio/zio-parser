@@ -15,16 +15,14 @@ final class CharParserImpl[Err, Result](parser: InitialParser, source: String) {
 
     val len = source.length
 
-    /** Operation stack; the next operation is returned to the main loop as a return value, further operations are
-      * stacked here
-      */
+    // Operation stack; the next operation is returned to the main loop as a return value, further operations are
+    // stacked here
     val opStack: Stack[ParserOp] = parser.initialStack.clone()
     var op: ParserOp             = parser.op
 
-    /** Result stacks and explicit variables for the top two results. If success is null, a failure value must be
-      * pushed. If success is not null, failure is not pushed The lastSuccess and lastFailure variables are either both
-      * null (when no result yet) or one of them have value.
-      */
+    // Result stacks and explicit variables for the top two results. If success is null, a failure value must be
+    // pushed. If success is not null, failure is not pushed The lastSuccess and lastFailure variables are either both
+    // null (when no result yet) or one of them have value.
     var lastSuccess1: AnyRef                       = null
     var lastFailure1: ParserError[Any]             = null
     var lastSuccess2: AnyRef                       = null
@@ -34,14 +32,14 @@ final class CharParserImpl[Err, Result](parser: InitialParser, source: String) {
 
     var lastIgnoredError: ParserError[Any] = null
 
-    /** Name stack for tracing */
+    // Name stack for tracing
     var nameStack: List[String] = parser.initialNames
 
-    /** Stack of stored positions for branch verification / backtrack */
+    // Stack of stored positions for branch verification / backtrack
     val storedPositions: Array[Int] = parser.initialPositions.clone()
     var storedPositionIndex: Int    = parser.initialPositionIndex
 
-    /** Stack and top value of chunk builders used by the Repeat operation */
+    // Stack and top value of chunk builders used by the Repeat operation
     val builderStack: Stack[ChunkBuilder[Any]] = Stack()
     var lastBuilder: ChunkBuilder[Any]         = null
 
@@ -56,7 +54,7 @@ final class CharParserImpl[Err, Result](parser: InitialParser, source: String) {
       }
     }
 
-    /** Position in the source stream */
+    // Position in the source stream
     var position: Int = 0
 
     while (op != null) {

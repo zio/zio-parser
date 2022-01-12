@@ -1052,8 +1052,8 @@ object BashPrettyPrinterExample extends DefaultRunnableSpec {
         condition: BashArithmeticExpression,
         trueCase: BashArithmeticExpression,
         falseCase: BashArithmeticExpression
-    ) extends BashArithmeticExpression   // condition ? trueCase : falseCase
-    case class Assign(x: BashVariable, y: BashArithmeticExpression)          extends BashArithmeticExpression // x = y
+    ) extends BashArithmeticExpression // condition ? trueCase : falseCase
+    case class Assign(x: BashVariable, y: BashArithmeticExpression) extends BashArithmeticExpression // x = y
     case class AssignMul(x: BashVariable, y: BashArithmeticExpression)       extends BashArithmeticExpression // x *= y
     case class AssignDiv(x: BashVariable, y: BashArithmeticExpression)       extends BashArithmeticExpression // x /= y
     case class AssignRem(x: BashVariable, y: BashArithmeticExpression)       extends BashArithmeticExpression // x %= y

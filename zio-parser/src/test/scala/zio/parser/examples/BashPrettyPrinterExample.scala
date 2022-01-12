@@ -462,12 +462,12 @@ object BashPrettyPrinterExample extends DefaultRunnableSpec {
     Printer.printString(s)
 
   val indentation                                = Printer.unit // TODO
-  //Printer.anyString
+  // Printer.anyString
 //    .statefulTransform(
 //      (value: String, _: Any) => Right((value)),
 //      (_: Any, state: BashPrinterState) => Right((" " * (state.indentation * state.indentationSize), state))
 //    )
-  //.unit
+  // .unit
   val newline: Printer[Nothing, Char, Any, Unit] = printS(System.lineSeparator()) ~> indentation
 
   val space: Printer[Nothing, Char, Any, Unit]  = print(' ')
@@ -1052,7 +1052,7 @@ object BashPrettyPrinterExample extends DefaultRunnableSpec {
         condition: BashArithmeticExpression,
         trueCase: BashArithmeticExpression,
         falseCase: BashArithmeticExpression
-    )                                                                        extends BashArithmeticExpression // condition ? trueCase : falseCase
+    ) extends BashArithmeticExpression   // condition ? trueCase : falseCase
     case class Assign(x: BashVariable, y: BashArithmeticExpression)          extends BashArithmeticExpression // x = y
     case class AssignMul(x: BashVariable, y: BashArithmeticExpression)       extends BashArithmeticExpression // x *= y
     case class AssignDiv(x: BashVariable, y: BashArithmeticExpression)       extends BashArithmeticExpression // x /= y

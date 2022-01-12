@@ -115,8 +115,9 @@ class ZioLuceneQueryParser(
   val modifier =
     (plus.as(Mod.Require).backtrack.widen[Mod] |
       minus.as(Mod.Prohibit).backtrack.widen[Mod] |
-      not.as(Mod.Not)
-      .widen[Mod]) ?? "modifier"
+      not
+        .as(Mod.Not)
+        .widen[Mod]) ?? "modifier"
 
   val fieldName = term.transform(unescapeWildcards, identity[String]) ?? "fieldName" // TODO: escapeWildcards
 

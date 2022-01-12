@@ -173,7 +173,7 @@ object ParserOp       {
   }
 
   sealed trait PairTransformation
-  object PairTransformation {
+  object PairTransformation    {
     final case class Zip(zip: (Any, Any) => Any) extends PairTransformation
     case object KeepFirst                        extends PairTransformation
     case object KeepSecond                       extends PairTransformation

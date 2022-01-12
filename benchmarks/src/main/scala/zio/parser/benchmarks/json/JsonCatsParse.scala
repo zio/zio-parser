@@ -128,7 +128,7 @@ abstract class GenericStringUtil {
   }
 
   def unescape(str: String): Either[Int, String] = {
-    val sb                  = new java.lang.StringBuilder
+    val sb                                             = new java.lang.StringBuilder
     def decodeNum(idx: Int, size: Int, base: Int): Int = {
       val end = idx + size
       if (end <= str.length) {

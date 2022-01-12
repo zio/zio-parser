@@ -212,13 +212,13 @@ sealed trait Parser[+Err, -In, +Result] { self =>
   final def between[Err2 >: Err, In2 <: In](
       left: Parser[Err2, In2, Any],
       right: Parser[Err2, In2, Any]
-  ): Parser[Err2, In2, Result]                                       =
+  ): Parser[Err2, In2, Result] =
     (left ~ self ~ right).map { case (_, value, _) => value }
 
   /** Surrounds this parser with the 'other' parser. The result is this parser's result. */
   final def surroundedBy[Err2 >: Err, In2 <: In](
       other: Parser[Err2, In2, Any]
-  ): Parser[Err2, In2, Result]                                       =
+  ): Parser[Err2, In2, Result] =
     (other ~ self ~ other).map { case (_, value, _) => value }
 
   /** Maps the error with the given function 'f' */
@@ -356,7 +356,7 @@ sealed trait Parser[+Err, -In, +Result] { self =>
         strippedNode
     }
 
-  lazy val compiledOpStack: InitialParser              = ParserOp.compile(optimized.asInstanceOf[ErasedParser])
+  lazy val compiledOpStack: InitialParser = ParserOp.compile(optimized.asInstanceOf[ErasedParser])
   lazy val defaultImplementation: ParserImplementation =
     // NOTE: here we can analyse the parser tree to select an implementation (for example check if it has FlatMap)
     ParserImplementation.Recursive

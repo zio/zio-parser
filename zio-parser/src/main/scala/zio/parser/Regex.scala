@@ -342,7 +342,7 @@ object Regex {
     object Step       {
       case object Matched                           extends Step
       case object Error                             extends Step
-      //final case class MatchedOrJump(lookup: LookupFunction) extends Step
+      // final case class MatchedOrJump(lookup: LookupFunction) extends Step
       final case class Jump(lookup: LookupFunction) extends Step
     }
 

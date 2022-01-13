@@ -141,7 +141,7 @@ abstract class GenericStringUtil {
       } else ~(str.length)
     }
     @annotation.tailrec
-    def loop(idx: Int): Int =
+    def loop(idx: Int): Int                            =
       if (idx >= str.length) {
         // done
         idx

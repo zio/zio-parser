@@ -71,12 +71,15 @@ object CalibanParser {
       String,
       Char,
       Char,
-      Char with (Char, Char) with (Char, Char, (Char, Char)) with (
-          Char,
-          Char,
-          (Char, Char),
-          (Char, Char, (Char, Char))
-      ),
+      Char
+        with (Char, Char)
+        with (Char, Char, (Char, Char))
+        with (
+            Char,
+            Char,
+            (Char, Char),
+            (Char, Char, (Char, Char))
+        ),
       Unit
     ] = {
       val escapes = Syntax.charIn(decodeTable.keys.toSeq: _*)
@@ -137,7 +140,7 @@ object CalibanParser {
         } else ~str.length
       }
       @annotation.tailrec
-      def loop(idx: Int): Int =
+      def loop(idx: Int): Int                            =
         if (idx >= str.length) {
           // done
           idx

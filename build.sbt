@@ -31,7 +31,15 @@ addCommandAlias("check", "; scalafmtSbtCheck; scalafmtCheckAll; compile:scalafix
 
 addCommandAlias(
   "testJVM",
-  ";zioParser/test; calibanParser/test"
+  ";zioParserJVM/test; calibanParser/test"
+)
+addCommandAlias(
+  "testJS",
+  ";zioParserJS/test"
+)
+addCommandAlias(
+  "testNative",
+  ";zioParserNative/test"
 )
 
 val zioVersion = "2.0.0-RC1"
@@ -74,8 +82,8 @@ lazy val zioParser = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   )
   .enablePlugins(BuildInfoPlugin)
 
-lazy val zioParserJVM = zioParser.jvm
-lazy val zioParserJS = zioParser.js
+lazy val zioParserJVM    = zioParser.jvm
+lazy val zioParserJS     = zioParser.js
 lazy val zioParserNative = zioParser.native
 
 lazy val calibanParser = project

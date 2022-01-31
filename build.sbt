@@ -84,7 +84,11 @@ lazy val zioParser = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 
 lazy val zioParserJVM    = zioParser.jvm
 lazy val zioParserJS     = zioParser.js
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
+  .settings(scalaJSUseMainModuleInitializer := true)
+
 lazy val zioParserNative = zioParser.native
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
 
 lazy val calibanParser = project
   .in(file("zio-parser-caliban"))

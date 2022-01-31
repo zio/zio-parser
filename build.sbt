@@ -89,7 +89,6 @@ lazy val zioParserJS  = zioParser.js
 
 lazy val zioParserNative = zioParser.native
   .settings(nativeSettings)
-  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
 
 lazy val calibanParser = project
   .in(file("zio-parser-caliban"))

@@ -31,14 +31,24 @@ addCommandAlias("check", "; scalafmtSbtCheck; scalafmtCheckAll; compile:scalafix
 
 addCommandAlias(
   "testJVM",
-  ";zioParser/test; calibanParser/test"
+  ";zioParserJVM/test; calibanParser/test"
+)
+addCommandAlias(
+  "testJS",
+  ";zioParserJS/test"
+)
+addCommandAlias(
+  "testNative",
+  ";zioParserNative/test"
 )
 
 val zioVersion = "2.0.0-RC2"
 
 lazy val root = (project in file("."))
   .aggregate(
-    zioParser,
+    zioParserJVM,
+    zioParserJS,
+    zioParserNative,
     calibanParser,
     docs
   )
@@ -47,8 +57,10 @@ lazy val root = (project in file("."))
     publish / skip     := true
   )
 
-lazy val zioParser = (project in file("zio-parser"))
+lazy val zioParser = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+  .in(file("zio-parser"))
   .settings(stdSettings("zio-parser"))
+  .settings(crossProjectSettings)
   .settings(dottySettings)
   .settings(buildInfoSettings("zio.parser"))
   .settings(
@@ -70,10 +82,20 @@ lazy val zioParser = (project in file("zio-parser"))
   )
   .enablePlugins(BuildInfoPlugin)
 
-lazy val calibanParser = (project in file("zio-parser-caliban"))
+lazy val zioParserJVM = zioParser.jvm
+lazy val zioParserJS  = zioParser.js
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
+  .settings(scalaJSUseMainModuleInitializer := true)
+
+lazy val zioParserNative = zioParser.native
+  .settings(nativeSettings)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
+
+lazy val calibanParser = project
+  .in(file("zio-parser-caliban"))
   .settings(stdSettings("zio-parser-caliban"))
   .settings(dottySettings)
-  .dependsOn(zioParser)
+  .dependsOn(zioParserJVM)
   .settings(
     publish / skip := true,
     libraryDependencies ++= Seq(
@@ -103,7 +125,7 @@ lazy val benchmarks = (project in file("benchmarks"))
     testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
   )
   .enablePlugins(JmhPlugin)
-  .dependsOn(zioParser)
+  .dependsOn(zioParserJVM)
 
 lazy val docs = project
   .in(file("zio-parser-docs"))
@@ -114,11 +136,11 @@ lazy val docs = project
     moduleName                                 := "zio-parser-docs",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
-    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(zioParser),
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(zioParserJVM),
     ScalaUnidoc / unidoc / target              := (LocalRootProject / baseDirectory).value / "website" / "static" / "api",
     cleanFiles += (ScalaUnidoc / unidoc / target).value,
     docusaurusCreateSite                       := docusaurusCreateSite.dependsOn(Compile / unidoc).value,
     docusaurusPublishGhpages                   := docusaurusPublishGhpages.dependsOn(Compile / unidoc).value
   )
-  .dependsOn(zioParser)
+  .dependsOn(zioParserJVM)
   .enablePlugins(MdocPlugin, DocusaurusPlugin, ScalaUnidocPlugin)

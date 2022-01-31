@@ -456,7 +456,7 @@ object Printer {
   /** Printer that just prints the input string */
   val anyString: Printer[Nothing, Char, String, String] =
     unsafeRegex(Regex.anyChar.atLeast(0))
-      .transform(s => String.copyValueOf(s.toArray), (s: String) => Chunk.fromArray(s.toCharArray))
+      .transform(s => String.valueOf(s.toArray), (s: String) => Chunk.fromArray(s.toCharArray))
 
   /** Prints a specific string 'str' and results in 'value' */
   def string[Result](str: String, value: Result): Printer[Nothing, Char, Result, Result] =

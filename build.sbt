@@ -98,7 +98,7 @@ lazy val calibanParser = project
   .settings(
     publish / skip := true,
     libraryDependencies ++= Seq(
-      "com.github.ghostdogpr" %% "caliban"      % "1.3.3",
+      "com.github.ghostdogpr" %% "caliban"      % "1.4.0",
       "dev.zio"               %% "zio"          % zioVersion,
       "dev.zio"               %% "zio-streams"  % zioVersion,
       "dev.zio"               %% "zio-test"     % zioVersion % Test,

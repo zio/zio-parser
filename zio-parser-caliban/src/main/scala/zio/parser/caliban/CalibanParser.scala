@@ -834,7 +834,8 @@ object CalibanParser {
     //      case Right(result) =>
     //        IO.succeed(Document(result._2.definitions,sm))
     //    }
-    Task.attempt(document.parseString(query))
+    Task
+      .attempt(document.parseString(query))
       .mapError(ex => ParsingError(s"Internal parsing error", innerThrowable = Some(ex)))
       .flatMap {
         case Left(error)   =>

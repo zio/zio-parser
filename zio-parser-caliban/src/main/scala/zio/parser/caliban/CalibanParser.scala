@@ -933,12 +933,13 @@ object CalibanDemo extends ZIOAppDefault {
 """.trim
 
   val parsed: ZIO[Any, Nothing, Either[Parser.ParserError[String], StringValue]] =
-    UIO(CalibanParser.stringValue.parseString(query))
+    UIO
+      .succeed(CalibanParser.stringValue.parseString(query))
       //  val parsed = UIO(CalibanSyntax.stringValue.parse("\"\"\"hello\"\"\""))
       .tap {
         case Left(_)      => UIO.unit
         case Right(value) =>
-          UIO(value.getClass).debug("CLASS")
+          UIO.succeed(value.getClass).debug("CLASS")
       }
 
 //  Debug.printParserTree(CalibanParser.document.asParser.optimized)

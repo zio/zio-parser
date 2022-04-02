@@ -42,7 +42,7 @@ addCommandAlias(
   ";zioParserNative/test"
 )
 
-val zioVersion = "2.0.0-RC3"
+val zioVersion = "2.0.0-RC4"
 
 lazy val root = (project in file("."))
   .aggregate(

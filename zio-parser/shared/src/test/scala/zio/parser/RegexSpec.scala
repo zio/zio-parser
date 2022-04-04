@@ -4,8 +4,6 @@ import zio._
 import zio.test.Assertion._
 import zio.test._
 
-import scala.annotation.nowarn
-
 object RegexSpec extends ZIOSpecDefault {
   val keywordStrings: List[String] =
     List(

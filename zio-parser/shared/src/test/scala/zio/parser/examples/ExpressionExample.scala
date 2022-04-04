@@ -4,7 +4,7 @@ import zio.parser.{Syntax, _}
 import zio.test.Assertion._
 import zio.test._
 
-object ExpressionExample extends DefaultRunnableSpec {
+object ExpressionExample extends ZIOSpecDefault {
 
   sealed trait OpType
   case object Add extends OpType

@@ -17,7 +17,7 @@ import zio.test.Assertion._
 import zio.test.TestAspect._
 import zio.test._
 
-object CalibanParserSpec extends DefaultRunnableSpec {
+object CalibanParserSpec extends ZIOSpecDefault {
 
   def spec0: Spec[Any, TestFailure[ParsingError], TestSuccess] = suite("CalibanParserSpec")(
     test("simple query with fields") {

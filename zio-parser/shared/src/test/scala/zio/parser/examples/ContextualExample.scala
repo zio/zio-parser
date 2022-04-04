@@ -5,7 +5,7 @@ import zio.parser.{Parser, Printer, Syntax, _}
 import zio.test.Assertion._
 import zio.test._
 
-object ContextualExample extends DefaultRunnableSpec {
+object ContextualExample extends ZIOSpecDefault {
 
   // Context sensitive example
 

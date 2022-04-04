@@ -9,7 +9,7 @@ import zio.test.Assertion.{anything, isRight}
 import zio.test._
 
 /** Tests whether the benchmark examples run with success */
-object BenchmarksSpec extends DefaultRunnableSpec {
+object BenchmarksSpec extends ZIOSpecDefault {
   override def spec: ZSpec[TestEnvironment, Any] =
     suite("Benchmarks")(
       suite("basic")(

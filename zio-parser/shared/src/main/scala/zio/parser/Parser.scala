@@ -490,7 +490,7 @@ object Parser {
       val position = state.position
       val result   = compiledRegex.test(position, state.source)
       if (result == Regex.NeedMoreInput) {
-        state.error = ParserError.UnexpectedEndOfInput
+        state.error = ParserError.UnexpectedEndOfInput(state.nameStack)
       } else if (result == Regex.NotMatched) {
         onFailure match {
           case Some(failure) =>
@@ -531,7 +531,7 @@ object Parser {
       val position = state.position
       val result   = compiledRegex.test(position, state.source)
       if (result == Regex.NeedMoreInput) {
-        state.error = ParserError.UnexpectedEndOfInput
+        state.error = ParserError.UnexpectedEndOfInput(state.nameStack)
         null.asInstanceOf[Chunk[Char]]
       } else if (result == Regex.NotMatched) {
         state.error = getFailure(position, state.nameStack)
@@ -572,7 +572,7 @@ object Parser {
       val position = state.position
       val result   = compiledRegex.test(position, state.source)
       if (result == Regex.NeedMoreInput) {
-        state.error = ParserError.UnexpectedEndOfInput
+        state.error = ParserError.UnexpectedEndOfInput(state.nameStack)
         null.asInstanceOf[Char]
       } else if (result == Regex.NotMatched) {
         state.error = getFailure(position, state.nameStack)
@@ -1108,7 +1108,7 @@ object Parser {
       }
 
       if (count < min) {
-        state.error = ParserError.UnexpectedEndOfInput
+        state.error = ParserError.UnexpectedEndOfInput(state.nameStack)
       } else {
         state.error = null
       }
@@ -1228,7 +1228,7 @@ object Parser {
 
     override protected def parseRec(state: recursive.ParserState): Unit =
       if (state.position < state.source.length)
-        state.error = ParserError.NotConsumedAll(None)
+        state.error = ParserError.NotConsumedAll(state.position, None)
 
     override protected def needsBacktrack: Boolean = false
   }
@@ -1350,8 +1350,9 @@ object Parser {
     def map[Err2](f: Err => Err2): ParserError[Err2] = self match {
       case ParserError.Failure(nameStack, position, failure) => ParserError.Failure(nameStack, position, f(failure))
       case ParserError.UnknownFailure(nameStack, position)   => ParserError.UnknownFailure(nameStack, position)
-      case ParserError.UnexpectedEndOfInput                  => ParserError.UnexpectedEndOfInput
-      case ParserError.NotConsumedAll(lastFailure)           => ParserError.NotConsumedAll(lastFailure.map(_.map(f)))
+      case ParserError.UnexpectedEndOfInput(nameStack)       => ParserError.UnexpectedEndOfInput(nameStack)
+      case ParserError.NotConsumedAll(position, lastFailure) =>
+        ParserError.NotConsumedAll(position, lastFailure.map(_.map(f)))
       case ParserError.AllBranchesFailed(left, right)        => ParserError.AllBranchesFailed(left.map(f), right.map(f))
     }
   }
@@ -1382,14 +1383,14 @@ object Parser {
     final case class UnknownFailure(nameStack: List[String], position: Int) extends ParserError[Nothing]
 
     /** The input stream ended before the parser finished */
-    case object UnexpectedEndOfInput extends ParserError[Nothing]
+    final case class UnexpectedEndOfInput(nameStack: List[String]) extends ParserError[Nothing]
 
     /** The parser was supposed to consume the full input but it did not.
       *
       * @param lastFailure
       *   the last encountered failure, if any
       */
-    final case class NotConsumedAll[Err](lastFailure: Option[ParserError[Err]]) extends ParserError[Err]
+    final case class NotConsumedAll[Err](position: Int, lastFailure: Option[ParserError[Err]]) extends ParserError[Err]
 
     /** All branches failed in a sequence of orElse or orElseEither parsers.
       *

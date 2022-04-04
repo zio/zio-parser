@@ -27,7 +27,7 @@ object ParserSpec extends DefaultRunnableSpec {
               isRight(equalTo("hello"))
             ),
             parserTest("end, failing", Syntax.digit.repeat0.string <~ Syntax.end, "123!!!")(
-              isLeft(equalTo(ParserError.NotConsumedAll(None)))
+              isLeft(equalTo(ParserError.NotConsumedAll(3, None)))
             ),
             parserTest("char, passing", Syntax.char('x'), "x")(isRight(equalTo(()))),
             parserTest("char, failing", Syntax.char('y'), "x")(
@@ -195,7 +195,7 @@ object ParserSpec extends DefaultRunnableSpec {
                 isLeft(equalTo(ParserError.Failure(Nil, 0, "not a")))
               ) @@ TestAspect.ignore, // With compiling to Regex it fails with UnexpectedEndOfInput - to be discussed
               parserTest("repeat immediate end of stream", Syntax.char('a', "not a").repeat, "")(
-                isLeft(equalTo(ParserError.UnexpectedEndOfInput))
+                isLeft(equalTo(ParserError.UnexpectedEndOfInput(Nil)))
               ),
               parserTest("repeat 1", charA.repeat, "abc")(
                 isRight(equalTo(Chunk('a')))
@@ -212,7 +212,7 @@ object ParserSpec extends DefaultRunnableSpec {
                 isRight(equalTo(Chunk('a', 'a', 'a')))
               ),
               parserTest("atLeast 3, failing", Syntax.char('a').as('a').atLeast(3), "aabca")(
-                isLeft(equalTo(ParserError.UnexpectedEndOfInput))
+                isLeft(equalTo(ParserError.UnexpectedEndOfInput(Nil)))
               )
             ),
             suite("repeat0")(
@@ -410,7 +410,7 @@ object ParserSpec extends DefaultRunnableSpec {
                 isRight(equalTo("123"))
               ),
               parserTest("digits, failing", Syntax.digit.+.string, "abc123")(
-                isLeft(equalTo(ParserError.UnexpectedEndOfInput))
+                isLeft(equalTo(ParserError.UnexpectedEndOfInput(Nil)))
               )
             ),
             parserTest("Not, inner failing", Syntax.string("hello", ()).not("it was hello"), "world")(

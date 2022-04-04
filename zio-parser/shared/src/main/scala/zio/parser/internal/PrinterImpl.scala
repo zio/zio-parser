@@ -9,7 +9,7 @@ import scala.annotation.nowarn
 
 /** Interpreter for Printer
   */
-class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Result]) {
+class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Result], colorMap: Map[String, String]) {
   type ErasedPrinter = Printer[Any, Any, Any, Any]
   case class Cont(f: Either[Any, Any] => (ErasedPrinter, Any, Option[Cont]))
 
@@ -18,8 +18,21 @@ class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Res
     var current: Any             = printer
     var result: Either[Any, Any] = Right(())
     val stack: Stack[Cont]       = Stack()
+    val nameStack: Stack[String] = Stack()
 
-    def finish(r: Either[Any, Any]): Unit =
+    def finish(r: Either[Any, Any]): Unit = {
+      if (!nameStack.isEmpty) {
+        nameStack.pop()
+        if (nameStack.isEmpty) {
+          scala.Console.RESET.foreach(ch => output.write(ch.asInstanceOf[Out]))
+        } else {
+          colorMap.get(nameStack.peek()) match {
+            case Some(value) => value.foreach(ch => output.write(ch.asInstanceOf[Out]))
+            case None        =>
+          }
+        }
+      }
+
       if (stack.isEmpty) {
         result = r
         current = null
@@ -30,6 +43,7 @@ class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Res
         input = nextI
         nextK.foreach(stack.push)
       }
+    }
 
     while (current != null) {
       (current: @nowarn) match {
@@ -41,6 +55,14 @@ class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Res
 
         case Printer.Fail(failure) =>
           finish(Left(failure))
+
+        case Printer.Named(name, inner) =>
+          colorMap.get(name) match {
+            case Some(value) => value.foreach(ch => output.write(ch.asInstanceOf[Out]))
+            case None        =>
+          }
+          nameStack.push(name)
+          current = inner
 
         case Printer.FlatMapValue(f) =>
           current = f.asInstanceOf[Any => ErasedPrinter](input)

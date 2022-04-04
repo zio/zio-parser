@@ -22,6 +22,9 @@ import zio.{=!=, Chunk}
   */
 sealed trait Printer[+Err, +Out, -Value, +Result] { self =>
 
+  def named(name: String): Printer[Err, Out, Value, Result] =
+    Printer.Named(name, self)
+
   /** Maps the printer's result with function 'to' and its input value with 'from' */
   final def transform[Value2, Result2](
       to: Result => Result2,
@@ -247,20 +250,22 @@ sealed trait Printer[+Err, +Out, -Value, +Result] { self =>
 
   // Execution
   /** Print the given 'value' to the given 'target' implementation */
-  final def print[Out2 >: Out](value: Value, target: Target[Out2]): Either[Err, Unit] = {
-    val printer = new PrinterImpl[Err, Out2, Value, Result](self)
+  final def print[Out2 >: Out](value: Value, target: Target[Out2], colorMap: Map[String, String]): Either[Err, Unit] = {
+    val printer = new PrinterImpl[Err, Out2, Value, Result](self, colorMap)
     printer.run(value, target)
   }
 
   /** Print the given 'value' to a chunk of output elements */
-  final def print(value: Value): Either[Err, Chunk[Out]] = {
+  final def print(value: Value, colorMap: Map[String, String]): Either[Err, Chunk[Out]] = {
     val target = new ChunkTarget[Out]
-    self.print(value, target).map(_ => target.result)
+    self.print(value, target, colorMap).map(_ => target.result)
   }
 
   /** Print the given 'value' to a string */
-  final def printString(value: Value)(implicit ev: Out <:< Char): Either[Err, String] =
-    self.print(value).map(_.mkString)
+  final def printString(value: Value, colorMap: Map[String, String] = Map.empty)(implicit
+      ev: Out <:< Char
+  ): Either[Err, String] =
+    self.print(value, colorMap).map(_.mkString)
 }
 
 object Printer {
@@ -269,6 +274,9 @@ object Printer {
 
     lazy val memoized: Printer[Err, Out, Value, Result] = inner()
   }
+
+  final case class Named[Err, Out, Value, Result](name: String, inner: Printer[Err, Out, Value, Result])
+      extends Printer[Err, Out, Value, Result]
 
   final case class Succeed[+Result](value: Result) extends Printer[Nothing, Nothing, Any, Result]
 

@@ -130,7 +130,7 @@ class Syntax[+Err, -In, +Out, -Value, +Result] private (
   final def named(name: String): Syntax[Err, In, Out, Value, Result] =
     new Syntax(
       asParser.named(name),
-      asPrinter
+      asPrinter.named(name)
     )
 
   /** Symbolic alias for named */
@@ -418,15 +418,17 @@ class Syntax[+Err, -In, +Out, -Value, +Result] private (
 
   /** Prints a value 'value' to the target implementation 'target' */
   final def print[Out2 >: Out](value: Value, target: Target[Out2]): Either[Err, Unit] =
-    asPrinter.print(value, target)
+    asPrinter.print(value, target, Map.empty)
 
   /** Prints a value 'value' and get back the chunk of output elements' */
   final def print(value: Value): Either[Err, Chunk[Out]] =
-    asPrinter.print(value)
+    asPrinter.print(value, Map.empty)
 
   /** Prints a value 'value' to a string */
-  final def printString(value: Value)(implicit ev: Out <:< Char): Either[Err, String] =
-    asPrinter.printString(value)
+  final def printString(value: Value, colorMap: Map[String, String] = Map.empty)(implicit
+      ev: Out <:< Char
+  ): Either[Err, String] =
+    asPrinter.printString(value, colorMap)
 
   /** Strips all the name information from this syntax to improve performance but reduces the failure message's
     * verbosity.

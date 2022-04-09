@@ -2,10 +2,10 @@ package zio.parser.target
 
 import zio.parser.internal.Stack
 import zio.stream.ZStream
-import zio.{ChunkBuilder, Queue, Runtime, UIO, ZIO, ZQueue}
+import zio.{ChunkBuilder, Queue, Runtime, UIO, ZIO}
 
 class ZStreamTarget[R, Output](runtime: Runtime[R]) extends Target[Output] {
-  private val queue: Queue[Output] = runtime.unsafeRun(ZQueue.unbounded[Output])
+  private val queue: Queue[Output] = runtime.unsafeRun(Queue.unbounded[Output])
 
   val stream: ZStream[Any, Nothing, Output] = ZStream.fromQueue(queue)
 

@@ -4,7 +4,7 @@ import zio.Chunk
 import zio.test.Assertion._
 import zio.test._
 
-object PrinterSpec extends DefaultRunnableSpec {
+object PrinterSpec extends ZIOSpecDefault {
   private val charA: Syntax[String, Char, Char, Char, Char] =
     Syntax.charIn('a')
 

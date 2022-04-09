@@ -5,7 +5,7 @@ import zio.parser.{Syntax, _}
 import zio.test.Assertion.{equalTo, isRight}
 import zio.test._
 
-object JsonExample extends DefaultRunnableSpec {
+object JsonExample extends ZIOSpecDefault {
   sealed abstract class Json
   object Json {
     final case class Obj(fields: Chunk[(String, Json)]) extends Json

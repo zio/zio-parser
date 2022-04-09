@@ -5,7 +5,7 @@ import zio.parser.Parser.ParserError
 import zio.test.Assertion._
 import zio.test._
 
-object ParserSpec extends DefaultRunnableSpec {
+object ParserSpec extends ZIOSpecDefault {
   private val charA: Syntax[String, Char, Char, Char, Char] = Syntax.char('a', "not a").as('a')
   private val charB: Syntax[String, Char, Char, Char, Char] = Syntax.char('b', "not b").as('b')
 

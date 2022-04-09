@@ -4,9 +4,7 @@ import zio._
 import zio.test.Assertion._
 import zio.test._
 
-import scala.annotation.nowarn
-
-object RegexSpec extends DefaultRunnableSpec {
+object RegexSpec extends ZIOSpecDefault {
   val keywordStrings: List[String] =
     List(
       "abstract",
@@ -62,7 +60,7 @@ object RegexSpec extends DefaultRunnableSpec {
 
   val keywords: Regex.Tabular.Tabular = Regex.Tabular(keywordsRegex)
 
-  override def spec: ZSpec[Environment, Any] =
+  override def spec: ZSpec[TestEnvironment, Any] =
     suite("RegexSpec")(
       suite("string")(
         test("positive matches") {
@@ -211,24 +209,38 @@ object RegexSpec extends DefaultRunnableSpec {
       }
     )
 
-  @nowarn private def singleChar(name: String, r: Regex, test: Char => Boolean, gen: Gen[Random, Char] = Gen.char) =
-    testM(name) {
+  private def singleChar(
+      name: String,
+      r: Regex,
+      f: Char => Boolean,
+      gen: Gen[Any, Char] = Gen.char
+  ): ZSpec[TestConfig, Any] =
+    test(name) {
       val compiled = r.compile
       check(gen) { ch =>
-        assertTrue(compiled.test(0, ch.toString) == 1 == test(ch))
+        assertTrue(compiled.test(0, ch.toString) == 1 == f(ch))
       }
     }
 
-  @nowarn private def multiCharPassing(name: String, r: Regex, gen: Gen[Random, Char]) =
-    testM(name) {
+  private def multiCharPassing(
+      name: String,
+      r: Regex,
+      gen: Gen[Any, Char]
+  ): ZSpec[Sized with TestConfig, Any] =
+    test(name) {
       val compiled = r.compile
       check(Gen.chunkOf1(gen)) { input =>
         assertTrue(compiled.test(0, new String(input.toArray)) == input.length)
       }
     }
 
-  @nowarn private def multiCharFailing(name: String, r: Regex, gen: Gen[Random, Char], counterexample: Char) =
-    testM(name) {
+  private def multiCharFailing(
+      name: String,
+      r: Regex,
+      gen: Gen[Any, Char],
+      counterexample: Char
+  ): ZSpec[Sized with TestConfig, Any] =
+    test(name) {
       val compiled = r.compile
       check(Gen.chunkOf1(gen)) { input =>
         Random.nextIntBetween(0, input.length).map { injectionPoint =>

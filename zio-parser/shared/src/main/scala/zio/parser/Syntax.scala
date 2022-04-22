@@ -576,7 +576,7 @@ object Syntax {
   lazy val letter: Syntax[String, Char, Char, Char, Char] = regexChar(Regex.anyLetter, "not a letter")
 
   /** Syntax of a single whitespace character */
-  lazy val whitespace: Syntax[String, Char, Char, Char, Char] = regexChar(Regex.whitespace, "not a whitespace")
+  lazy val whitespace: Syntax[String, Char, Char, Char, Char] = regexChar(Regex.anyWhitespace, "not a whitespace")
 
   /** Syntax that in parser mode results in the current input stream position */
   lazy val index: Syntax[Nothing, Any, Nothing, Any, Int] =

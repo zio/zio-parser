@@ -504,6 +504,13 @@ object Syntax {
       Printer.ParseRegex(regex, None)
     )
 
+  /** Syntax that combines all the constructors of subclasses of a sum type */
+  def oneOf[I, O, A](
+      x: Syntax[String, I, O, _ <: A, _ <: A],
+      xs: Syntax[String, I, O, _ <: A, _ <: A]*
+  ): Syntax[String, I, O, A, A] =
+    xs.map(_.widen[A]).foldLeft(x.widen[A])(_ | _)
+
   /** Syntax that parses/prints a single character */
   val anyChar: Syntax[Nothing, Char, Char, Char] =
     unsafeRegexChar(

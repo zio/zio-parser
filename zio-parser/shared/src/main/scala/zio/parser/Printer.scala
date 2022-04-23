@@ -170,7 +170,7 @@ sealed trait Printer[+Err, +Out, -Value] { self =>
 
   /** Ignores the printer's result and input and use 'result' and 'value' instead */
   final def asPrinted[Value2](matches: Value2, value: Value): Printer[Err, Out, Value2] =
-    Printer.Ignore(self, matches, value)
+    Printer.Ignore[Err, Out, Value, Value2](self, matches, value)
 
   /** Maps the printer's input value with function 'f' */
   final def contramap[Value2](f: Value2 => Value): Printer[Err, Out, Value2] =
@@ -238,11 +238,11 @@ object Printer {
       from: Value2 => Value
   ) extends Printer[Err2, Out, Value2]
 
-  final case class Ignore[Err, Err2, Out, Value, Value2](
+  final case class Ignore[Err, Out, Value, Value2](
       printer: Printer[Err, Out, Value],
       matches: Value2,
-      from: Value2
-  ) extends Printer[Err2, Out, Value2]
+      from: Value
+  ) extends Printer[Err, Out, Value2]
 
   final case class Zip[Err, Err2, Out, Out2, Value2, Value, ZippedValue](
       left: Printer[Err, Out, Value],

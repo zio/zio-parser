@@ -19,7 +19,7 @@ class PrinterImpl[Err, Out, Value](printer: Printer[Err, Out, Value]) {
     var result: Either[Any, Any] = Right(())
     val stack: Stack[Cont]       = Stack()
 
-    def finish(r: Either[Any, Any]): Unit =
+    def finish(r: Either[Any, Unit]): Unit =
       if (stack.isEmpty) {
         result = r
         current = null
@@ -36,9 +36,7 @@ class PrinterImpl[Err, Out, Value](printer: Printer[Err, Out, Value]) {
         case l @ Printer.Lazy(_) =>
           current = l.memoized
 
-        case Printer.Succeed(value) =>
-          if (value != ())
-            throw new IllegalStateException("Succeed should always return () was: " + value)
+        case Printer.Succeed(_) =>
           finish(Right(()))
 
         case Printer.Fail(failure) =>
@@ -53,26 +51,26 @@ class PrinterImpl[Err, Out, Value](printer: Printer[Err, Out, Value]) {
           current = syntax
           stack.push(Cont {
             case Left(failure) => (Printer.Fail(failure), oldInput, None)
-            case Right(value)  => (Printer.Succeed(()), oldInput, None)
+            case Right(_)      => (Printer.Succeed(()), oldInput, None)
           })
 
         case Printer.Passthrough() =>
           output.write(input.asInstanceOf[Out])
-          finish(Right(input))
+          finish(Right(()))
 
         case parseRegex @ Printer.ParseRegex(_, Some(failure)) =>
           val chunk = input.asInstanceOf[Chunk[Char]]
           if (parseRegex.compiledRegex.test(0, new String(chunk.toArray)) >= 0) {
             for (out <- input.asInstanceOf[Chunk[Out]])
               output.write(out)
-            finish(Right(input))
+            finish(Right(()))
           } else {
             finish(Left(failure))
           }
         case Printer.ParseRegex(_, None)                       =>
           for (out <- input.asInstanceOf[Chunk[Out]])
             output.write(out)
-          finish(Right(input))
+          finish(Right(()))
         case Printer.SkipRegex(_, as)                          =>
           for (out <- as.asInstanceOf[Chunk[Out]])
             output.write(out)
@@ -82,19 +80,19 @@ class PrinterImpl[Err, Out, Value](printer: Printer[Err, Out, Value]) {
           val char = input.asInstanceOf[Char]
           if (parseRegex.compiledRegex.test(0, char.toString) > 0) {
             output.write(input.asInstanceOf[Out])
-            finish(Right(input))
+            finish(Right(()))
           } else {
             finish(Left(failure))
           }
         case Printer.ParseRegexLastChar(_, None)                       =>
           output.write(input.asInstanceOf[Out])
-          finish(Right(input))
+          finish(Right(()))
 
         case Printer.MapError(syntax, f) =>
           current = syntax
           stack.push(Cont {
             case Left(failure) => (Printer.Fail(f.asInstanceOf[Any => Any](failure)), input, None)
-            case Right(value)  => (Printer.Succeed(()), input, None)
+            case Right(_)      => (Printer.Succeed(()), input, None)
           })
 
         case Printer.Ignore(syntax, to, from) =>
@@ -116,7 +114,7 @@ class PrinterImpl[Err, Out, Value](printer: Printer[Err, Out, Value]) {
           current = syntax
           stack.push(Cont {
             case Left(failure) => (Printer.Fail(failure), oldInput, None)
-            case Right(value)  => (Printer.Succeed(()), oldInput, None)
+            case Right(_)      => (Printer.Succeed(()), oldInput, None)
           })
 
         case Printer.ContramapEither(syntax, from) =>
@@ -245,13 +243,13 @@ class PrinterImpl[Err, Out, Value](printer: Printer[Err, Out, Value]) {
               })
 
             case None =>
-              finish(Right(None))
+              finish(Right(()))
           }
 
         case rep @ Printer.Repeat(inner, _, _) =>
           val inputChunk = input.asInstanceOf[Chunk[Any]]
           if (inputChunk.isEmpty) {
-            finish(Right(Chunk.empty))
+            finish(Right(()))
           } else {
             val head = inputChunk.head
             val tail = inputChunk.tail

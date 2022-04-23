@@ -131,6 +131,7 @@ lazy val benchmarks = (project in file("benchmarks"))
 lazy val docs = project
   .in(file("zio-parser-docs"))
   .settings(stdSettings("zio-parser"))
+  .settings(macroDefinitionSettings)
   .settings(
     scalaVersion                               := Scala213,
     publish / skip                             := true,

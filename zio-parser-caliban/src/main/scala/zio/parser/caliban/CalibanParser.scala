@@ -766,7 +766,7 @@ object CalibanParser {
       )
 
   lazy val typeDefinition: CalibanSyntax[TypeDefinition, TypeDefinition] = {
-    val parser: Parser[String, Char, TypeDefinition]                   = (stringValue <~ whitespaceWithComment).?.asParser.flatMap {
+    val parser: Parser[String, Char, TypeDefinition]   = (stringValue <~ whitespaceWithComment).?.asParser.flatMap {
       stringValOpt =>
         val description = stringValOpt.map(_.value)
 
@@ -777,8 +777,8 @@ object CalibanParser {
           unionTypeDefinition(description).widen[TypeDefinition].asParser |
           scalarTypeDefinition(description).widen[TypeDefinition].asParser
     }
-    val printer: Printer[String, Char, TypeDefinition, TypeDefinition] =
-      Printer.byValue[String, Char, TypeDefinition, TypeDefinition] { (d: TypeDefinition) =>
+    val printer: Printer[String, Char, TypeDefinition] =
+      Printer.byValue[String, Char, TypeDefinition] { (d: TypeDefinition) =>
         objectTypeDefinition(d.description).widen[TypeDefinition].asPrinter(d) |
           interfaceTypeDefinition(d.description).widen[TypeDefinition].asPrinter(d) |
           inputObjectTypeDefinition(d.description).widen[TypeDefinition].asPrinter(d) |

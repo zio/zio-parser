@@ -20,7 +20,7 @@ import zio.parser.target.Target
   */
 class Syntax[+Err, -In, +Out, -Value, +Result] private (
     val asParser: Parser[Err, In, Result],
-    val asPrinter: Printer[Err, Out, Value, Result]
+    val asPrinter: Printer[Err, Out, Value]
 ) { self =>
 
   /** Maps the parser with the given function 'f' */
@@ -29,7 +29,7 @@ class Syntax[+Err, -In, +Out, -Value, +Result] private (
 
   /** Maps the printer with the given function 'f' */
   final def mapPrinter[Err2 >: Err, Out2, Value2 <: Value, Result2 >: Result](
-      f: Printer[Err, Out, Value, Result] => Printer[Err2, Out2, Value2, Result2]
+      f: Printer[Err, Out, Value] => Printer[Err2, Out2, Value2]
   ) =
     new Syntax(asParser, f(asPrinter))
 
@@ -42,7 +42,7 @@ class Syntax[+Err, -In, +Out, -Value, +Result] private (
   ): Syntax[Err, In, Out, Value2, Result2] =
     new Syntax(
       asParser.map(to),
-      asPrinter.transform(to, from)
+      asPrinter.contramap(from)
     )
 
   /** Sets the result to 'result' and the value to be printed to 'value' */
@@ -61,7 +61,7 @@ class Syntax[+Err, -In, +Out, -Value, +Result] private (
   ): Syntax[Err2, In, Out, Value2, Result2] =
     new Syntax(
       asParser.transformEither(to),
-      asPrinter.transformEither(to, from)
+      asPrinter.contramapEither(from)
     )
 
   /** Maps the parser's successful result with the given function 'to', and maps the value to be printed with the given
@@ -272,7 +272,7 @@ class Syntax[+Err, -In, +Out, -Value, +Result] private (
   final def not[Err2 >: Err](failure: Err2): Syntax[Err2, In, Out, Value, Unit] =
     new Syntax(
       asParser.not(failure),
-      asPrinter.unit
+      asPrinter
     )
 
   /** Concatenates the syntaxes 'left', then this, then 'right'.
@@ -313,7 +313,7 @@ class Syntax[+Err, -In, +Out, -Value, +Result] private (
   ): Syntax[Err, Char, Char, String, String] =
     new Syntax(
       asParser.string,
-      Printer.anyString
+      Printer.any
     )
 
   /** Flattens a result of parsed strings to a single string */
@@ -343,14 +343,14 @@ class Syntax[+Err, -In, +Out, -Value, +Result] private (
   final def unit: Syntax[Err, In, Out, Value, Unit] =
     new Syntax(
       self.asParser.unit,
-      self.asPrinter.unit
+      self.asPrinter
     )
 
   /** Syntax that does not consume any input but prints 'printed' and results in unit */
   final def unit(printed: Value): Syntax[Err, In, Out, Unit, Unit] =
     new Syntax(
       self.asParser.unit,
-      self.asPrinter.asPrinted((), printed)
+      self.asPrinter.asPrinted(printed, printed)
     )
 
   /** Converts a Chunk syntax to a List syntax */
@@ -441,13 +441,13 @@ class Syntax[+Err, -In, +Out, -Value, +Result] private (
 object Syntax {
   private[parser] def from[Err, In, Out, Value, Result](
       parser: Parser[Err, In, Result],
-      printer: Printer[Err, Out, Value, Result]
+      printer: Printer[Err, Out, Value]
   ): Syntax[Err, In, Out, Value, Result] =
     new Syntax(parser, printer)
 
   /** Syntax that does not parse or print anything but succeeds with 'value' */
   def succeed[Result](value: Result): Syntax[Nothing, Any, Nothing, Any, Result] =
-    new Syntax(Parser.Succeed(value), Printer.Succeed(value))
+    new Syntax(Parser.Succeed(value), Printer.any)
 
   /** Syntax that does not pares or print anything but fails with 'failure' */
   def fail[Err](failure: Err): Syntax[Err, Any, Nothing, Any, Nothing] =
@@ -582,7 +582,7 @@ object Syntax {
   lazy val index: Syntax[Nothing, Any, Nothing, Any, Int] =
     from(
       Parser.index,
-      Printer.succeed(0)
+      Printer.any
     )
 
   /** Syntax that in parser mode only succeeds if the input stream has been consumed fully.
@@ -592,6 +592,6 @@ object Syntax {
   lazy val end: Syntax[Nothing, Any, Nothing, Any, Unit] =
     from(
       Parser.end,
-      Printer.unit
+      Printer.any
     )
 }

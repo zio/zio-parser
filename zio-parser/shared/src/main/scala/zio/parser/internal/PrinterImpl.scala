@@ -9,8 +9,8 @@ import scala.annotation.nowarn
 
 /** Interpreter for Printer
   */
-class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Result]) {
-  type ErasedPrinter = Printer[Any, Any, Any, Any]
+class PrinterImpl[Err, Out, Value](printer: Printer[Err, Out, Value]) {
+  type ErasedPrinter = Printer[Any, Any, Any]
   case class Cont(f: Either[Any, Any] => (ErasedPrinter, Any, Option[Cont]))
 
   def run(value: Value, output: Target[Out]): Either[Err, Unit] = {
@@ -101,7 +101,8 @@ class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Res
             input = from
             current = syntax
             stack.push(Cont {
-              case Left(failure) => (Printer.Fail(failure), oldInput, None)
+              case Left(failure) =>
+                (Printer.Fail(failure), oldInput, None)
               case Right(_)      =>
                 (Printer.Succeed(to), oldInput, None)
             })
@@ -109,17 +110,17 @@ class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Res
             finish(Left(Printer.Failed(ParserError.UnknownFailure(Nil, 0)))) // TODO
           }
 
-        case Printer.Transform(syntax, to, from) =>
+        case Printer.Contramap(syntax, from) =>
           val oldInput = input
           input = from.asInstanceOf[Any => Any](input)
           current = syntax
           stack.push(Cont {
             case Left(failure) => (Printer.Fail(failure), oldInput, None)
             case Right(value)  =>
-              (Printer.Succeed(to.asInstanceOf[Any => Any](value)), oldInput, None)
+              (Printer.Succeed(()), oldInput, None)
           })
 
-        case Printer.TransformEither(syntax, to, from) =>
+        case Printer.ContramapEither(syntax, from) =>
           val oldInput = input
           from.asInstanceOf[Any => Either[Any, Any]](input) match {
             case Left(failure)   =>
@@ -130,12 +131,12 @@ class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Res
               stack.push(Cont {
                 case Left(failure) => (Printer.Fail(failure), oldInput, None)
                 case Right(value)  =>
-                  to.asInstanceOf[Any => Either[Any, Any]](value) match {
-                    case Left(failure) =>
-                      (Printer.Fail(failure), oldInput, None)
-                    case Right(value)  =>
-                      (Printer.Succeed(value), oldInput, None)
-                  }
+//                  to.asInstanceOf[Any => Either[Any, Any]](value) match {
+//                    case Left(failure) =>
+//                      (Printer.Fail(failure), oldInput, None)
+//                    case Right(value)  =>
+                  (Printer.Succeed(()), oldInput, None)
+//                  }
               })
           }
 
@@ -203,14 +204,6 @@ class PrinterImpl[Err, Out, Value, Result](printer: Printer[Err, Out, Value, Res
               (right.asInstanceOf[ErasedPrinter], valueB, Some(k2))
           }
           stack.push(k1)
-
-        case Printer.FlatMapResult(syntax, f) =>
-          val oldInput = input
-          current = syntax
-          stack.push(Cont {
-            case Left(failure) => (Printer.Fail(failure), oldInput, None)
-            case Right(result) => (f.asInstanceOf[Any => ErasedPrinter](result), oldInput, None)
-          })
 
         case Printer.OrElseEither(left, right) =>
           val oldInput    = input

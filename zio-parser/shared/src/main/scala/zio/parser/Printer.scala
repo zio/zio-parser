@@ -169,7 +169,7 @@ sealed trait Printer[+Err, +Out, -Value] { self =>
     contramapTo(narrow, failure)
 
   /** Ignores the printer's result and input and use 'result' and 'value' instead */
-  final def asPrinted[Value2](matches: Value2, value: Value2): Printer[Err, Out, Value2] =
+  final def asPrinted[Value2](matches: Value2, value: Value): Printer[Err, Out, Value2] =
     Printer.Ignore(self, matches, value)
 
   /** Maps the printer's input value with function 'f' */
@@ -199,6 +199,8 @@ sealed trait Printer[+Err, +Out, -Value] { self =>
 }
 
 object Printer {
+  val unit: Printer[Nothing, Nothing, Any] = Printer.Succeed(())
+
   final case class Lazy[Err, Out, Value](inner: () => Printer[Err, Out, Value]) extends Printer[Err, Out, Value] {
     lazy val memoized: Printer[Err, Out, Value] = inner()
   }
@@ -242,11 +244,10 @@ object Printer {
       from: Value2
   ) extends Printer[Err2, Out, Value2]
 
-  final case class Zip[Err, Err2, Out, Out2, Value2, Value, Result, Result2, ZippedValue, ZippedResult](
+  final case class Zip[Err, Err2, Out, Out2, Value2, Value, ZippedValue](
       left: Printer[Err, Out, Value],
       right: Printer[Err2, Out2, Value2],
-      unzipValue: ZippedValue => (Value, Value2),
-      zipResult: (Result, Result2) => ZippedResult
+      unzipValue: ZippedValue => (Value, Value2)
   ) extends Printer[Err2, Out2, ZippedValue]
 
   final case class ZipLeft[Err, Err2, Out, Out2, Value2, Value](
@@ -288,7 +289,7 @@ object Printer {
   def fail[Err](failure: Err): Printer[Err, Nothing, Any] = Fail(failure)
 
   /** Printer that just emits its input value */
-  def any[Result]: Printer[Nothing, Nothing, Result] = Passthrough()
+  def any: Printer[Nothing, Nothing, Any] = Passthrough()
 
   /** Printer determined by a function on the input value */
   def byValue[Err, Out, Value](f: Value => Printer[Err, Out, Any]): Printer[Err, Out, Value] =
@@ -326,7 +327,7 @@ object Printer {
 
   /** Printer that emits the input if it is equals to 'value'. Otherwise fails with 'failure' */
   def exactly[Err, Out](value: Out, failure: Err)(implicit ev: Out =!= Char): Printer[Err, Out, Out] =
-    any[Out].filter(_ == value, failure)
+    any.filter(_ == value, failure)
 
   /** Printer that emits the input except if it is equals to 'value', in which case it fails */
   def except[Out](value: Out)(implicit ev: Out =!= Char): Printer[String, Out, Out] =
@@ -334,7 +335,7 @@ object Printer {
 
   /** Printer that emits the input except if it is equals to 'value', in which case it fails with 'failure' */
   def except[Err, Out](value: Out, failure: Err)(implicit ev: Out =!= Char): Printer[Err, Out, Out] =
-    any[Out].filter(_ != value, failure)
+    any.filter(_ != value, failure)
 
   /** Printer that prints the given chunk of characters in 'value' */
   def regexDiscard(regex: Regex, value: Chunk[Char]): Printer[Nothing, Char, Unit] =
@@ -378,8 +379,8 @@ object Printer {
       .contramap((s: String) => Chunk.fromArray(s.toCharArray))
 
   /** Prints a specific string 'str' and results in 'value' */
-  def string(str: String): Printer[Nothing, Char, Unit] =
-    regexDiscard(Regex.string(str), Chunk.fromArray(str.toCharArray))
+  def string[Result](str: String, value: Result): Printer[Nothing, Char, Result] =
+    regexDiscard(Regex.string(str), Chunk.fromArray(str.toCharArray)).asPrinted(value, ())
 
   /** Prints a single alpha-numeric character */
   val alphaNumeric: Printer[String, Char, Char] = regexChar(Regex.anyAlphaNumeric, "not alphanumeric")

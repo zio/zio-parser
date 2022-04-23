@@ -426,7 +426,7 @@ object ParserSpec extends ZIOSpecDefault {
               (for {
                 ch1 <- Parser.anyChar
                 ch2 <- Parser.anyChar
-              } yield (ch1, ch2)) <=> Printer.string("he"),
+              } yield (ch1, ch2)) <=> Printer.string("he", ('h', 'e')),
               "he"
             )(isRight(equalTo(('h', 'e'))))
           )

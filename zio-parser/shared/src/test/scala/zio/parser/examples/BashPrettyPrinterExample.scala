@@ -461,7 +461,7 @@ object BashPrettyPrinterExample extends ZIOSpecDefault {
   def printS(s: String): Printer[Nothing, Char, Any] =
     Printer.printString(s)
 
-  val indentation                          = Printer.any // TODO
+  val indentation                          = Printer.unit // TODO
   // Printer.anyString
 //    .statefulTransform(
 //      (value: String, _: Any) => Right((value)),
@@ -551,15 +551,15 @@ object BashPrettyPrinterExample extends ZIOSpecDefault {
       case (req, printer) :: rest =>
         val (sameReq, tail)             = rest.span { case (r, _) => r == req }
         val partsToMerge: List[PP[Any]] = printer :: sameReq.map { case (_, p) => p }
-        val mergedParts                 = partsToMerge.foldLeft[PP[Any]](Printer.any)(_ ~> _)
+        val mergedParts                 = partsToMerge.foldLeft[PP[Any]](Printer.unit)(_ ~> _)
         (req, mergedParts) :: normalizePartsWithQuoteRequirements(tail)
     }
 
   private def prettyPrintBashString(string: String): (BashStringRequirements, PP[Any]) =
     if (string.isEmpty) {
-      (BashStringRequirements.NeedQuotes, Printer.any)
+      (BashStringRequirements.NeedQuotes, Printer.unit)
     } else {
-      string.foldLeft[(BashStringRequirements, PP[Any])]((BashStringRequirements.NoRequirements, Printer.any)) {
+      string.foldLeft[(BashStringRequirements, PP[Any])]((BashStringRequirements.NoRequirements, Printer.unit)) {
         case ((reqs, p), ch) if ch.isWhitespace                => (reqs.needsQuotes, p ~> print(ch))
         case ((reqs, p), ch) if charsNeedsQuoting.contains(ch) => (reqs.needsQuotes, p ~> print(ch))
         case ((reqs, p), ch) if charsNeedsEscape.contains(ch)  => (reqs.needsQuotes, p ~> print('\\') ~> print(ch))
@@ -605,7 +605,7 @@ object BashPrettyPrinterExample extends ZIOSpecDefault {
     case BashExpressions.Interpolated(parts)        =>
       val renderedParts   = renderInterpolatedParts(parts)
       val normalizedParts = normalizePartsWithQuoteRequirements(renderedParts)
-      normalizedParts.foldLeft[PP[Any]](Printer.any) { case (s, (req, p)) =>
+      normalizedParts.foldLeft[PP[Any]](Printer.unit) { case (s, (req, p)) =>
         s ~> renderStringPart(req, p)
       }
 
@@ -622,7 +622,7 @@ object BashPrettyPrinterExample extends ZIOSpecDefault {
 //      .mapState { (state: BashPrinterState) => state.copy(indentation = state.indentation - 1) }
 
   lazy val printStatement: PP[BashStatement] = Printer.byValue {
-    case BashStatements.Nop                                      => Printer.any
+    case BashStatements.Nop                                      => Printer.unit
     case BashStatements.Assign(target, expression)               =>
       printIdentifier(target) ~> print('=') ~> printExpression(expression)
     case BashStatements.Command(name, params, None)              =>
@@ -640,7 +640,7 @@ object BashPrettyPrinterExample extends ZIOSpecDefault {
         printS("fi")
     case BashStatements.Declare(options, name, initialValue)     =>
       val opts   = if (options.isEmpty) {
-        Printer.any
+        Printer.unit
       } else {
         space ~> printDeclareOption.repeatWithSep(print(' ')).apply(Chunk.fromIterable(options))
       }
@@ -651,7 +651,7 @@ object BashPrettyPrinterExample extends ZIOSpecDefault {
       }
     case BashStatements.Local(options, name, initialValue)       =>
       val opts: PP[Any] = if (options.isEmpty) {
-        Printer.any
+        Printer.unit
       } else {
         space ~> printDeclareOption.repeatWithSep(print(' ')).apply(Chunk.fromIterable(options))
       }

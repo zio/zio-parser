@@ -28,7 +28,7 @@ class Syntax[+Err, -In, +Out, -Value, +Result] private (
     new Syntax(f(asParser), asPrinter)
 
   /** Maps the printer with the given function 'f' */
-  final def mapPrinter[Err2 >: Err, Out2, Value2 <: Value, Result2 >: Result](
+  final def mapPrinter[Err2 >: Err, Out2, Value2 <: Value](
       f: Printer[Err, Out, Value] => Printer[Err2, Out2, Value2]
   ) =
     new Syntax(asParser, f(asPrinter))
@@ -313,7 +313,7 @@ class Syntax[+Err, -In, +Out, -Value, +Result] private (
   ): Syntax[Err, Char, Char, String, String] =
     new Syntax(
       asParser.string,
-      Printer.any
+      Printer.anyString
     )
 
   /** Flattens a result of parsed strings to a single string */
@@ -350,7 +350,7 @@ class Syntax[+Err, -In, +Out, -Value, +Result] private (
   final def unit(printed: Value): Syntax[Err, In, Out, Unit, Unit] =
     new Syntax(
       self.asParser.unit,
-      self.asPrinter.asPrinted(printed, printed)
+      self.asPrinter.asPrinted((), printed)
     )
 
   /** Converts a Chunk syntax to a List syntax */
@@ -447,7 +447,7 @@ object Syntax {
 
   /** Syntax that does not parse or print anything but succeeds with 'value' */
   def succeed[Result](value: Result): Syntax[Nothing, Any, Nothing, Any, Result] =
-    new Syntax(Parser.Succeed(value), Printer.any)
+    new Syntax(Parser.Succeed(value), Printer.Succeed(value))
 
   /** Syntax that does not pares or print anything but fails with 'failure' */
   def fail[Err](failure: Err): Syntax[Err, Any, Nothing, Any, Nothing] =
@@ -582,7 +582,7 @@ object Syntax {
   lazy val index: Syntax[Nothing, Any, Nothing, Any, Int] =
     from(
       Parser.index,
-      Printer.any
+      Printer.Succeed(0)
     )
 
   /** Syntax that in parser mode only succeeds if the input stream has been consumed fully.
@@ -592,6 +592,6 @@ object Syntax {
   lazy val end: Syntax[Nothing, Any, Nothing, Any, Unit] =
     from(
       Parser.end,
-      Printer.any
+      Printer.Succeed(())
     )
 }

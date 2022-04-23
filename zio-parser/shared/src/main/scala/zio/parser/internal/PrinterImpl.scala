@@ -37,7 +37,9 @@ class PrinterImpl[Err, Out, Value](printer: Printer[Err, Out, Value]) {
           current = l.memoized
 
         case Printer.Succeed(value) =>
-          finish(Right(value))
+          if (value != ())
+            throw new IllegalStateException("Succeed should always return () was: " + value)
+          finish(Right(()))
 
         case Printer.Fail(failure) =>
           finish(Left(failure))
@@ -51,7 +53,7 @@ class PrinterImpl[Err, Out, Value](printer: Printer[Err, Out, Value]) {
           current = syntax
           stack.push(Cont {
             case Left(failure) => (Printer.Fail(failure), oldInput, None)
-            case Right(value)  => (Printer.Succeed(value), oldInput, None)
+            case Right(value)  => (Printer.Succeed(()), oldInput, None)
           })
 
         case Printer.Passthrough() =>
@@ -92,7 +94,7 @@ class PrinterImpl[Err, Out, Value](printer: Printer[Err, Out, Value]) {
           current = syntax
           stack.push(Cont {
             case Left(failure) => (Printer.Fail(f.asInstanceOf[Any => Any](failure)), input, None)
-            case Right(value)  => (Printer.Succeed(value), input, None)
+            case Right(value)  => (Printer.Succeed(()), input, None)
           })
 
         case Printer.Ignore(syntax, to, from) =>
@@ -101,10 +103,8 @@ class PrinterImpl[Err, Out, Value](printer: Printer[Err, Out, Value]) {
             input = from
             current = syntax
             stack.push(Cont {
-              case Left(failure) =>
-                (Printer.Fail(failure), oldInput, None)
-              case Right(_)      =>
-                (Printer.Succeed(to), oldInput, None)
+              case Left(failure) => (Printer.Fail(failure), oldInput, None)
+              case Right(_)      => (Printer.Succeed(()), oldInput, None)
             })
           } else {
             finish(Left(Printer.Failed(ParserError.UnknownFailure(Nil, 0)))) // TODO
@@ -116,8 +116,7 @@ class PrinterImpl[Err, Out, Value](printer: Printer[Err, Out, Value]) {
           current = syntax
           stack.push(Cont {
             case Left(failure) => (Printer.Fail(failure), oldInput, None)
-            case Right(value)  =>
-              (Printer.Succeed(()), oldInput, None)
+            case Right(value)  => (Printer.Succeed(()), oldInput, None)
           })
 
         case Printer.ContramapEither(syntax, from) =>
@@ -130,41 +129,32 @@ class PrinterImpl[Err, Out, Value](printer: Printer[Err, Out, Value]) {
               current = syntax
               stack.push(Cont {
                 case Left(failure) => (Printer.Fail(failure), oldInput, None)
-                case Right(value)  =>
-//                  to.asInstanceOf[Any => Either[Any, Any]](value) match {
-//                    case Left(failure) =>
-//                      (Printer.Fail(failure), oldInput, None)
-//                    case Right(value)  =>
+                case Right(_)      =>
                   (Printer.Succeed(()), oldInput, None)
-//                  }
               })
           }
 
-        case Printer.Zip(left, right, unzipValue, zipResult) =>
+        case Printer.Zip(left, right, unzipValue) =>
           val oldInput         = input
           val (valueA, valueB) = unzipValue.asInstanceOf[Any => (Any, Any)](input)
           current = left
           input = valueA
 
           val k1 = Cont {
-            case Left(failure)     =>
+            case Left(failure) =>
               (Printer.Fail(failure), oldInput, None)
-            case Right(leftResult) =>
+            case Right(_)      =>
               val k2 = Cont((rightResult: Either[Any, Any]) =>
                 rightResult match {
-                  case Left(failure)      => (Printer.Fail(failure), oldInput, None)
-                  case Right(rightResult) =>
-                    (
-                      Printer.Succeed(zipResult.asInstanceOf[(Any, Any) => Any](leftResult, rightResult)),
-                      oldInput,
-                      None
-                    )
+                  case Left(failure) => (Printer.Fail(failure), oldInput, None)
+                  case Right(_)      =>
+                    (Printer.Succeed(()), oldInput, None)
                 }
               )
               (right.asInstanceOf[ErasedPrinter], valueB, Some(k2))
           }
           stack.push(k1)
-        case Printer.ZipLeft(left, right)                    =>
+        case Printer.ZipLeft(left, right)         =>
           val oldInput = input
           val valueA   = input
           val valueB   = ()
@@ -172,19 +162,20 @@ class PrinterImpl[Err, Out, Value](printer: Printer[Err, Out, Value]) {
           input = valueA
 
           val k1 = Cont {
-            case Left(failure)     =>
+            case Left(failure) =>
               (Printer.Fail(failure), oldInput, None)
-            case Right(leftResult) =>
+            case Right(_)      =>
               val k2 = Cont((rightResult: Either[Any, Any]) =>
                 rightResult match {
                   case Left(failure) => (Printer.Fail(failure), oldInput, None)
-                  case Right(_)      => (Printer.Succeed(leftResult), oldInput, None)
+                  case Right(_)      => (Printer.Succeed(()), oldInput, None)
                 }
               )
               (right.asInstanceOf[ErasedPrinter], valueB, Some(k2))
           }
           stack.push(k1)
-        case Printer.ZipRight(left, right)                   =>
+
+        case Printer.ZipRight(left, right) =>
           val oldInput = input
           val valueA   = ()
           val valueB   = input
@@ -197,8 +188,8 @@ class PrinterImpl[Err, Out, Value](printer: Printer[Err, Out, Value]) {
             case Right(_)      =>
               val k2 = Cont((rightResult: Either[Any, Any]) =>
                 rightResult match {
-                  case Left(failure)      => (Printer.Fail(failure), oldInput, None)
-                  case Right(rightResult) => (Printer.Succeed(rightResult), oldInput, None)
+                  case Left(failure) => (Printer.Fail(failure), oldInput, None)
+                  case Right(_)      => (Printer.Succeed(()), oldInput, None)
                 }
               )
               (right.asInstanceOf[ErasedPrinter], valueB, Some(k2))
@@ -214,7 +205,7 @@ class PrinterImpl[Err, Out, Value](printer: Printer[Err, Out, Value]) {
               current = left
               stack.push(Cont {
                 case Left(failure) => (Printer.Fail(failure), oldInput, None)
-                case Right(value)  => (Printer.Succeed(Left(value)), oldInput, None)
+                case Right(_)      => (Printer.Succeed(()), oldInput, None)
               })
 
             case Right(rightInput) =>
@@ -222,7 +213,7 @@ class PrinterImpl[Err, Out, Value](printer: Printer[Err, Out, Value]) {
               current = right
               stack.push(Cont {
                 case Left(failure) => (Printer.Fail(failure), oldInput, None)
-                case Right(value)  => (Printer.Succeed(Right(value)), oldInput, None)
+                case Right(_)      => (Printer.Succeed(()), oldInput, None)
               })
 
           }
@@ -232,12 +223,12 @@ class PrinterImpl[Err, Out, Value](printer: Printer[Err, Out, Value]) {
           val capture = output.capture()
 
           stack.push(Cont {
-            case Left(_)       =>
+            case Left(_)  =>
               output.drop(capture)
               (right.asInstanceOf[ErasedPrinter], input, None)
-            case Right(result) =>
+            case Right(_) =>
               output.emit(capture)
-              (Printer.Succeed(result), input, None)
+              (Printer.Succeed(()), input, None)
           })
 
         case Printer.Optional(inner) =>
@@ -250,7 +241,7 @@ class PrinterImpl[Err, Out, Value](printer: Printer[Err, Out, Value]) {
               current = inner
               stack.push(Cont {
                 case Left(failure) => (Printer.Fail(failure), oldInput, None)
-                case Right(value)  => (Printer.Succeed(Some(value)), oldInput, None)
+                case Right(_)      => (Printer.Succeed(()), oldInput, None)
               })
 
             case None =>
@@ -268,17 +259,17 @@ class PrinterImpl[Err, Out, Value](printer: Printer[Err, Out, Value]) {
             current = inner
             input = head
             stack.push(Cont {
-              case Left(failure)     =>
+              case Left(failure) =>
                 (Printer.Fail(failure), inputChunk, None)
-              case Right(headResult) =>
+              case Right(_)      =>
                 (
                   rep.asInstanceOf[ErasedPrinter],
                   tail,
                   Some(Cont {
-                    case Left(failure)     =>
+                    case Left(failure) =>
                       (Printer.Fail(failure), inputChunk, None)
-                    case Right(tailResult) =>
-                      (Printer.Succeed(headResult +: tailResult.asInstanceOf[Chunk[Any]]), inputChunk, None)
+                    case Right(_)      =>
+                      (Printer.Succeed(()), inputChunk, None)
                   })
                 )
             })

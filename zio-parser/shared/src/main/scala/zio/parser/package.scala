@@ -23,18 +23,6 @@ package object parser {
       Parser.ZipRight(Parser.Lazy(() => self), Parser.Lazy(() => that))
   }
 
-  implicit final class InvariantSyntaxOps[Err, In, Out, Value](private val self: Syntax[Err, In, Out, Value, Value])
-      extends AnyVal {
-
-    /** Ignores the result of the syntax and result in 'value' instead */
-    def as[Value2](value: Value2): Syntax[Err, In, Out, Value2, Value2] =
-      Syntax.from(
-        self.asParser.as(value),
-        self.asPrinter.asPrinted(value, value)
-      )
-
-  }
-
   implicit final class UnitSyntaxOps[Err, In, Out](private val self: Syntax[Err, In, Out, Unit, Any]) extends AnyVal {
 
     /** Symbolic alias for zipRight
@@ -52,6 +40,13 @@ package object parser {
       Syntax.from(
         self.asParser ~> that.asParser,
         self.asPrinter ~> that.asPrinter
+      )
+
+    /** Ignores the result of the syntax and result in 'value' instead */
+    def as[Result2](value: => Result2): Syntax[Err, In, Out, Result2, Result2] =
+      Syntax.from(
+        self.asParser.as(value),
+        self.asPrinter.asPrinted(value, ())
       )
   }
 
@@ -135,38 +130,32 @@ package object parser {
       Printer.ZipRight(Printer.Lazy(() => self), Printer.Lazy(() => that))
   }
 
-  implicit class PrinterOps[Err, Out, Value, Result](private val self: Printer[Err, Out, Value]) extends AnyVal {
+  implicit class PrinterOps[Err, Out, Value](private val self: Printer[Err, Out, Value]) extends AnyVal {
 
     /** Symbolic alias for zipRight
       */
-    def ~>[Result2](that: => Printer[Err, Out, Value]): Printer[Err, Out, Value] =
+    def ~>(that: => Printer[Err, Out, Value]): Printer[Err, Out, Value] =
       zipRight(that)
 
     /** Print this, then print that and use the second printer's result value. Both printers get the same value to be
       * printed.
       */
-    def zipRight[Result2](that: => Printer[Err, Out, Value]): Printer[Err, Out, Value] =
+    def zipRight(that: => Printer[Err, Out, Value]): Printer[Err, Out, Value] =
       Printer.ZipRight(Printer.Lazy(() => self), Printer.Lazy(() => that))
 
     /** Symbolic alias for zip */
-    final def ~[Err2 >: Err, Out2 >: Out, Value2, Result2, ZippedValue, ZippedResult](
+    final def ~[Err2 >: Err, Out2 >: Out, Value2, ZippedValue](
         that: => Printer[Err2, Out2, Value2]
-    )(implicit
-        zippableValue: PUnzippable.In[Value, Value2, ZippedValue],
-        zippableResult: PZippable.Out[Result, Result2, ZippedResult]
-    ): Printer[Err2, Out2, ZippedValue] =
+    )(implicit zippableValue: PUnzippable.In[Value, Value2, ZippedValue]): Printer[Err2, Out2, ZippedValue] =
       zip(that)
 
     /** Take a pair to be printed, print the left value with this, and the right value with 'that'. The result is a pair
       * of both printer's results.
       */
-    final def zip[Err2 >: Err, Out2 >: Out, Value2, Result2, ZippedValue, ZippedResult](
+    final def zip[Err2 >: Err, Out2 >: Out, Value2, ZippedValue](
         that: => Printer[Err2, Out2, Value2]
-    )(implicit
-        unzippableValue: PUnzippable.In[Value, Value2, ZippedValue],
-        zippableResult: PZippable.Out[Result, Result2, ZippedResult]
-    ): Printer[Err2, Out2, ZippedValue] =
-      Printer.Zip(Printer.Lazy(() => self), Printer.Lazy(() => that), unzippableValue.unzip, zippableResult.zip)
+    )(implicit unzippableValue: PUnzippable.In[Value, Value2, ZippedValue]): Printer[Err2, Out2, ZippedValue] =
+      Printer.Zip(Printer.Lazy(() => self), Printer.Lazy(() => that), unzippableValue.unzip)
 
   }
 }

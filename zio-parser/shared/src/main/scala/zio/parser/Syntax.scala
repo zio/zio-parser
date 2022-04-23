@@ -4,6 +4,9 @@ import zio.Chunk
 import zio.parser.Parser.ParserError
 import zio.parser.target.Target
 
+import scala.language.existentials
+import scala.reflect.ClassTag
+
 /** Syntax defines a parser and a printer together and provides combinators to simultaneously build them up from smaller
   * syntax fragments.
   *

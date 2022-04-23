@@ -10,13 +10,13 @@ object SyntaxSpec extends ZIOSpecDefault {
     self =>
     override def toString: String =
       self match {
-        case WeekDay.Monday => "Monday"
-        case WeekDay.Tuesday => "Tuesday"
+        case WeekDay.Monday    => "Monday"
+        case WeekDay.Tuesday   => "Tuesday"
         case WeekDay.Wednesday => "Wednesday"
-        case WeekDay.Thursday => "Thursday"
-        case WeekDay.Friday => "Friday"
-        case WeekDay.Saturday => "Saturday"
-        case WeekDay.Sunday => "Sunday"
+        case WeekDay.Thursday  => "Thursday"
+        case WeekDay.Friday    => "Friday"
+        case WeekDay.Saturday  => "Saturday"
+        case WeekDay.Sunday    => "Sunday"
       }
   }
 
@@ -35,13 +35,13 @@ object SyntaxSpec extends ZIOSpecDefault {
 
     case object Sunday extends WeekDay
 
-    val mondaySyntax = Syntax.string("Mon", Monday)
-    val tuesdaySyntax = Syntax.string("Tue", Tuesday)
+    val mondaySyntax    = Syntax.string("Mon", Monday)
+    val tuesdaySyntax   = Syntax.string("Tue", Tuesday)
     val wednesdaySyntax = Syntax.string("Wed", Wednesday)
-    val thursdaySyntax = Syntax.string("Thu", Thursday)
-    val fridaySyntax = Syntax.string("Fri", Friday)
-    val saturdaySyntax = Syntax.string("Sat", Saturday)
-    val sundaySyntax = Syntax.string("Sun", Sunday)
+    val thursdaySyntax  = Syntax.string("Thu", Thursday)
+    val fridaySyntax    = Syntax.string("Fri", Friday)
+    val saturdaySyntax  = Syntax.string("Sat", Saturday)
+    val sundaySyntax    = Syntax.string("Sun", Sunday)
 
     val arbitrary: Gen[Any, WeekDay] =
       Gen.oneOf(
@@ -54,7 +54,7 @@ object SyntaxSpec extends ZIOSpecDefault {
         Gen.const(Sunday)
       )
 
-    val weekDaySyntax: Syntax[String, Char, Char, WeekDay, WeekDay] = Syntax.oneOf(
+    val weekDaySyntax = Syntax.oneOf(
       mondaySyntax,
       tuesdaySyntax,
       wednesdaySyntax,
@@ -65,7 +65,6 @@ object SyntaxSpec extends ZIOSpecDefault {
     )
   }
 
-
   override def spec =
     suite("Syntax")(
       test("oneOf can parse sum types") {
@@ -74,18 +73,16 @@ object SyntaxSpec extends ZIOSpecDefault {
           assert(parsed)(isRight(equalTo(day)))
         }
       },
-
       test("oneOf can print sum types") {
         check(WeekDay.arbitrary) { day =>
           val printed = WeekDay.weekDaySyntax.printString(day)
           assert(printed)(isRight(equalTo(day.toString.take(3))))
         }
       },
-
       test("oneOf fails to parse garbage") {
         val parsed = WeekDay.weekDaySyntax.parseString("garbage")
         println(parsed)
         assert(parsed)(isLeft(isSubtype[AllBranchesFailed[String]](anything)))
-      },
+      }
     )
 }

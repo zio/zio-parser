@@ -16,59 +16,54 @@ object JsonExample extends ZIOSpecDefault {
     case object Null                                    extends Json
   }
 
-  val whitespace: Syntax[String, Char, Char, Char, Char]  = Syntax.charIn(' ', '\t', '\r', '\n')
-  val whitespaces: Syntax[String, Char, Char, Unit, Unit] = whitespace.*.asPrinted((), Chunk(' '))
+  val whitespace: Syntax[String, Char, Char, Char]  = Syntax.charIn(' ', '\t', '\r', '\n')
+  val whitespaces: Syntax[String, Char, Char, Unit] = whitespace.*.asPrinted((), Chunk(' '))
 
-  val quote: Syntax[String, Char, Char, Unit, Unit]            = Syntax.char('\"')
-  val escapedChar: Syntax[String, Char, Char, Char, Char]      = Syntax.charNotIn('\"') // TODO: real escaping support
-  val quotedString: Syntax[String, Char, Char, String, String] = (quote ~> escapedChar.*.string <~ quote)
+  val quote: Syntax[String, Char, Char, Unit]          = Syntax.char('\"')
+  val escapedChar: Syntax[String, Char, Char, Char]    = Syntax.charNotIn('\"') // TODO: real escaping support
+  val quotedString: Syntax[String, Char, Char, String] = (quote ~> escapedChar.*.string <~ quote)
 
-  val nul: Syntax[String, Char, Char, Json.Null.type, Json.Null.type] = Syntax.string("null", Json.Null)
+  val nul: Syntax[String, Char, Char, Json.Null.type] = Syntax.string("null", Json.Null)
 
-  val bool: Syntax[String, Char, Char, Json.Bool, Json.Bool] =
+  val bool: Syntax[String, Char, Char, Json.Bool] =
     Syntax.string("true", Json.Bool(true)) <>
       Syntax.string("false", Json.Bool(false))
 
-  val str: Syntax[String, Char, Char, Json.Str, Json.Str] = quotedString
+  val str: Syntax[String, Char, Char, Json.Str] = quotedString
     .transform(Json.Str.apply, (s: Json.Str) => s.value)
 
-  val digits                                                                                             = Syntax.digit.repeat
-  val signedIntStr: Syntax[String, Char, Char, (Option[Unit], Chunk[Char]), (Option[Unit], Chunk[Char])] =
+  val digits                                                                = Syntax.digit.repeat
+  val signedIntStr: Syntax[String, Char, Char, (Option[Unit], Chunk[Char])] =
     Syntax.char('-').? ~ digits
-  val frac: Syntax[String, Char, Char, Chunk[Char], Chunk[Char]]                                         = Syntax.char('.') ~> digits
-  val exp: Syntax[String, Char, Char, (Char, Char, Chunk[Char]), (Char, Char, Chunk[Char])]              =
+  val frac: Syntax[String, Char, Char, Chunk[Char]]                         = Syntax.char('.') ~> digits
+  val exp: Syntax[String, Char, Char, (Char, Char, Chunk[Char])]            =
     Syntax.charIn('e', 'E') ~ Syntax.charIn('+', '-') ~ digits
-  val jsonNum: Syntax[String, Char, Char, String, String]                                                = (signedIntStr ~ frac.? ~ exp.?).string
+  val jsonNum: Syntax[String, Char, Char, String]                           = (signedIntStr ~ frac.? ~ exp.?).string
 
-  val num: Syntax[String, Char, Char, Json.Num, Json.Num] = jsonNum
+  val num: Syntax[String, Char, Char, Json.Num] = jsonNum
     .transform(
       s => Json.Num(BigDecimal(s).bigDecimal),
       (v: Json.Num) => v.value.toString()
     )
 
-  val listSep: Syntax[String, Char, Char, Unit, Unit]           = Syntax.char(',').surroundedBy(whitespaces)
-  lazy val list: Syntax[String, Char, Char, Json.Arr, Json.Arr] =
+  val listSep: Syntax[String, Char, Char, Unit]       = Syntax.char(',').surroundedBy(whitespaces)
+  lazy val list: Syntax[String, Char, Char, Json.Arr] =
     (Syntax.char('[') ~> json.repeatWithSep(listSep) <~ Syntax.char(']'))
       .transform(Json.Arr.apply, (arr: Json.Arr) => arr.elements)
 
-  val keyValueSep: Syntax[String, Char, Char, Unit, Unit]                       = Syntax.char(':').surroundedBy(whitespaces)
-  lazy val keyValue: Syntax[String, Char, Char, (String, Json), (String, Json)] =
-    (str ~ keyValueSep ~ json).transform[(String, Json), (String, Json)](
+  val keyValueSep: Syntax[String, Char, Char, Unit]             = Syntax.char(':').surroundedBy(whitespaces)
+  lazy val keyValue: Syntax[String, Char, Char, (String, Json)] =
+    (str ~ keyValueSep ~ json).transform[(String, Json)](
       { case (key, value) => (key.value, value) },
       { case (key, value) => (Json.Str(key), value) }
     )
-  val obj: Syntax[String, Char, Char, Json.Obj, Json.Obj]                       = (Syntax.char('{') ~>
+  val obj: Syntax[String, Char, Char, Json.Obj]                 = (Syntax.char('{') ~>
     keyValue.repeatWithSep(listSep).surroundedBy(whitespaces) <~
     Syntax.char('}'))
     .transform(Json.Obj.apply, (arr: Json.Obj) => arr.fields)
 
-  lazy val json: Syntax[String, Char, Char, Json, Json] =
-    nul.widen[Json] <>
-      bool.widen[Json] <>
-      str.widen[Json] <>
-      num.widen[Json] <>
-      list.widen[Json] <>
-      obj.widen[Json]
+  lazy val json: Syntax[String, Char, Char, Json] =
+    nul.widen[Json] <> bool.widen[Json] <> str.widen[Json] <> num.widen[Json] <> list.widen[Json] <> obj.widen[Json]
 
 //  Debug.printParserTree(json.asParser)
 //  println("-----")
@@ -82,7 +77,7 @@ object JsonExample extends ZIOSpecDefault {
 
   def parsingTests(
       name: String,
-      json: Syntax[String, Char, Char, Json, Json]
+      json: Syntax[String, Char, Char, Json]
   ): Spec[Any, TestFailure[Nothing], TestSuccess] =
     suite(name)(
       test("null") {

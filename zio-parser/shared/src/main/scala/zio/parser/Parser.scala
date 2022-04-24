@@ -191,7 +191,7 @@ sealed trait Parser[+Err, -In, +Result] { self =>
 
   /** Repeats this parser until the given `stopCondition` parser succeeds. */
   final def repeatUntil[Err2 >: Err, In2 <: In](
-      stopCondition: Parser[Err2, In2, Unit]
+      stopCondition: Parser[Err2, In2, Any]
   ): Parser[Err2, In2, Chunk[Result]] =
     (stopCondition.not(null.asInstanceOf[Err2]) ~> self).repeat0.manualBacktracking
 

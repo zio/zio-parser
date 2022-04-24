@@ -20,7 +20,7 @@ class Zipping extends ParserBenchmark[Zips] {
     sb.toString()
   }
 
-  override final val zioSyntax: zio.parser.Syntax[String, Char, Char, Zips, Zips] = {
+  override final val zioSyntax: zio.parser.Syntax[String, Char, Char, Zips] = {
     import zio.parser._
 
     val item  = Syntax
@@ -34,7 +34,7 @@ class Zipping extends ParserBenchmark[Zips] {
       (zip: Zip) => (zip.a, zip.b, zip.c, zip.d)
     )
     val line  = zip <~ Syntax.char('\n')
-    val lines = line.repeat0.transform[Zips, Zips](Zips.apply, z => Chunk.fromIterable(z.zips)).manualBacktracking
+    val lines = line.repeat0.transform[Zips](Zips.apply, z => Chunk.fromIterable(z.zips)).manualBacktracking
     lines
   }
 

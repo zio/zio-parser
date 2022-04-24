@@ -7,7 +7,7 @@ import scala.util.Try
 class RepeatSpecificChars extends ParserBenchmark[String] {
   override final def loadInput(): String = "abcdefghijklmnop" * 10000
 
-  override final val zioSyntax: zio.parser.Syntax[String, Char, Char, String, String] = {
+  override final val zioSyntax: zio.parser.Syntax[String, Char, Char, String] = {
     import zio.parser._
     Syntax.charIn('a' to 'p': _*).atLeast(10000).string
   }

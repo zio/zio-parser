@@ -27,15 +27,15 @@ import java.util.concurrent.TimeUnit
 class CharParserMicroBenchmarks {
 
   type String10 = (String, String, String, String, String, String, String, String, String, String)
-  var skipAndTransformSyntax: Syntax[Nothing, Char, Char, String, String]                    = _
-  var skipAndTransformOrElseSyntax: Syntax[String, Char, Char, String, String]               = _
-  var skipAndTransformZipSyntax: Syntax[String, Char, Char, String10, String10]              = _
-  var skipAndTransformRepeatSyntax: Syntax[String, Char, Char, Chunk[String], Chunk[String]] = _
-  var repeatWithSep0Syntax: Syntax[String, Char, Char, Chunk[String], Chunk[String]]         = _
-  var hello: Chunk[Char]                                                                     = _
-  var hellos: Chunk[Char]                                                                    = _
-  var world: Chunk[Char]                                                                     = _
-  var hellosSep: String                                                                      = _
+  var skipAndTransformSyntax: Syntax[Nothing, Char, Char, String]             = _
+  var skipAndTransformOrElseSyntax: Syntax[String, Char, Char, String]        = _
+  var skipAndTransformZipSyntax: Syntax[String, Char, Char, String10]         = _
+  var skipAndTransformRepeatSyntax: Syntax[String, Char, Char, Chunk[String]] = _
+  var repeatWithSep0Syntax: Syntax[String, Char, Char, Chunk[String]]         = _
+  var hello: Chunk[Char]                                                      = _
+  var hellos: Chunk[Char]                                                     = _
+  var world: Chunk[Char]                                                      = _
+  var hellosSep: String                                                       = _
 
   @Setup
   def setUp(): Unit = {
@@ -50,10 +50,10 @@ class CharParserMicroBenchmarks {
     val _ = skipAndTransformSyntax.asParser.optimized
 
     val literalHello =
-      Syntax.regexDiscard(Regex.string("hello"), "not hello", hello).transform[String, String](_ => "hello", _ => ())
+      Syntax.regexDiscard(Regex.string("hello"), "not hello", hello).transform[String](_ => "hello", _ => ())
 
     skipAndTransformOrElseSyntax = literalHello |
-      Syntax.regexDiscard(Regex.string("world"), "not world", world).transform[String, String](_ => "world", _ => ())
+      Syntax.regexDiscard(Regex.string("world"), "not world", world).transform[String](_ => "world", _ => ())
     val _ = skipAndTransformOrElseSyntax.asParser.optimized
 
     skipAndTransformRepeatSyntax = literalHello.repeat

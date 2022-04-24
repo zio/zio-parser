@@ -13,13 +13,13 @@ object ContextualExample extends ZIOSpecDefault {
   case class Node(name: String, child: Option[Node])
 
   // Invertible syntax fragments
-  val openTag: Syntax[String, Char, Char, String, String] =
+  val openTag: Syntax[String, Char, Char, String] =
     (Syntax.char('<') ~> Syntax.anyChar
       .filter[String, Char](_.isLetterOrDigit, "not a letter/digit")
       .repeat
       .string <~ Syntax.char('>')) ?? "open tag"
 
-  def closeTag(name: String): Syntax[String, Char, Char, Unit, Unit] =
+  def closeTag(name: String): Syntax[String, Char, Char, Unit] =
     Syntax.string(s"</$name>", ()) ?? s"close tag ($name)"
 
   // Separate definition of recursive parser
@@ -39,7 +39,7 @@ object ContextualExample extends ZIOSpecDefault {
   }
 
   // Plugging the two together to get an invertible syntax
-  lazy val node: Syntax[String, Char, Char, Node, Node] =
+  lazy val node: Syntax[String, Char, Char, Node] =
     nodeParser <=> nodePrinter
 
   override def spec: ZSpec[Environment, Any] =

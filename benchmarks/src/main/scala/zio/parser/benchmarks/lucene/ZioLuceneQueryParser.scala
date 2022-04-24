@@ -86,14 +86,14 @@ class ZioLuceneQueryParser(
 
   val range =
     (
-      ((rangeStart ~ bound).transform[Boundary, Boundary](
+      ((rangeStart ~ bound).transform[Boundary](
         { case (t, s) => toBoundary(s, t) },
         {
           case Boundary.Bound(value, boundType) => (boundType, value)
           case Boundary.Unbound                 => (BoundType.Exclusive, "*")
         }
       ) ~ rangeTo ~
-        (bound ~ rangeEnd).transform[Boundary, Boundary](
+        (bound ~ rangeEnd).transform[Boundary](
           { case (s, t) => toBoundary(s, t) },
           {
             case Boundary.Bound(value, boundType) => (value, boundType)
@@ -202,7 +202,7 @@ class ZioLuceneQueryParser(
 
   val regexpTermQuery = regexpTerm.transform(Query.Regex, (r: Query.Regex) => r.value) ?? "regexpTermQuery"
 
-  val fuzzyOp     = tilde ~> integer.?.transform[Int, Int](
+  val fuzzyOp     = tilde ~> integer.?.transform[Int](
     _.getOrElse(2),
     {
       case 2      => None
@@ -227,7 +227,7 @@ class ZioLuceneQueryParser(
     (regexpTermQuery.widen[Query] | range.widen[Query] | quotedTermQuery.widen[Query] | fieldTermQuery
       .widen[Query]) ?? "termQueryInner"
 
-  val termQuery = (termQueryInner ~ (carat ~> number).backtrack.?).transform[Query, Query](
+  val termQuery = (termQueryInner ~ (carat ~> number).backtrack.?).transform[Query](
     {
       case (query, Some(score)) => Query.Boost(query, score)
       case (query, None)        => query
@@ -240,8 +240,8 @@ class ZioLuceneQueryParser(
 
   val fieldNamePrefix = (fieldName <~ (opColon | opEqual).surroundedBy(whitespaces)) ?? "fieldNamePrefix"
 
-  lazy val grouping: Syntax[String, Char, Char, Query, Query] =
-    (query.between(lparen, rparen) ~ (carat ~> number).backtrack.?).transform[Query, Query](
+  lazy val grouping: Syntax[String, Char, Char, Query] =
+    (query.between(lparen, rparen) ~ (carat ~> number).backtrack.?).transform[Query](
       {
         case (query, Some(score)) => Query.Boost(query, score)
         case (query, None)        => query
@@ -252,9 +252,9 @@ class ZioLuceneQueryParser(
       }
     ) ?? "grouping"
 
-  lazy val clause: Syntax[String, Char, Char, Query, Query] = fieldRange.backtrack.widen[Query] |
+  lazy val clause: Syntax[String, Char, Char, Query] = fieldRange.backtrack.widen[Query] |
     (fieldNamePrefix.backtrack.? ~ (grouping | termQuery))
-      .transform[Query, Query](
+      .transform[Query](
         {
           case (Some(fieldName), query) => Query.Field(fieldName, query).normalize
           case (None, query)            => query
@@ -266,7 +266,7 @@ class ZioLuceneQueryParser(
       )
       .surroundedBy(whitespaces) ?? "clause"
 
-  val modClause = (modifier.? ~ clause).transform[Query, Query](
+  val modClause = (modifier.? ~ clause).transform[Query](
     {
       case (Some(Mod.Require), query)  => Query.Require(query)
       case (Some(Mod.Prohibit), query) => Query.Prohibit(query)
@@ -283,24 +283,24 @@ class ZioLuceneQueryParser(
 
   lazy val conjunctQuery = modClause
     .repeatWithSep(and)
-    .transform(
+    .transform[Query](
       chunk => Query.And(chunk.toList).normalize,
-      (and: Query.And) => Chunk.fromIterable(and.queries)
+      { case (and: Query.And) => Chunk.fromIterable(and.queries) }
     )
     .widen[Query] ?? "conjunctQuery"
 
   lazy val disjunctQuery = conjunctQuery
     .repeatWithSep(or)
-    .transform(
+    .transform[Query](
       chunk => Query.Or(chunk.toList).normalize,
-      (or: Query.Or) => Chunk.fromIterable(or.queries)
+      { case (or: Query.Or) => Chunk.fromIterable(or.queries) }
     )
     .widen[Query] ?? "disjunctQuery"
 
-  lazy val query: Syntax[String, Char, Char, Query, Query] =
+  lazy val query: Syntax[String, Char, Char, Query] =
     disjunctQuery
       .repeatWithSep(whitespaces)
-      .transform[Query, Query](
+      .transform[Query](
         chunk => topLevelCombinator(chunk.toList).normalize,
         { case Query.Or(lst) =>
           Chunk.fromIterable(lst) // TODO: other cases

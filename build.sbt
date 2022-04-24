@@ -63,6 +63,7 @@ lazy val zioParser = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(crossProjectSettings)
   .settings(dottySettings)
   .settings(buildInfoSettings("zio.parser"))
+  .settings(macroDefinitionSettings)
   .settings(
     libraryDependencies ++=
       (CrossVersion.partialVersion(scalaVersion.value) match {
@@ -130,6 +131,7 @@ lazy val benchmarks = (project in file("benchmarks"))
 lazy val docs = project
   .in(file("zio-parser-docs"))
   .settings(stdSettings("zio-parser"))
+  .settings(macroDefinitionSettings)
   .settings(
     scalaVersion                               := Scala213,
     publish / skip                             := true,

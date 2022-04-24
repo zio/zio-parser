@@ -4,9 +4,6 @@ import zio.Chunk
 import zio.parser.Parser.ParserError
 import zio.parser.target.Target
 
-import scala.language.existentials
-import scala.reflect.ClassTag
-
 /** Syntax defines a parser and a printer together and provides combinators to simultaneously build them up from smaller
   * syntax fragments.
   *
@@ -509,10 +506,11 @@ object Syntax {
 
   /** Syntax that combines all the constructors of subclasses of a sum type */
   def oneOf[I, O, A](
-      x: Syntax[String, I, O, _ <: A, _ <: A],
-      xs: Syntax[String, I, O, _ <: A, _ <: A]*
+      x: SyntaxEnrichedForSubTyping[A, I, O],
+      xs: SyntaxEnrichedForSubTyping[A, I, O]*
   ): Syntax[String, I, O, A, A] =
-    xs.map(_.widen[A]).foldLeft(x.widen[A])(_ | _)
+    xs.map(enriched => enriched.syntax.widen[A](enriched.ev, enriched.tag))
+      .foldLeft(x.syntax.widen[A](x.ev, x.tag))(_ | _)
 
   /** Syntax that parses/prints a single character */
   val anyChar: Syntax[Nothing, Char, Char, Char] =

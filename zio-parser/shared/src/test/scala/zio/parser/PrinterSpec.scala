@@ -11,6 +11,8 @@ object PrinterSpec extends ZIOSpecDefault {
   private val charB: Syntax[String, Char, Char, Char, Char] =
     Syntax.charIn('b')
 
+  case class TestCaseClass(a: Char, b: Char)
+
   override def spec: ZSpec[Environment, Any] =
     suite("Printing")(
       suite("Invertible syntax")(
@@ -120,6 +122,9 @@ object PrinterSpec extends ZIOSpecDefault {
           printerTest("repeatWithSep", Syntax.anyChar.repeatWithSep(Syntax.char('-')), Chunk('a', 'b', 'c'))(
             isRight(equalTo("a-b-c"))
           )
+        ),
+        printerTest_("from", ((charA ~ charB).asPrinter).from[TestCaseClass], TestCaseClass('a', 'b'))(
+          isRight(equalTo("ab"))
         )
       )
     )
@@ -127,5 +132,10 @@ object PrinterSpec extends ZIOSpecDefault {
   private def printerTest[E, T](name: String, syntax: Syntax[E, Char, Char, T, T], input: T)(
       assertion: Assertion[Either[E, String]]
   ): ZSpec[Any, Nothing] =
-    test(name)(assert(syntax.print(input).map(_.mkString))(assertion))
+    test(name)(assert(syntax.printString(input))(assertion))
+
+  private def printerTest_[E, T](name: String, printer: Printer[E, Char, T, Any], input: T)(
+      assertion: Assertion[Either[E, String]]
+  ): ZSpec[Any, Nothing] =
+    test(name)(assert(printer.printString(input))(assertion))
 }

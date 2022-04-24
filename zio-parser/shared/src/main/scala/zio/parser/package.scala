@@ -171,15 +171,15 @@ package object parser extends ImplicitTupleConversion {
     )(implicit unzippableValue: PUnzippable.In[Value, Value2, ZippedValue]): Printer[Err2, Out2, ZippedValue] =
       Printer.Zip(Printer.Lazy(() => self), Printer.Lazy(() => that), unzippableValue.unzip)
   }
-   
-  implicit class TuplePrinterOps[Err, Out, Value <: Product, Result](
-    private val self: Printer[Err, Out, Value, Result]
+
+  implicit class TuplePrinterOps[Err, Out, Value <: Product](
+      private val self: Printer[Err, Out, Value]
   ) {
 
     /** Transforms the printer's input from a given case class for a tuple printer */
     def from[Value2](implicit
         conversion: TupleConversion[Value2, Value]
-    ): Printer[Err, Out, Value2, Result] =
+    ): Printer[Err, Out, Value2] =
       self.contramap(conversion.to)
   }
 }

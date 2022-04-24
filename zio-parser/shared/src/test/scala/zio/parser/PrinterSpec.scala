@@ -134,7 +134,7 @@ object PrinterSpec extends ZIOSpecDefault {
   ): ZSpec[Any, Nothing] =
     test(name)(assert(syntax.printString(input))(assertion))
 
-  private def printerTest_[E, T](name: String, printer: Printer[E, Char, T, Any], input: T)(
+  private def printerTest_[E, T](name: String, printer: Printer[E, Char, T], input: T)(
       assertion: Assertion[Either[E, String]]
   ): ZSpec[Any, Nothing] =
     test(name)(assert(printer.printString(input))(assertion))

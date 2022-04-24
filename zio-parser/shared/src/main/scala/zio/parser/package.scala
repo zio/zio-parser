@@ -74,14 +74,12 @@ package object parser extends ImplicitTupleConversion {
       * }}}
       */
     def widen[D](implicit ev: Result <:< D, tag: ClassTag[Value]): Syntax[String, In, Out, D, D] =
-      self.asParser.asInstanceOf[Parser[String, In, D]] <=> self.asPrinter.transformEither(
-        (value: Result) => Right(ev(value)),
-        (value: D) =>
-          if (tag.runtimeClass.isAssignableFrom(value.getClass)) {
-            Right(value.asInstanceOf[Value])
-          } else {
-            Left(s"Not a ${tag.runtimeClass.getSimpleName}")
-          }
+      self.asParser.asInstanceOf[Parser[String, In, D]] <=> self.asPrinter.contramapEither((value: D) =>
+        if (tag.runtimeClass.isAssignableFrom(value.getClass)) {
+          Right(value.asInstanceOf[Value])
+        } else {
+          Left(s"Not a ${tag.runtimeClass.getSimpleName}")
+        }
       )
   }
 
@@ -125,70 +123,63 @@ package object parser extends ImplicitTupleConversion {
       * This operation enables the use of parser or printer-specific operators to build up fragments of a syntax. The
       * resulting syntax can be used as a building block to create bigger syntaxes.
       */
-    def <=>[Out, Value](that: Printer[Err, Out, Value, Result]): Syntax[Err, In, Out, Value, Result] =
+    def <=>[Out, Value](that: Printer[Err, Out, Value]): Syntax[Err, In, Out, Value, Result] =
       Syntax.from[Err, In, Out, Value, Result](self, that)
   }
 
-  implicit class UnitPrinterOps[Err, Out](private val self: Printer[Err, Out, Unit, Any]) extends AnyVal {
+  implicit class UnitPrinterOps[Err, Out](private val self: Printer[Err, Out, Unit]) extends AnyVal {
 
     /** Symbolic alias for zipRight
       */
     def ~>[Err2 >: Err, Out2 >: Out, Value, Result](
-        that: => Printer[Err2, Out2, Value, Result]
-    ): Printer[Err2, Out2, Value, Result] =
+        that: => Printer[Err2, Out2, Value]
+    ): Printer[Err2, Out2, Value] =
       zipRight(that)
 
     /** Print Unit with this, then print that and use the second printer's result value
       */
     def zipRight[Err2 >: Err, Out2 >: Out, Value, Result](
-        that: => Printer[Err2, Out2, Value, Result]
-    ): Printer[Err2, Out2, Value, Result] =
+        that: => Printer[Err2, Out2, Value]
+    ): Printer[Err2, Out2, Value] =
       Printer.ZipRight(Printer.Lazy(() => self), Printer.Lazy(() => that))
   }
 
-  implicit class PrinterOps[Err, Out, Value, Result](private val self: Printer[Err, Out, Value, Result])
-      extends AnyVal {
+  implicit class PrinterOps[Err, Out, Value](private val self: Printer[Err, Out, Value]) extends AnyVal {
 
     /** Symbolic alias for zipRight
       */
-    def ~>[Result2](that: => Printer[Err, Out, Value, Result2]): Printer[Err, Out, Value, Result2] =
+    def ~>(that: => Printer[Err, Out, Value]): Printer[Err, Out, Value] =
       zipRight(that)
 
     /** Print this, then print that and use the second printer's result value. Both printers get the same value to be
       * printed.
       */
-    def zipRight[Result2](that: => Printer[Err, Out, Value, Result2]): Printer[Err, Out, Value, Result2] =
+    def zipRight(that: => Printer[Err, Out, Value]): Printer[Err, Out, Value] =
       Printer.ZipRight(Printer.Lazy(() => self), Printer.Lazy(() => that))
 
     /** Symbolic alias for zip */
-    final def ~[Err2 >: Err, Out2 >: Out, Value2, Result2, ZippedValue, ZippedResult](
-        that: => Printer[Err2, Out2, Value2, Result2]
-    )(implicit
-        zippableValue: PUnzippable.In[Value, Value2, ZippedValue],
-        zippableResult: PZippable.Out[Result, Result2, ZippedResult]
-    ): Printer[Err2, Out2, ZippedValue, ZippedResult] =
+    final def ~[Err2 >: Err, Out2 >: Out, Value2, ZippedValue](
+        that: => Printer[Err2, Out2, Value2]
+    )(implicit zippableValue: PUnzippable.In[Value, Value2, ZippedValue]): Printer[Err2, Out2, ZippedValue] =
       zip(that)
 
     /** Take a pair to be printed, print the left value with this, and the right value with 'that'. The result is a pair
       * of both printer's results.
       */
-    final def zip[Err2 >: Err, Out2 >: Out, Value2, Result2, ZippedValue, ZippedResult](
-        that: => Printer[Err2, Out2, Value2, Result2]
-    )(implicit
-        unzippableValue: PUnzippable.In[Value, Value2, ZippedValue],
-        zippableResult: PZippable.Out[Result, Result2, ZippedResult]
-    ): Printer[Err2, Out2, ZippedValue, ZippedResult] =
-      Printer.Zip(Printer.Lazy(() => self), Printer.Lazy(() => that), unzippableValue.unzip, zippableResult.zip)
+    final def zip[Err2 >: Err, Out2 >: Out, Value2, ZippedValue](
+        that: => Printer[Err2, Out2, Value2]
+    )(implicit unzippableValue: PUnzippable.In[Value, Value2, ZippedValue]): Printer[Err2, Out2, ZippedValue] =
+      Printer.Zip(Printer.Lazy(() => self), Printer.Lazy(() => that), unzippableValue.unzip)
   }
 
-  implicit class TuplePrinterOps[Err, Out, Value <: Product, Result](
-      private val self: Printer[Err, Out, Value, Result]
+  implicit class TuplePrinterOps[Err, Out, Value <: Product](
+      private val self: Printer[Err, Out, Value]
   ) {
 
     /** Transforms the printer's input from a given case class for a tuple printer */
     def from[Value2](implicit
         conversion: TupleConversion[Value2, Value]
-    ): Printer[Err, Out, Value2, Result] =
+    ): Printer[Err, Out, Value2] =
       self.contramap(conversion.to)
   }
 }

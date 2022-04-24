@@ -31,11 +31,11 @@ object ContextualExample extends ZIOSpecDefault {
     } yield Node(name, inner)
 
   // Separate definition of recursive printer
-  lazy val nodePrinter: Printer[String, Char, Node, Node] = Printer.byValue { (model: Node) =>
+  lazy val nodePrinter: Printer[String, Char, Node] = Printer.byValue { (model: Node) =>
     (model.child match {
       case Some(child) => openTag.asPrinter(model.name) ~> nodePrinter(child) ~> closeTag(model.name).asPrinter(())
       case None        => openTag.asPrinter(model.name) ~> closeTag(model.name).asPrinter(())
-    }).as(model)
+    })
   }
 
   // Plugging the two together to get an invertible syntax

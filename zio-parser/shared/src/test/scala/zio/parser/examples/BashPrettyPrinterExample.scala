@@ -454,39 +454,39 @@ object BashPrettyPrinterExample extends ZIOSpecDefault {
       )
     )
 
-  type PP[A] = Printer[Nothing, Char, A, Unit]
+  type PP[A] = Printer[Nothing, Char, A]
 
-  def print(ch: Char): Printer[Nothing, Char, Any, Unit]   =
+  def print(ch: Char): Printer[Nothing, Char, Any]   =
     Printer.print(ch)
-  def printS(s: String): Printer[Nothing, Char, Any, Unit] =
+  def printS(s: String): Printer[Nothing, Char, Any] =
     Printer.printString(s)
 
-  val indentation                                = Printer.unit // TODO
+  val indentation                          = Printer.unit // TODO
   // Printer.anyString
 //    .statefulTransform(
 //      (value: String, _: Any) => Right((value)),
 //      (_: Any, state: BashPrinterState) => Right((" " * (state.indentation * state.indentationSize), state))
 //    )
   // .unit
-  val newline: Printer[Nothing, Char, Any, Unit] = printS(System.lineSeparator()) ~> indentation
+  val newline: Printer[Nothing, Char, Any] = printS(System.lineSeparator()) ~> indentation
 
-  val space: Printer[Nothing, Char, Any, Unit]  = print(' ')
-  val dollar: Printer[Nothing, Char, Any, Unit] = print('$')
+  val space: Printer[Nothing, Char, Any]  = print(' ')
+  val dollar: Printer[Nothing, Char, Any] = print('$')
 
   def between(
       prefix: String,
       suffix: String,
       printer: PP[Any]
-  ): Printer[Nothing, Char, Any, Unit] =
+  ): Printer[Nothing, Char, Any] =
     printS(prefix) ~> printer ~> printS(suffix)
 
-  def doubleQuoted(printer: PP[Any]): Printer[Nothing, Char, Any, Unit]    =
+  def doubleQuoted(printer: PP[Any]): Printer[Nothing, Char, Any]    =
     between("\"", "\"", printer)
-  def dollarQuoted(printer: PP[Any]): Printer[Nothing, Char, Any, Unit]    =
+  def dollarQuoted(printer: PP[Any]): Printer[Nothing, Char, Any]    =
     between("$'", "'", printer)
-  def curlyBracketed(printer: PP[Any]): Printer[Nothing, Char, Any, Unit]  =
+  def curlyBracketed(printer: PP[Any]): Printer[Nothing, Char, Any]  =
     between("{", "}", printer)
-  def squareBracketed(printer: PP[Any]): Printer[Nothing, Char, Any, Unit] =
+  def squareBracketed(printer: PP[Any]): Printer[Nothing, Char, Any] =
     between("[", "]", printer)
 
   val printIdentifier: PP[BashIdentifier] = Printer.byValue((id: BashIdentifier) => printS(id.name))
@@ -594,12 +594,12 @@ object BashPrettyPrinterExample extends ZIOSpecDefault {
     case BashExpressions.ReadVariable(variable) =>
       variable match {
         case BashVariables.Variable(name) if name.name.length > 1 =>
-          dollar ~> curlyBracketed(printVariable(variable).unit)
-        case _                                                    => dollar ~> printVariable(variable).unit
+          dollar ~> curlyBracketed(printVariable(variable))
+        case _                                                    => dollar ~> printVariable(variable)
       }
 
     case BashExpressions.ReadArray(variable, index) =>
-      dollar ~> curlyBracketed(printVariable(variable).unit ~> squareBracketed(printArrayIndex(index)))
+      dollar ~> curlyBracketed(printVariable(variable) ~> squareBracketed(printArrayIndex(index)))
     case BashExpressions.Eval(statement)            => between("$(", ")", printStatement(statement))
     case BashExpressions.Conditional(condition)     => between("[[ ", " ]]", printCondition(condition))
     case BashExpressions.Interpolated(parts)        =>
@@ -626,12 +626,11 @@ object BashPrettyPrinterExample extends ZIOSpecDefault {
     case BashStatements.Assign(target, expression)               =>
       printIdentifier(target) ~> print('=') ~> printExpression(expression)
     case BashStatements.Command(name, params, None)              =>
-      printExpression.repeatWithSep(print(' ')).apply(Chunk.fromIterable(name :: params)).unit
+      printExpression.repeatWithSep(print(' ')).apply(Chunk.fromIterable(name :: params))
     case BashStatements.Command(name, params, Some(hereString))  =>
       printExpression
         .repeatWithSep(print(' '))
         .apply(Chunk.fromIterable(name :: params ::: List(BashExpressions.Literal("<<<"), hereString)))
-        .unit
     case BashStatements.IfThenElse(conditional, onTrue, onFalse) =>
       printS("if") ~> space ~> printExpression(conditional) ~> newline ~>
         printS("then") ~>
@@ -654,7 +653,7 @@ object BashPrettyPrinterExample extends ZIOSpecDefault {
       val opts: PP[Any] = if (options.isEmpty) {
         Printer.unit
       } else {
-        space ~> printDeclareOption.repeatWithSep(print(' ')).apply(Chunk.fromIterable(options)).unit
+        space ~> printDeclareOption.repeatWithSep(print(' ')).apply(Chunk.fromIterable(options))
       }
       val prefix        = printS("local") ~> opts ~> space ~> printS(name.name)
       initialValue match {
@@ -665,7 +664,7 @@ object BashPrettyPrinterExample extends ZIOSpecDefault {
       val quotedExpr = Printer.byValue { (e: BashArithmeticExpression) =>
         print('"') ~> printArithmenticExpression(e) <~ print('"')
       }
-      val printExprs = quotedExpr.repeatWithSep(print(' ')).unit
+      val printExprs = quotedExpr.repeatWithSep(print(' '))
       printS("let") ~> space ~> printExprs(Chunk.fromIterable(expression))
     case BashStatements.Function(name, body)                     =>
       printS("function") ~> space ~> printIdentifier(name) ~> space ~> print('{') ~>
@@ -681,7 +680,7 @@ object BashPrettyPrinterExample extends ZIOSpecDefault {
         indented(newline ~> printStatement(body)) ~> newline ~>
         printS("done")
     case BashStatements.Sequence(statements)                     =>
-      printStatement.repeatWithSep(newline).apply(Chunk.fromIterable(statements)).unit
+      printStatement.repeatWithSep(newline).apply(Chunk.fromIterable(statements))
   }
 
   def needParentheses(expression: BashArithmeticExpression): Boolean =
@@ -701,14 +700,14 @@ object BashPrettyPrinterExample extends ZIOSpecDefault {
       x: BashArithmeticExpression,
       y: BashArithmeticExpression,
       op: String
-  ): Printer[Nothing, Char, Any, Unit] =
+  ): Printer[Nothing, Char, Any] =
     parenthesed(x) ~> space ~> printS(op) ~> space ~> parenthesed(y)
 
   def assignment(
       x: BashVariable,
       y: BashArithmeticExpression,
       op: String
-  ): Printer[Nothing, Char, Any, Unit] =
+  ): Printer[Nothing, Char, Any] =
     printVariable(x) ~> space ~> printS(op) ~> space ~> parenthesed(y)
 
   lazy val printArithmenticExpression: PP[BashArithmeticExpression] = Printer.byValue {
@@ -762,13 +761,13 @@ object BashPrettyPrinterExample extends ZIOSpecDefault {
       x: BashCondition,
       y: BashCondition,
       op: String
-  ): Printer[Nothing, Char, Any, Unit] =
+  ): Printer[Nothing, Char, Any] =
     printCondition(x) ~> space ~> printS(op) ~> space ~> printCondition(y)
 
   def unaryCondition(
       x: BashCondition,
       op: String
-  ): Printer[Nothing, Char, Any, Unit] =
+  ): Printer[Nothing, Char, Any] =
     printS(op) ~> space ~> printCondition(x)
 
   lazy val printCondition: PP[BashCondition] = Printer.byValue {

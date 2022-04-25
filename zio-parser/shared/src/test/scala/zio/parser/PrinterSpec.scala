@@ -11,6 +11,8 @@ object PrinterSpec extends ZIOSpecDefault {
   private val charB: Syntax[String, Char, Char, Char] =
     Syntax.charIn('b')
 
+  case class TestCaseClass(a: Char, b: Char)
+
   override def spec: ZSpec[Environment, Any] =
     suite("Printing")(
       suite("Invertible syntax")(
@@ -22,13 +24,13 @@ object PrinterSpec extends ZIOSpecDefault {
           isLeft(equalTo("not h"))
         ),
         printerTest("transform", Syntax.anyChar.transform(_.toInt, (v: Int) => v.toChar), 66)(isRight(equalTo("B"))),
-//        printerTest(
-//          "transformEither, failing",
-//          Syntax.anyChar.transformEither(_ => Left("bad"), (_: Int) => Left("bad")),
-//          100
-//        )(
-//          isLeft(equalTo("bad"))
-//        ),
+        printerTest(
+          "transformEither, failing",
+          Syntax.anyChar.transformEither[String, Int](_ => Left("bad"), (_: Int) => Left("bad")),
+          100
+        )(
+          isLeft(equalTo("bad"))
+        ),
         printerTest("s ~ s", Syntax.anyChar ~ Syntax.anyChar, ('x', 'y'))(isRight(equalTo("xy"))),
         printerTest("s ~ s ~ s", Syntax.anyChar ~ Syntax.anyChar ~ Syntax.anyChar, ('x', 'y', 'z'))(
           isRight(equalTo("xyz"))
@@ -120,6 +122,9 @@ object PrinterSpec extends ZIOSpecDefault {
           printerTest("repeatWithSep", Syntax.anyChar.repeatWithSep(Syntax.char('-')), Chunk('a', 'b', 'c'))(
             isRight(equalTo("a-b-c"))
           )
+        ),
+        printerTest_("from", ((charA ~ charB).asPrinter).from[TestCaseClass], TestCaseClass('a', 'b'))(
+          isRight(equalTo("ab"))
         )
       )
     )
@@ -127,5 +132,10 @@ object PrinterSpec extends ZIOSpecDefault {
   private def printerTest[E, T](name: String, syntax: Syntax[E, Char, Char, T], input: T)(
       assertion: Assertion[Either[E, String]]
   ): ZSpec[Any, Nothing] =
-    test(name)(assert(syntax.print(input).map(_.mkString))(assertion))
+    test(name)(assert(syntax.printString(input))(assertion))
+
+  private def printerTest_[E, T](name: String, printer: Printer[E, Char, T], input: T)(
+      assertion: Assertion[Either[E, String]]
+  ): ZSpec[Any, Nothing] =
+    test(name)(assert(printer.printString(input))(assertion))
 }

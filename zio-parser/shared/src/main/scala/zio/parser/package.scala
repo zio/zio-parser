@@ -4,7 +4,7 @@ import zio.parser.internal.{PUnzippable, PZippable}
 
 import scala.reflect.ClassTag
 
-package object parser {
+package object parser extends ImplicitTupleConversion {
 
   implicit final class AnyParserOps[Err, In](private val self: Parser[Err, In, Any]) extends AnyVal {
 
@@ -21,6 +21,13 @@ package object parser {
         that: => Parser[Err2, In2, Result]
     ): Parser[Err2, In2, Result] =
       Parser.ZipRight(Parser.Lazy(() => self), Parser.Lazy(() => that))
+  }
+
+  implicit final class TupleParserOps[Err, In, Result](private val self: Parser[Err, In, Result]) extends AnyVal {
+
+    /** Maps the parser's successful tuple result to the given case class */
+    def to[Result2 <: Product](implicit conversion: TupleConversion[Result2, Result]): Parser[Err, In, Result2] =
+      self.map(conversion.from)
   }
 
   implicit final class AnySyntaxOps[Err, In, Out](private val self: Syntax[Err, In, Out, Unit]) extends AnyVal {
@@ -99,6 +106,13 @@ package object parser {
         self.asParser.zip(that.asParser),
         self.asPrinter.zip(that.asPrinter)
       )
+
+    /** Transforms the syntax of a tuple to a syntax of a given case class */
+    def of[Value2 <: Product](implicit
+        conversion: TupleConversion[Value2, Value],
+        ev: Value =:= Value
+    ): Syntax[Err, In, Out, Value2] =
+      self.transform(conversion.from, conversion.to)
   }
 
   implicit class ParserOps[Err, In, Value](private val self: Parser[Err, In, Value]) extends AnyVal {
@@ -155,6 +169,16 @@ package object parser {
         that: => Printer[Err2, Out2, Value2]
     )(implicit unzippableValue: PUnzippable.In[Value, Value2, ZippedValue]): Printer[Err2, Out2, ZippedValue] =
       Printer.Zip(Printer.Lazy(() => self), Printer.Lazy(() => that), unzippableValue.unzip)
+  }
 
+  implicit class TuplePrinterOps[Err, Out, Value <: Product](
+      private val self: Printer[Err, Out, Value]
+  ) {
+
+    /** Transforms the printer's input from a given case class for a tuple printer */
+    def from[Value2](implicit
+        conversion: TupleConversion[Value2, Value]
+    ): Printer[Err, Out, Value2] =
+      self.contramap(conversion.to)
   }
 }

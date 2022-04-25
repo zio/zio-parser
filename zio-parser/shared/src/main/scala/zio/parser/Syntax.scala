@@ -428,7 +428,7 @@ object Syntax {
     new Syntax(Parser.Succeed(value), Printer.Succeed(value))
 
   /** Syntax that does not pares or print anything but fails with 'failure' */
-  def fail[Err](failure: Err): Syntax[Err, Any, Nothing, Nothing] = // TODO: DOUBLE CHECK
+  def fail[Err](failure: Err): Syntax[Err, Any, Nothing, Nothing] =
     new Syntax(Parser.Fail(failure), Printer.Fail(failure))
 
   // Char variants

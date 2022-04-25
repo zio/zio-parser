@@ -9,6 +9,8 @@ object ParserSpec extends ZIOSpecDefault {
   private val charA: Syntax[String, Char, Char, Char] = Syntax.char('a', "not a").as('a')
   private val charB: Syntax[String, Char, Char, Char] = Syntax.char('b', "not b").as('b')
 
+  case class TestCaseClass(a: String, b: Int)
+
   override def spec: ZSpec[Environment, Any] = {
     suite("Parsing")(
       List(ParserImplementation.StackSafe, ParserImplementation.Recursive).map { implementation =>
@@ -16,9 +18,9 @@ object ParserSpec extends ZIOSpecDefault {
             assertion: Assertion[Either[ParserError[E], T]]
         ): ZSpec[Any, Nothing] = createParserTest(implementation)(name, syntax, input)(assertion)
 
-        def parserTest_[E, T](name: String, syntax: Syntax[E, Char, Char, T], input: String)(
+        def parserTest_[E, T](name: String, parser: Parser[E, Char, T], input: String)(
             assertion: Assertion[Either[ParserError[E], T]]
-        ): ZSpec[Any, Nothing] = createParserTest_(implementation)(name, syntax, input)(assertion)
+        ): ZSpec[Any, Nothing] = createParserTest_(implementation)(name, parser, input)(assertion)
 
         suite(implementation.toString)(
           suite("Invertible syntax")(
@@ -418,6 +420,14 @@ object ParserSpec extends ZIOSpecDefault {
             ),
             parserTest("Not, inner passing", Syntax.string("hello", ()).not("it was hello"), "hello")(
               isLeft(equalTo(ParserError.Failure(Nil, 5, "it was hello")))
+            ),
+            parserTest(
+              "of",
+              (Syntax.alphaNumeric.repeat.string ~ Syntax.string("->", ()) ~ Syntax.digit.repeat.string
+                .transform(_.toInt, (n: Int) => n.toString)).of[TestCaseClass],
+              "hello->123"
+            )(
+              isRight(equalTo(TestCaseClass("hello", 123)))
             )
           ),
           suite("Parser only")(
@@ -426,9 +436,18 @@ object ParserSpec extends ZIOSpecDefault {
               (for {
                 ch1 <- Parser.anyChar
                 ch2 <- Parser.anyChar
-              } yield (ch1, ch2)) <=> Printer.string("he", ('h', 'e')),
+              } yield (ch1, ch2)),
               "he"
             )(isRight(equalTo(('h', 'e'))))
+          ),
+          parserTest_(
+            "to",
+            (Parser.alphaNumeric.repeat.string ~
+              Parser.string("->", ()) ~
+              Parser.digit.repeat.string.map(_.toInt)).to[TestCaseClass],
+            "hello->123"
+          )(
+            isRight(equalTo(TestCaseClass("hello", 123)))
           )
         )
       }: _*
@@ -447,11 +466,11 @@ object ParserSpec extends ZIOSpecDefault {
 
   private def createParserTest_[E, T](
       implementation: ParserImplementation
-  )(name: String, syntax: Syntax[E, Char, Char, T], input: String)(
+  )(name: String, parser: Parser[E, Char, T], input: String)(
       assertion: Assertion[Either[ParserError[E], T]]
   ): ZSpec[Any, Nothing] =
     test(name)(
-      assert(syntax.parseString(input, implementation))(assertion)
+      assert(parser.parseString(input, implementation))(assertion)
     )
 //    test(name)(assert(syntax.parseString(input))(assertion))
 }

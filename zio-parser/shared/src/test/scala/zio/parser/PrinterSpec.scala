@@ -5,10 +5,10 @@ import zio.test.Assertion._
 import zio.test._
 
 object PrinterSpec extends ZIOSpecDefault {
-  private val charA: Syntax[String, Char, Char, Char, Char] =
+  private val charA: Syntax[String, Char, Char, Char] =
     Syntax.charIn('a')
 
-  private val charB: Syntax[String, Char, Char, Char, Char] =
+  private val charB: Syntax[String, Char, Char, Char] =
     Syntax.charIn('b')
 
   case class TestCaseClass(a: Char, b: Char)
@@ -26,7 +26,7 @@ object PrinterSpec extends ZIOSpecDefault {
         printerTest("transform", Syntax.anyChar.transform(_.toInt, (v: Int) => v.toChar), 66)(isRight(equalTo("B"))),
         printerTest(
           "transformEither, failing",
-          Syntax.anyChar.transformEither(_ => Left("bad"), (_: Int) => Left("bad")),
+          Syntax.anyChar.transformEither[String, Int](_ => Left("bad"), (_: Int) => Left("bad")),
           100
         )(
           isLeft(equalTo("bad"))
@@ -129,7 +129,7 @@ object PrinterSpec extends ZIOSpecDefault {
       )
     )
 
-  private def printerTest[E, T](name: String, syntax: Syntax[E, Char, Char, T, T], input: T)(
+  private def printerTest[E, T](name: String, syntax: Syntax[E, Char, Char, T], input: T)(
       assertion: Assertion[Either[E, String]]
   ): ZSpec[Any, Nothing] =
     test(name)(assert(syntax.printString(input))(assertion))

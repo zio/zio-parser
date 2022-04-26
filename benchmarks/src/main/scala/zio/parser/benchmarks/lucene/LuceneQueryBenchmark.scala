@@ -27,10 +27,10 @@ import java.util.concurrent.TimeUnit
 @Measurement(iterations = 5, time = 2, timeUnit = TimeUnit.SECONDS)
 @Fork(value = 1)
 class LuceneQueryBenchmark {
-  var testQuery: String                                                = _
-  var catsParser: CatsLuceneQueryParser                                = _
-  var zioParserQuery: Syntax[String, Char, Char, Query, Query]         = _
-  var zioParserStrippedQuery: Syntax[String, Char, Char, Query, Query] = _
+  var testQuery: String                                         = _
+  var catsParser: CatsLuceneQueryParser                         = _
+  var zioParserQuery: Syntax[String, Char, Char, Query]         = _
+  var zioParserStrippedQuery: Syntax[String, Char, Char, Query] = _
 
   @Setup
   def setUp(): Unit = {

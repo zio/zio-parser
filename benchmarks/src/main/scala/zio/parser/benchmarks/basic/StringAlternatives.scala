@@ -24,7 +24,7 @@ class StringAlternatives extends ParserBenchmark[Tokens] {
     sb.toString()
   }
 
-  override final val zioSyntax: zio.parser.Syntax[String, Char, Char, Tokens, Tokens] = {
+  override final val zioSyntax: zio.parser.Syntax[String, Char, Char, Tokens] = {
     import zio.parser._
 
     val t     = Syntax.string("true", True)

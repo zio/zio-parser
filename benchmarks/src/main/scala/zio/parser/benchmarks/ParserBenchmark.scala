@@ -15,7 +15,7 @@ import scala.util.Try
 @Fork(value = 2)
 abstract class ParserBenchmark[T] {
   def loadInput(): String
-  val zioSyntax: zio.parser.Syntax[String, Char, Char, T, T]
+  val zioSyntax: zio.parser.Syntax[String, Char, Char, T]
   val catParser: cats.parse.Parser0[T]
   def fastParseP[P: fastparse.P]: fastparse.P[T]
   val attoParser: atto.Parser[T]

@@ -16,7 +16,7 @@ abstract class JsonParserBenchmark(fileName: String) extends ParserBenchmark[Jso
   override def loadInput(): String =
     Source.fromResource(fileName).getLines().mkString("\n")
 
-  override final val zioSyntax: Syntax[String, Char, Char, Json, Json] = JsonZioParser.json
+  override final val zioSyntax: Syntax[String, Char, Char, Json] = JsonZioParser.json
 
   override final val catParser: Parser0[Json] = JsonCatsParse.parser
 

@@ -30,35 +30,34 @@ package object parser extends ImplicitTupleConversion {
       self.map(conversion.from)
   }
 
-  implicit final class UnitSyntaxOps[Err, In, Out](private val self: Syntax[Err, In, Out, Unit, Any]) extends AnyVal {
+  implicit final class AnySyntaxOps[Err, In, Out](private val self: Syntax[Err, In, Out, Unit]) extends AnyVal {
 
     /** Symbolic alias for zipRight
       */
-    def ~>[Err2 >: Err, In2 <: In, Out2 >: Out, Value2, Result2](
-        that: => Syntax[Err2, In2, Out2, Value2, Result2]
-    ): Syntax[Err2, In2, Out2, Value2, Result2] =
+    def ~>[Err2 >: Err, In2 <: In, Out2 >: Out, Value2](
+        that: => Syntax[Err2, In2, Out2, Value2]
+    ): Syntax[Err2, In2, Out2, Value2] =
       zipRight(that)
 
     /** Concatenates this parser with that parser, and if both succeeds, discard the first result and use the second.
       */
-    def zipRight[Err2 >: Err, In2 <: In, Out2 >: Out, Value2, Result2](
-        that: => Syntax[Err2, In2, Out2, Value2, Result2]
-    ): Syntax[Err2, In2, Out2, Value2, Result2] =
+    def zipRight[Err2 >: Err, In2 <: In, Out2 >: Out, Value2](
+        that: => Syntax[Err2, In2, Out2, Value2]
+    ): Syntax[Err2, In2, Out2, Value2] =
       Syntax.from(
         self.asParser ~> that.asParser,
         self.asPrinter ~> that.asPrinter
       )
 
     /** Ignores the result of the syntax and result in 'value' instead */
-    def as[Result2](value: => Result2): Syntax[Err, In, Out, Result2, Result2] =
+    def as[Value2](value: => Value2): Syntax[Err, In, Out, Value2] =
       Syntax.from(
         self.asParser.as(value),
         self.asPrinter.asPrinted(value, ())
       )
   }
 
-  implicit class StringErrSyntaxOps[In, Out, Value, Result](private val self: Syntax[String, In, Out, Value, Result])
-      extends AnyVal {
+  implicit class StringErrSyntaxOps[In, Out, Value](private val self: Syntax[String, In, Out, Value]) extends AnyVal {
 
     /** Widens the parser to a supertype of its result
       *
@@ -73,7 +72,7 @@ package object parser extends ImplicitTupleConversion {
       * obj.widen[Json]
       * }}}
       */
-    def widen[D](implicit ev: Result <:< D, tag: ClassTag[Value]): Syntax[String, In, Out, D, D] =
+    def widen[D](implicit ev: Value <:< D, tag: ClassTag[Value]): Syntax[String, In, Out, D] =
       self.asParser.asInstanceOf[Parser[String, In, D]] <=> self.asPrinter.contramapEither((value: D) =>
         if (tag.runtimeClass.isAssignableFrom(value.getClass)) {
           Right(value.asInstanceOf[Value])
@@ -83,62 +82,62 @@ package object parser extends ImplicitTupleConversion {
       )
   }
 
-  implicit class SyntaxOps[Err, In, Out, Value, Result](private val self: Syntax[Err, In, Out, Value, Result]) {
+  implicit class SyntaxOps[Err, In, Out, Value](private val self: Syntax[Err, In, Out, Value]) {
 
     /** Symbolic alias for zip */
-    final def ~[Err2 >: Err, In2 <: In, Out2 >: Out, Value2, Result2, ZippedValue, ZippedResult](
-        that: => Syntax[Err2, In2, Out2, Value2, Result2]
+    final def ~[Err2 >: Err, In2 <: In, Out2 >: Out, Value2, ZippedValue](
+        that: => Syntax[Err2, In2, Out2, Value2]
     )(implicit
         unzippableValue: PUnzippable.In[Value, Value2, ZippedValue],
-        zippableResult: PZippable.Out[Result, Result2, ZippedResult]
-    ): Syntax[Err2, In2, Out2, ZippedValue, ZippedResult] =
+        zippableResult: PZippable.Out[Value, Value2, ZippedValue]
+    ): Syntax[Err2, In2, Out2, ZippedValue] =
       zip(that)
 
     /** Concatenates this syntax with 'that' syntax. In case both parser succeeds, the result is a pair of the results.
       * The printer destructures a pair and prints the left value with this, the right value with 'that'.
       */
-    final def zip[Err2 >: Err, In2 <: In, Out2 >: Out, Value2, Result2, ZippedValue, ZippedResult](
-        that: => Syntax[Err2, In2, Out2, Value2, Result2]
+    final def zip[Err2 >: Err, In2 <: In, Out2 >: Out, Value2, ZippedValue](
+        that: => Syntax[Err2, In2, Out2, Value2]
     )(implicit
         unzippableValue: PUnzippable.In[Value, Value2, ZippedValue],
-        zippableResult: PZippable.Out[Result, Result2, ZippedResult]
-    ): Syntax[Err2, In2, Out2, ZippedValue, ZippedResult] =
+        zippableResult: PZippable.Out[Value, Value2, ZippedValue]
+    ): Syntax[Err2, In2, Out2, ZippedValue] =
       Syntax.from(
         self.asParser.zip(that.asParser),
         self.asPrinter.zip(that.asPrinter)
       )
 
     /** Transforms the syntax of a tuple to a syntax of a given case class */
-    def of[Result2 <: Product](implicit
-        conversion: TupleConversion[Result2, Result],
-        ev: Result =:= Value
-    ): Syntax[Err, In, Out, Result2, Result2] =
+    def of[Value2 <: Product](implicit
+        conversion: TupleConversion[Value2, Value],
+        ev: Value =:= Value
+    ): Syntax[Err, In, Out, Value2] =
       self.transform(conversion.from, conversion.to)
   }
 
-  implicit class ParserOps[Err, In, Result](private val self: Parser[Err, In, Result]) extends AnyVal {
+  implicit class ParserOps[Err, In, Value](private val self: Parser[Err, In, Value]) extends AnyVal {
 
     /** Combines this parser with that printer to get a syntax.
       *
       * This operation enables the use of parser or printer-specific operators to build up fragments of a syntax. The
       * resulting syntax can be used as a building block to create bigger syntaxes.
       */
-    def <=>[Out, Value](that: Printer[Err, Out, Value]): Syntax[Err, In, Out, Value, Result] =
-      Syntax.from[Err, In, Out, Value, Result](self, that)
+    def <=>[Out](that: Printer[Err, Out, Value]): Syntax[Err, In, Out, Value] =
+      Syntax.from[Err, In, Out, Value](self, that)
   }
 
   implicit class UnitPrinterOps[Err, Out](private val self: Printer[Err, Out, Unit]) extends AnyVal {
 
     /** Symbolic alias for zipRight
       */
-    def ~>[Err2 >: Err, Out2 >: Out, Value, Result](
+    def ~>[Err2 >: Err, Out2 >: Out, Value](
         that: => Printer[Err2, Out2, Value]
     ): Printer[Err2, Out2, Value] =
       zipRight(that)
 
     /** Print Unit with this, then print that and use the second printer's result value
       */
-    def zipRight[Err2 >: Err, Out2 >: Out, Value, Result](
+    def zipRight[Err2 >: Err, Out2 >: Out, Value](
         that: => Printer[Err2, Out2, Value]
     ): Printer[Err2, Out2, Value] =
       Printer.ZipRight(Printer.Lazy(() => self), Printer.Lazy(() => that))

@@ -14,7 +14,7 @@ object ExpressionExample extends ZIOSpecDefault {
   case class Const(value: Int)                      extends Expr
   case class Op(operator: OpType, a: Expr, b: Expr) extends Expr
 
-  val const: Syntax[String, Char, Char, Expr, Expr]        = Syntax.anyChar
+  val const: Syntax[String, Char, Char, Expr]      = Syntax.anyChar
     .filter[String, Char](_.isDigit, "not a digit")
     .repeat
     .string
@@ -23,13 +23,13 @@ object ExpressionExample extends ZIOSpecDefault {
       { case (n: Const) => n.value.toString },
       "Not a constant"
     ) ?? "constant"
-  val operator: Syntax[String, Char, Char, OpType, OpType] =
+  val operator: Syntax[String, Char, Char, OpType] =
     (Syntax.charIn('+').transformTo[String, OpType, OpType](_ => Add, { case Add => '+' }, "Not +") <>
       Syntax.charIn('-').transformTo[String, OpType, OpType](_ => Sub, { case Sub => '-' }, "Not -")) ?? "operator"
-  val lparen: Syntax[String, Char, Char, Unit, Unit]       = Syntax.char('(')
-  val rparen: Syntax[String, Char, Char, Unit, Unit]       = Syntax.char(')')
+  val lparen: Syntax[String, Char, Char, Unit]     = Syntax.char('(')
+  val rparen: Syntax[String, Char, Char, Unit]     = Syntax.char(')')
 
-  lazy val subExpr: Syntax[String, Char, Char, Expr, Expr] =
+  lazy val subExpr: Syntax[String, Char, Char, Expr] =
     (expr ~ operator ~ expr)
       .transformTo[String, Expr, Expr](
         { case (a, op, b) =>
@@ -39,9 +39,9 @@ object ExpressionExample extends ZIOSpecDefault {
         "Not valid sub expression"
       ) ?? "sub expression"
 
-  lazy val subExprInParens: Syntax[String, Char, Char, Expr, Expr] = (lparen ~> subExpr <~ rparen)
+  lazy val subExprInParens: Syntax[String, Char, Char, Expr] = (lparen ~> subExpr <~ rparen)
 
-  lazy val expr: Syntax[String, Char, Char, Expr, Expr] =
+  lazy val expr: Syntax[String, Char, Char, Expr] =
     (subExprInParens | const) ?? "expression"
 
   val exampleExpr: Expr = Op(

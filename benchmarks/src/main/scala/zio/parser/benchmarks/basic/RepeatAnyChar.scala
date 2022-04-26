@@ -10,12 +10,12 @@ class RepeatAnyChar extends ParserBenchmark[Chars] {
 
   override final def loadInput(): String = "hello" * 1000
 
-  override final val zioSyntax: zio.parser.Syntax[String, Char, Char, Chars, Chars] = {
+  override final val zioSyntax: zio.parser.Syntax[String, Char, Char, Chars] = {
     import zio.Chunk
     import zio.parser._
 
     Syntax.anyChar.repeat
-      .transform[Chars, Chars](
+      .transform[Chars](
         chunk => Chars(chunk.toSeq),
         chars => Chunk.fromIterable(chars.chars)
       )

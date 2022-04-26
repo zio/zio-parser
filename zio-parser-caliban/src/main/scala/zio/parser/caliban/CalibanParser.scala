@@ -25,7 +25,7 @@ object Numbers {
 }
 
 object CalibanParser {
-  type CalibanSyntax[D1, D2] = Syntax[String, Char, Char, D1, D2]
+  type CalibanSyntax[D1] = Syntax[String, Char, Char, D1]
 
   private def optColl[A, C[_] <: Seq[_]](c: C[A]): Option[C[A]] =
     if (c.nonEmpty) Some(c) else None
@@ -33,26 +33,26 @@ object CalibanParser {
   private def optMap[K, V](c: Map[K, V]): Option[Map[K, V]] =
     if (c.nonEmpty) Some(c) else None
 
-  lazy val UnicodeBOM                                                           = '\uFEFF'
-  lazy val Tab                                                                  = '\u0009'
-  lazy val Space                                                                = '\u0020'
-  lazy val LF                                                                   = '\u000A'
-  lazy val CR                                                                   = '\u000D'
-  lazy val Comma                                                                = ','
-  lazy val whitespace: CalibanSyntax[Char, Char]                                = Syntax.charIn(UnicodeBOM, Tab, Space, LF, CR, Comma)
-  lazy val comment: Syntax[String, Char, Char, Chunk[Char], Unit]               =
-    Syntax.char('#') ~> Syntax.anyChar.repeatUntil(Syntax.char(LF) | Syntax.string(s"$CR$LF", ())).unit
-  lazy val whitespaceWithComment: Syntax[String, Char, Char, Unit, Unit]        = (whitespace | comment).*.unit(Chunk.empty)
-  lazy val whitespaceWithComment1: Syntax[String, Char, Char, Unit, Unit]       = (whitespace | comment).+.unit(Chunk.empty)
-  private def wrapBrackets[D1, D2](t: Syntax[String, Char, Char, D1, D2])       =
+  lazy val UnicodeBOM                                                       = '\uFEFF'
+  lazy val Tab                                                              = '\u0009'
+  lazy val Space                                                            = '\u0020'
+  lazy val LF                                                               = '\u000A'
+  lazy val CR                                                               = '\u000D'
+  lazy val Comma                                                            = ','
+  lazy val whitespace: CalibanSyntax[Unit]                                  = Syntax.charIn(UnicodeBOM, Tab, Space, LF, CR, Comma).unit(' ')
+  lazy val comment: Syntax[String, Char, Char, Unit]                        =
+    Syntax.char('#') ~> Syntax.anyChar.repeatUntil(Syntax.char(LF) | Syntax.string(s"$CR$LF", ())).unit(Chunk.empty)
+  lazy val whitespaceWithComment: Syntax[String, Char, Char, Unit]          = (whitespace | comment).*.unit(Chunk.empty)
+  lazy val whitespaceWithComment1: Syntax[String, Char, Char, Unit]         = (whitespace | comment).+.unit(Chunk.empty)
+  private def wrapBrackets[D1, D2](t: Syntax[String, Char, Char, D1])       =
     (whitespaceWithComment ~> t <~ whitespaceWithComment).between(Syntax.char('{'), Syntax.char('}'))
-  private def wrapParentheses[D1, D2](t: Syntax[String, Char, Char, D1, D2])    =
+  private def wrapParentheses[D1, D2](t: Syntax[String, Char, Char, D1])    =
     (whitespaceWithComment ~> t <~ whitespaceWithComment).between(Syntax.char('('), Syntax.char(')'))
-  private def wrapSquareBrackets[D1, D2](t: Syntax[String, Char, Char, D1, D2]) =
+  private def wrapSquareBrackets[D1, D2](t: Syntax[String, Char, Char, D1]) =
     Syntax.char('[').surroundedBy(whitespaceWithComment) ~> t <~ Syntax
       .char(']')
       .surroundedBy(whitespaceWithComment)
-  private def wrapWhitespaces[D1, D2](t: Syntax[String, Char, Char, D1, D2])    =
+  private def wrapWhitespaces[D1, D2](t: Syntax[String, Char, Char, D1])    =
     t.surroundedBy(whitespaceWithComment)
 
   private object StringUtil {
@@ -67,45 +67,11 @@ object CalibanParser {
       ('t', '\t')
     )
 
-    lazy val escapedToken: Syntax[
-      String,
-      Char,
-      Char,
-      Char
-        with (Char, Char)
-        with (Char, Char, (Char, Char))
-        with (
-            Char,
-            Char,
-            (Char, Char),
-            (Char, Char, (Char, Char))
-        ),
-      Unit
-    ] = {
-      val escapes = Syntax.charIn(decodeTable.keys.toSeq: _*)
-
-      val oct  = Syntax.charIn('0' to '7': _*)
-      val octP = Syntax.char('o') ~ oct ~ oct
-
-      val hex  = Syntax.charIn(('0' to '9') ++ ('a' to 'f') ++ ('A' to 'F'): _*)
-      val hex2 = hex ~ hex
-      val hexP = Syntax.char('x') ~ hex2
-
-      val hex4 = hex2 ~ hex2
-      val u4   = Syntax.char('u') ~ hex4
-      val hex8 = hex4 ~ hex4
-      val u8   = Syntax.char('U') ~ hex8
-
-      val after = escapes | octP | hexP | u4 | u8
-      (Syntax.char('\\') ~ after).unit
-    }
-
     /** String content without the delimiter
       */
-    def undelimitedString(endP: CalibanSyntax[Unit, Unit]): CalibanSyntax[String, String] =
+    def undelimitedString(endP: CalibanSyntax[Unit]): CalibanSyntax[String] =
       Syntax.anyChar
         .repeatUntil(endP)
-//      escapedToken
 //        .orElse((!endP) ~ Parser.filterChar(_ => true))
 //        .+
         .string
@@ -118,10 +84,10 @@ object CalibanParser {
           (str: String) => Right(str) // TODO: escape
         )
 
-    lazy val simpleString: CalibanSyntax[String, String] =
+    lazy val simpleString: CalibanSyntax[String] =
       Syntax.filterChar(c => c >= ' ' && c != '"' && c != '\\', "Not a valid string character").repeat0.string
 
-    def escapedString(q: Char): CalibanSyntax[String, String] = {
+    def escapedString(q: Char): CalibanSyntax[String] = {
       val end = Syntax.char(q)
       end ~> (simpleString <~ end).orElse(undelimitedString(end) <~ end)
     }
@@ -187,26 +153,26 @@ object CalibanParser {
     }
   }
 
-  lazy val name: CalibanSyntax[String, String] =
+  lazy val name: CalibanSyntax[String] =
     (Syntax.charIn(('a' to 'z') ++ ('A' to 'Z') ++ Seq('_'): _*) ~
       Syntax.charIn(('a' to 'z') ++ ('A' to 'Z') ++ Seq('_') ++ ('0' to '9'): _*).*).string
 
-  lazy val booleanValue: CalibanSyntax[BooleanValue, BooleanValue] =
+  lazy val booleanValue: CalibanSyntax[BooleanValue] =
     Syntax.string("true", BooleanValue(true)) | Syntax.string("false", BooleanValue(false))
 
-  lazy val intValue: CalibanSyntax[IntValue, IntValue] =
-    (Numbers.signedIntString <~ (Syntax.char('.').not("Integer cannot have a dot")))
+  lazy val intValue: CalibanSyntax[IntValue] =
+    (Numbers.signedIntString <~ Syntax.char('.').not("Integer cannot have a dot"))
       .transform(
         IntValue(_),
         _.toBigInt.toString
       )
 
-  lazy val floatValue: CalibanSyntax[FloatValue, FloatValue] = Numbers.jsonNumber.transform(
+  lazy val floatValue: CalibanSyntax[FloatValue] = Numbers.jsonNumber.transform(
     FloatValue(_),
     _.toBigDecimal.toString()
   )
 
-  lazy val stringValue: CalibanSyntax[StringValue, StringValue] =
+  lazy val stringValue: CalibanSyntax[StringValue] =
     (
       (Syntax.string("\"\"\"", ()) ~> StringUtil
         .undelimitedString(endP = Syntax.string("\"\"\"", ()))
@@ -238,33 +204,33 @@ object CalibanParser {
     l4.mkString("\n")
   }
 
-  lazy val nullValue: CalibanSyntax[NullValue.type, NullValue.type] = Syntax.string("null", NullValue)
-  lazy val enumValue: CalibanSyntax[EnumValue, EnumValue]           =
+  lazy val nullValue: CalibanSyntax[NullValue.type] = Syntax.string("null", NullValue)
+  lazy val enumValue: CalibanSyntax[EnumValue]      =
     name.transform(EnumValue.apply, (value: EnumValue) => value.value)
 
-  lazy val listValue: CalibanSyntax[ListValue, ListValue] =
+  lazy val listValue: CalibanSyntax[ListValue] =
     wrapSquareBrackets(value.repeatWithSep(whitespaceWithComment))
       .transform(
         values => ListValue(values.toList),
         (value: ListValue) => Chunk.fromIterable(value.values)
       )
 
-  lazy val objectField: CalibanSyntax[(String, InputValue), (String, InputValue)] =
+  lazy val objectField: CalibanSyntax[(String, InputValue)] =
     (name <~ wrapWhitespaces(Syntax.char(':'))) ~ value
 
-  lazy val objectValue: CalibanSyntax[ObjectValue, ObjectValue] =
+  lazy val objectValue: CalibanSyntax[ObjectValue] =
     wrapBrackets(objectField.repeatWithSep0(whitespaceWithComment)).transform(
       values => ObjectValue(values.toMap),
       (value: ObjectValue) => Chunk.fromIterable(value.fields)
     )
 
-  lazy val variable: CalibanSyntax[VariableValue, VariableValue] =
+  lazy val variable: CalibanSyntax[VariableValue] =
     (Syntax.char('$') ~> name).transform(
       VariableValue.apply,
       (value: VariableValue) => value.name
     )
 
-  lazy val value: CalibanSyntax[InputValue, InputValue] =
+  lazy val value: CalibanSyntax[InputValue] =
     intValue.widen[InputValue] |
       floatValue.widen[InputValue] |
       booleanValue.widen[InputValue] |
@@ -275,36 +241,36 @@ object CalibanParser {
       objectValue.widen[InputValue] |
       variable.widen[InputValue]
 
-  lazy val defaultValue: CalibanSyntax[InputValue, InputValue] = wrapWhitespaces(Syntax.char('=')) ~> value
+  lazy val defaultValue: CalibanSyntax[InputValue] = wrapWhitespaces(Syntax.char('=')) ~> value
 
-  lazy val alias: CalibanSyntax[String, String] = name <~ whitespaceWithComment <~ Syntax.char(':')
+  lazy val alias: CalibanSyntax[String] = name <~ whitespaceWithComment <~ Syntax.char(':')
 
-  lazy val argument: CalibanSyntax[(String, InputValue), (String, InputValue)] =
+  lazy val argument: CalibanSyntax[(String, InputValue)] =
     (name <~ wrapWhitespaces(Syntax.char(':'))) ~ value
 
-  lazy val arguments: CalibanSyntax[Map[String, InputValue], Map[String, InputValue]] =
+  lazy val arguments: CalibanSyntax[Map[String, InputValue]] =
     wrapParentheses(argument.repeatWithSep0(whitespaceWithComment)).transform(
       v => v.toMap,
       (map: Map[String, InputValue]) => Chunk.fromIterable(map)
     )
 
-  lazy val directive: CalibanSyntax[Directive, Directive]              =
+  lazy val directive: CalibanSyntax[Directive]        =
     (Syntax.index ~ ((Syntax.char('@') ~> name) <~ whitespaceWithComment) ~ arguments.?).transform(
       { case (index, name, arguments) =>
         Directive(name, arguments.getOrElse(Map()), index)
       },
-      (directive: Directive) => (directive.name, optMap(directive.arguments))
+      (directive: Directive) => (0, directive.name, optMap(directive.arguments))
     )
-  lazy val directives: CalibanSyntax[List[Directive], List[Directive]] =
+  lazy val directives: CalibanSyntax[List[Directive]] =
     directive.repeatWithSep(whitespaceWithComment).toList
 
-  lazy val selection: CalibanSyntax[Selection, Selection] =
+  lazy val selection: CalibanSyntax[Selection] =
     field.widen[Selection] | fragmentSpread.widen[Selection] | inlineFragment.widen[Selection]
 
-  lazy val selectionSet: CalibanSyntax[List[Selection], List[Selection]] =
+  lazy val selectionSet: CalibanSyntax[List[Selection]] =
     wrapBrackets(selection.repeatWithSep0(whitespaceWithComment)).toList
 
-  lazy val namedType: CalibanSyntax[NamedType, NamedType] =
+  lazy val namedType: CalibanSyntax[NamedType] =
     (name.filter((n: String) => n != "null", "Name cannot be 'null'") ~
       Syntax
         .charIn('!')
@@ -316,7 +282,7 @@ object CalibanParser {
         (named: NamedType) => (named.name, if (named.nonNull) Some('!') else None)
       )
 
-  lazy val listType: CalibanSyntax[ListType, ListType] =
+  lazy val listType: CalibanSyntax[ListType] =
     (wrapSquareBrackets(type_) ~
       Syntax.charIn('!').?)
       .transform(
@@ -326,10 +292,10 @@ object CalibanParser {
         (lt: ListType) => (lt.ofType, if (lt.nonNull) Some('!') else None)
       )
 
-  lazy val type_ : CalibanSyntax[Type, Type] =
+  lazy val type_ : CalibanSyntax[Type] =
     namedType.widen[Type] | listType.widen[Type]
 
-  lazy val argumentDefinition: CalibanSyntax[InputValueDefinition, InputValueDefinition]              =
+  lazy val argumentDefinition: CalibanSyntax[InputValueDefinition]        =
     (((stringValue <~ whitespaceWithComment1).? ~ name <~ wrapWhitespaces(Syntax.char(':'))) ~
       (type_ <~ whitespaceWithComment) ~ ((defaultValue <~ whitespaceWithComment).? ~ directives.?)).transform(
       { case (description, name, type_, (defaultValue, directives)) =>
@@ -343,10 +309,10 @@ object CalibanParser {
           (d.defaultValue, optColl(d.directives))
         )
     )
-  lazy val argumentDefinitions: CalibanSyntax[List[InputValueDefinition], List[InputValueDefinition]] =
+  lazy val argumentDefinitions: CalibanSyntax[List[InputValueDefinition]] =
     wrapParentheses(argumentDefinition.+).toList
 
-  lazy val fieldDefinition: CalibanSyntax[FieldDefinition, FieldDefinition] =
+  lazy val fieldDefinition: CalibanSyntax[FieldDefinition] =
     (((stringValue <~ whitespaceWithComment).? ~ (name <~ whitespaceWithComment)) ~
       (argumentDefinitions <~ whitespaceWithComment).? ~
       ((Syntax.char(':') <~ whitespaceWithComment) ~> type_ <~ whitespaceWithComment) ~ directives.?).transform(
@@ -357,7 +323,7 @@ object CalibanParser {
         (d.description.map(StringValue.apply), d.name, optColl(d.args), d.ofType, optColl(d.directives))
     )
 
-  lazy val variableDefinition: CalibanSyntax[VariableDefinition, VariableDefinition] =
+  lazy val variableDefinition: CalibanSyntax[VariableDefinition] =
     ((variable <~ wrapWhitespaces(Syntax.char(':'))) ~
       (type_ <~ whitespaceWithComment) ~
       ((defaultValue <~ whitespaceWithComment).? ~ directives.?)).transform(
@@ -367,10 +333,10 @@ object CalibanParser {
       (d: VariableDefinition) => (VariableValue(d.name), d.variableType, (d.defaultValue, optColl(d.directives)))
     )
 
-  lazy val variableDefinitions: CalibanSyntax[Chunk[VariableDefinition], Chunk[VariableDefinition]] =
+  lazy val variableDefinitions: CalibanSyntax[Chunk[VariableDefinition]] =
     wrapParentheses(variableDefinition.repeatWithSep0(whitespaceWithComment))
 
-  lazy val field: CalibanSyntax[Field, Field] = (((Syntax.index ~ (alias <~ whitespaceWithComment).?) ~
+  lazy val field: CalibanSyntax[Field] = (((Syntax.index ~ (alias <~ whitespaceWithComment).?) ~
     name <~ whitespaceWithComment) ~ (arguments <~ whitespaceWithComment).? ~
     (directives <~ whitespaceWithComment).? ~ selectionSet.?).transform(
     { case (index, alias, name, args, dirs, sels) =>
@@ -383,13 +349,13 @@ object CalibanParser {
         index
       )
     },
-    (f: Field) => (f.alias, f.name, optMap(f.arguments), optColl(f.directives), optColl(f.selectionSet))
+    (f: Field) => (0, f.alias, f.name, optMap(f.arguments), optColl(f.directives), optColl(f.selectionSet))
   )
 
-  lazy val fragmentName: CalibanSyntax[String, String] =
+  lazy val fragmentName: CalibanSyntax[String] =
     name.filter((n: String) => n != "on", "Fragment name cannot be 'on'")
 
-  lazy val fragmentSpread: CalibanSyntax[FragmentSpread, FragmentSpread] =
+  lazy val fragmentSpread: CalibanSyntax[FragmentSpread] =
     ((Syntax.string("...", ()) ~> fragmentName <~ whitespaceWithComment) ~ directives.?).transform(
       { case (name, dirs) =>
         FragmentSpread(name, dirs.getOrElse(Nil))
@@ -397,10 +363,10 @@ object CalibanParser {
       (spread: FragmentSpread) => (spread.name, optColl(spread.directives))
     )
 
-  lazy val typeCondition: CalibanSyntax[NamedType, NamedType] =
+  lazy val typeCondition: CalibanSyntax[NamedType] =
     Syntax.string("on", ()) ~> whitespaceWithComment1 ~> namedType
 
-  lazy val inlineFragment: CalibanSyntax[InlineFragment, InlineFragment] =
+  lazy val inlineFragment: CalibanSyntax[InlineFragment] =
     (Syntax.string("...", ()) ~> whitespaceWithComment ~>
       (typeCondition <~ whitespaceWithComment).? ~ (directives <~ whitespaceWithComment).? ~ selectionSet).transform(
       { case (typeCondition, dirs, sel) =>
@@ -409,12 +375,12 @@ object CalibanParser {
       (f: InlineFragment) => (f.typeCondition, optColl(f.dirs), f.selectionSet)
     )
 
-  lazy val operationType: CalibanSyntax[OperationType, OperationType] =
+  lazy val operationType: CalibanSyntax[OperationType] =
     Syntax.string[OperationType]("query", OperationType.Query) |
       Syntax.string[OperationType]("mutation", OperationType.Mutation) |
       Syntax.string[OperationType]("subscription", OperationType.Subscription)
 
-  lazy val operationDefinition: CalibanSyntax[OperationDefinition, OperationDefinition] =
+  lazy val operationDefinition: CalibanSyntax[OperationDefinition] =
     ((operationType <~ whitespaceWithComment) ~ ((name <~ whitespaceWithComment).? ~
       (variableDefinitions <~ whitespaceWithComment).?) ~
       (directives <~ whitespaceWithComment).? ~ selectionSet).transform(
@@ -441,7 +407,7 @@ object CalibanParser {
           (d: OperationDefinition) => d.selectionSet
         )
 
-  lazy val fragmentDefinition: CalibanSyntax[FragmentDefinition, FragmentDefinition] =
+  lazy val fragmentDefinition: CalibanSyntax[FragmentDefinition] =
     ((Syntax.string("fragment", ()) ~> whitespaceWithComment1 ~> fragmentName <~ whitespaceWithComment1) ~
       (typeCondition <~ whitespaceWithComment) ~ (directives <~ whitespaceWithComment).? ~ selectionSet).transform(
       { case (name, typeCondition, dirs, sel) =>
@@ -452,7 +418,7 @@ object CalibanParser {
 
   private def objectTypeDefinition(
       description: Option[String]
-  ): CalibanSyntax[ObjectTypeDefinition, ObjectTypeDefinition] =
+  ): CalibanSyntax[ObjectTypeDefinition] =
     ((Syntax.string("type", ()) ~> whitespaceWithComment1 ~> name <~ whitespaceWithComment1) ~
       ((implements <~ whitespaceWithComment).? ~ (directives <~ whitespaceWithComment).?) ~
       wrapBrackets(fieldDefinition.repeatWithSep0(whitespaceWithComment))).transform(
@@ -469,17 +435,17 @@ object CalibanParser {
         (d.name, (optColl(d.implements), optColl(d.directives)), Chunk.fromIterable(d.fields))
     )
 
-  lazy val implements: CalibanSyntax[List[NamedType], List[NamedType]] =
+  lazy val implements: CalibanSyntax[List[NamedType]] =
     (((Syntax.string("implements", ()) <~ whitespaceWithComment <~
       (Syntax.char('&') <~ whitespaceWithComment).?.unit(None)) ~> namedType <~ whitespaceWithComment) ~
       (Syntax.char('&') ~> whitespaceWithComment ~> namedType).repeatWithSep0(whitespaceWithComment)).transform(
-      { case (name, tps) => (name :: tps.toList) },
+      { case (name, tps) => name :: tps.toList },
       tps => (tps.head, Chunk.fromIterable(tps.tail))
     )
 
   private def interfaceTypeDefinition(
       description: Option[String]
-  ): CalibanSyntax[InterfaceTypeDefinition, InterfaceTypeDefinition] =
+  ): CalibanSyntax[InterfaceTypeDefinition] =
     ((Syntax.string("interface", ()) ~> whitespaceWithComment1 ~> name <~ whitespaceWithComment) ~
       (directives <~ whitespaceWithComment).? ~ wrapBrackets(
         fieldDefinition.repeatWithSep0(whitespaceWithComment)
@@ -492,7 +458,7 @@ object CalibanParser {
 
   private def inputObjectTypeDefinition(
       description: Option[String]
-  ): CalibanSyntax[InputObjectTypeDefinition, InputObjectTypeDefinition] =
+  ): CalibanSyntax[InputObjectTypeDefinition] =
     ((Syntax.string(
       "input",
       ()
@@ -504,7 +470,7 @@ object CalibanParser {
       (d: InputObjectTypeDefinition) => (d.name, optColl(d.directives), Chunk.fromIterable(d.fields))
     )
 
-  lazy val enumValueDefinition: CalibanSyntax[EnumValueDefinition, EnumValueDefinition] =
+  lazy val enumValueDefinition: CalibanSyntax[EnumValueDefinition] =
     ((stringValue <~ whitespaceWithComment).? ~ (name <~ whitespaceWithComment) ~ directives.?).transform(
       { case (description, enumValue, directives) =>
         EnumValueDefinition(description.map(_.value), enumValue, directives.getOrElse(Nil))
@@ -512,12 +478,12 @@ object CalibanParser {
       (d: EnumValueDefinition) => (d.description.map(StringValue.apply), d.enumValue, optColl(d.directives))
     )
 
-  lazy val enumName: CalibanSyntax[String, String] =
+  lazy val enumName: CalibanSyntax[String] =
     name.filter(s => s != "true" && s != "false" && s != "null", "Enum name cannot be 'true', 'false' or 'null'")
 
   private def enumTypeDefinition(
       description: Option[String]
-  ): CalibanSyntax[EnumTypeDefinition, EnumTypeDefinition] =
+  ): CalibanSyntax[EnumTypeDefinition] =
     ((Syntax.string("enum", ()) ~> whitespaceWithComment1 ~> enumName <~ whitespaceWithComment) ~
       (directives <~ whitespaceWithComment).? ~ wrapBrackets(
         enumValueDefinition.repeatWithSep0(whitespaceWithComment)
@@ -530,13 +496,12 @@ object CalibanParser {
 
   private def unionTypeDefinition(
       description: Option[String]
-  ): CalibanSyntax[UnionTypeDefinition, UnionTypeDefinition] = {
+  ): CalibanSyntax[UnionTypeDefinition] = {
     val parser0: Syntax[
       String,
       Char,
       Char,
       (String, Option[List[Directive]], NamedType, Chunk[NamedType]),
-      (String, Option[List[Directive]], NamedType, Chunk[NamedType])
     ] =
       (Syntax.string("union", ()) ~> whitespaceWithComment1 ~> name <~ whitespaceWithComment) ~
         ((directives <~ whitespaceWithComment).? <~ Syntax.char('=') <~ whitespaceWithComment) ~
@@ -564,7 +529,7 @@ object CalibanParser {
 
   private def scalarTypeDefinition(
       description: Option[String]
-  ): CalibanSyntax[ScalarTypeDefinition, ScalarTypeDefinition] =
+  ): CalibanSyntax[ScalarTypeDefinition] =
     ((Syntax.string("scalar", ()) ~> whitespaceWithComment1 ~> name <~ whitespaceWithComment) ~ directives.?).transform(
       { case (name, directives) =>
         ScalarTypeDefinition(description, name, directives.getOrElse(Nil))
@@ -572,10 +537,10 @@ object CalibanParser {
       (d: ScalarTypeDefinition) => (d.name, optColl(d.directives))
     )
 
-  lazy val rootOperationTypeDefinition: CalibanSyntax[(OperationType, NamedType), (OperationType, NamedType)] =
+  lazy val rootOperationTypeDefinition: CalibanSyntax[(OperationType, NamedType)] =
     (operationType <~ wrapWhitespaces(Syntax.char(':'))) ~ namedType
 
-  lazy val schemaDefinition: CalibanSyntax[SchemaDefinition, SchemaDefinition] =
+  lazy val schemaDefinition: CalibanSyntax[SchemaDefinition] =
     ((Syntax.string("schema", ()) ~> whitespaceWithComment ~> (directives <~ whitespaceWithComment).?) ~
       wrapBrackets(rootOperationTypeDefinition.repeatWithSep0(whitespaceWithComment))).transform(
       { case (directives, ops) =>
@@ -600,7 +565,7 @@ object CalibanParser {
         )
     )
 
-  lazy val schemaExtensionWithOptionalDirectivesAndOperations: CalibanSyntax[SchemaExtension, SchemaExtension] =
+  lazy val schemaExtensionWithOptionalDirectivesAndOperations: CalibanSyntax[SchemaExtension] =
     ((directives <~ whitespaceWithComment).? ~
       wrapBrackets(rootOperationTypeDefinition.repeatWithSep0(whitespaceWithComment)).?).transform(
       { case (directives, ops) =>
@@ -627,10 +592,10 @@ object CalibanParser {
         )
     )
 
-  lazy val schemaExtension: CalibanSyntax[SchemaExtension, SchemaExtension] =
+  lazy val schemaExtension: CalibanSyntax[SchemaExtension] =
     Syntax.string("schema", ()) ~> whitespaceWithComment ~> schemaExtensionWithOptionalDirectivesAndOperations
 
-  lazy val scalarTypeExtension: CalibanSyntax[ScalarTypeExtension, ScalarTypeExtension] =
+  lazy val scalarTypeExtension: CalibanSyntax[ScalarTypeExtension] =
     ((Syntax.string("scalar", ()) ~> whitespaceWithComment ~> name <~ whitespaceWithComment) ~ directives).transform(
       { case (name, directives) =>
         ScalarTypeExtension(name, directives)
@@ -638,8 +603,7 @@ object CalibanParser {
       (ste: ScalarTypeExtension) => (ste.name, ste.directives)
     )
 
-  lazy val objectTypeExtensionWithOptionalInterfacesOptionalDirectivesAndFields
-      : CalibanSyntax[ObjectTypeExtension, ObjectTypeExtension] =
+  lazy val objectTypeExtensionWithOptionalInterfacesOptionalDirectivesAndFields: CalibanSyntax[ObjectTypeExtension] =
     ((name <~ whitespaceWithComment) ~ ((implements <~ whitespaceWithComment).? ~
       (directives <~ whitespaceWithComment).?) ~
       wrapBrackets(fieldDefinition.repeatWithSep0(whitespaceWithComment)).?).transform(
@@ -655,12 +619,11 @@ object CalibanParser {
         (ote.name, (optColl(ote.implements), optColl(ote.directives)), optColl(Chunk.fromIterable(ote.fields)))
     )
 
-  lazy val objectTypeExtension: CalibanSyntax[ObjectTypeExtension, ObjectTypeExtension] =
+  lazy val objectTypeExtension: CalibanSyntax[ObjectTypeExtension] =
     Syntax.string("type", ()) ~> whitespaceWithComment1 ~>
       objectTypeExtensionWithOptionalInterfacesOptionalDirectivesAndFields
 
-  lazy val interfaceTypeExtensionWithOptionalDirectivesAndFields
-      : CalibanSyntax[InterfaceTypeExtension, InterfaceTypeExtension] =
+  lazy val interfaceTypeExtensionWithOptionalDirectivesAndFields: CalibanSyntax[InterfaceTypeExtension] =
     ((name <~ whitespaceWithComment) ~ ((directives <~ whitespaceWithComment).? ~
       wrapBrackets(fieldDefinition.repeatWithSep0(whitespaceWithComment)).?)).transform(
       { case (name, (directives, fields)) =>
@@ -669,12 +632,11 @@ object CalibanParser {
       (ite: InterfaceTypeExtension) => (ite.name, (optColl(ite.directives), optColl(Chunk.fromIterable(ite.fields))))
     )
 
-  lazy val interfaceTypeExtension: CalibanSyntax[InterfaceTypeExtension, InterfaceTypeExtension] =
+  lazy val interfaceTypeExtension: CalibanSyntax[InterfaceTypeExtension] =
     Syntax.string("interface", ()) ~> whitespaceWithComment1 ~>
       interfaceTypeExtensionWithOptionalDirectivesAndFields
 
-  lazy val unionTypeExtensionWithOptionalDirectivesAndUnionMembers
-      : CalibanSyntax[UnionTypeExtension, UnionTypeExtension] =
+  lazy val unionTypeExtensionWithOptionalDirectivesAndUnionMembers: CalibanSyntax[UnionTypeExtension] =
     ((name <~ whitespaceWithComment) ~
       ((directives <~ whitespaceWithComment).? <~ (Syntax.char('=') <~ whitespaceWithComment).?.unit(None)) ~
       ((Syntax.char('|') <~ whitespaceWithComment).?.unit(None) ~> (namedType <~ whitespaceWithComment).?) ~
@@ -693,11 +655,11 @@ object CalibanParser {
           )
       )
 
-  lazy val unionTypeExtension: CalibanSyntax[UnionTypeExtension, UnionTypeExtension] =
+  lazy val unionTypeExtension: CalibanSyntax[UnionTypeExtension] =
     Syntax.string("union", ()) ~> whitespaceWithComment1 ~>
       unionTypeExtensionWithOptionalDirectivesAndUnionMembers
 
-  lazy val enumTypeExtensionWithOptionalDirectivesAndValues: CalibanSyntax[EnumTypeExtension, EnumTypeExtension] =
+  lazy val enumTypeExtensionWithOptionalDirectivesAndValues: CalibanSyntax[EnumTypeExtension] =
     ((enumName <~ whitespaceWithComment) ~ (directives <~ whitespaceWithComment).? ~
       wrapBrackets(enumValueDefinition.repeatWithSep0(whitespaceWithComment)).?).transform(
       { case (name, directives, enumValuesDefinition) =>
@@ -707,11 +669,10 @@ object CalibanParser {
         (ete.name, optColl(ete.directives), optColl(Chunk.fromIterable(ete.enumValuesDefinition)))
     )
 
-  lazy val enumTypeExtension: CalibanSyntax[EnumTypeExtension, EnumTypeExtension] =
+  lazy val enumTypeExtension: CalibanSyntax[EnumTypeExtension] =
     Syntax.string("enum", ()) ~> whitespaceWithComment1 ~> enumTypeExtensionWithOptionalDirectivesAndValues
 
-  lazy val inputObjectTypeExtensionWithOptionalDirectivesAndFields
-      : CalibanSyntax[InputObjectTypeExtension, InputObjectTypeExtension] =
+  lazy val inputObjectTypeExtensionWithOptionalDirectivesAndFields: CalibanSyntax[InputObjectTypeExtension] =
     ((name <~ whitespaceWithComment) ~ (directives <~ whitespaceWithComment).? ~
       wrapBrackets(argumentDefinition.repeatWithSep0(whitespaceWithComment)).?).transform(
       { case (name, directives, fields) =>
@@ -721,11 +682,11 @@ object CalibanParser {
         (iote.name, optColl(iote.directives), optColl(Chunk.fromIterable(iote.fields)))
     )
 
-  lazy val inputObjectTypeExtension: CalibanSyntax[InputObjectTypeExtension, InputObjectTypeExtension] =
+  lazy val inputObjectTypeExtension: CalibanSyntax[InputObjectTypeExtension] =
     Syntax.string("input", ()) ~> whitespaceWithComment1 ~>
       inputObjectTypeExtensionWithOptionalDirectivesAndFields
 
-  lazy val directiveLocation: CalibanSyntax[DirectiveLocation, DirectiveLocation] =
+  lazy val directiveLocation: CalibanSyntax[DirectiveLocation] =
     Syntax.string[DirectiveLocation]("QUERY", ExecutableDirectiveLocation.QUERY) |
       Syntax.string[DirectiveLocation]("MUTATION", ExecutableDirectiveLocation.MUTATION) |
       Syntax.string[DirectiveLocation]("SUBSCRIPTION", ExecutableDirectiveLocation.SUBSCRIPTION) |
@@ -745,7 +706,7 @@ object CalibanParser {
       Syntax.string[DirectiveLocation]("INPUT_OBJECT", TypeSystemDirectiveLocation.INPUT_OBJECT) |
       Syntax.string[DirectiveLocation]("INPUT_FIELD_DEFINITION", TypeSystemDirectiveLocation.INPUT_FIELD_DEFINITION)
 
-  lazy val directiveDefinition: CalibanSyntax[DirectiveDefinition, DirectiveDefinition] =
+  lazy val directiveDefinition: CalibanSyntax[DirectiveDefinition] =
     ((stringValue <~ whitespaceWithComment).? ~
       (Syntax.string("directive @", ()) ~> name <~ whitespaceWithComment) ~
       ((argumentDefinitions <~ whitespaceWithComment).? <~ Syntax.string("on", ()) <~ whitespaceWithComment1) ~
@@ -765,7 +726,7 @@ object CalibanParser {
           )
       )
 
-  lazy val typeDefinition: CalibanSyntax[TypeDefinition, TypeDefinition] = {
+  lazy val typeDefinition: CalibanSyntax[TypeDefinition] = {
     val parser: Parser[String, Char, TypeDefinition]   = (stringValue <~ whitespaceWithComment).?.asParser.flatMap {
       stringValOpt =>
         val description = stringValOpt.map(_.value)
@@ -790,15 +751,15 @@ object CalibanParser {
     parser <=> printer
   }
 
-  lazy val typeSystemDefinition: CalibanSyntax[TypeSystemDefinition, TypeSystemDefinition] =
+  lazy val typeSystemDefinition: CalibanSyntax[TypeSystemDefinition] =
     typeDefinition.widen[TypeSystemDefinition] |
       schemaDefinition.widen[TypeSystemDefinition] |
       directiveDefinition.widen[TypeSystemDefinition]
 
-  lazy val executableDefinition: CalibanSyntax[ExecutableDefinition, ExecutableDefinition] =
+  lazy val executableDefinition: CalibanSyntax[ExecutableDefinition] =
     operationDefinition.widen[ExecutableDefinition] | fragmentDefinition.widen[ExecutableDefinition]
 
-  lazy val typeExtension: CalibanSyntax[TypeExtension, TypeExtension] =
+  lazy val typeExtension: CalibanSyntax[TypeExtension] =
     objectTypeExtension.widen[TypeExtension] |
       interfaceTypeExtension.widen[TypeExtension] |
       inputObjectTypeExtension.widen[TypeExtension] |
@@ -806,15 +767,15 @@ object CalibanParser {
       unionTypeExtension.widen[TypeExtension] |
       scalarTypeExtension.widen[TypeExtension]
 
-  lazy val typeSystemExtension: CalibanSyntax[TypeSystemExtension, TypeSystemExtension] =
+  lazy val typeSystemExtension: CalibanSyntax[TypeSystemExtension] =
     Syntax.string("extend ", ()) ~> (schemaExtension.widen[TypeSystemExtension] | typeExtension
       .widen[TypeSystemExtension])
 
-  lazy val definition: CalibanSyntax[Definition, Definition] =
+  lazy val definition: CalibanSyntax[Definition] =
     executableDefinition.widen[Definition] | typeSystemDefinition.widen[Definition] | typeSystemExtension
       .widen[Definition]
 
-  lazy val document: CalibanSyntax[ParsedDocument, ParsedDocument] =
+  lazy val document: CalibanSyntax[ParsedDocument] =
     (whitespaceWithComment ~> definition.repeatWithSep(
       whitespaceWithComment
     ) <~ whitespaceWithComment <~ Syntax.end)
@@ -860,41 +821,42 @@ object ZNumbers {
 
   /** a single base 10 digit
     */
-  val digit: CalibanSyntax[Char, Char] = Syntax.digit
+  val digit: CalibanSyntax[Char] = Syntax.digit
 
   /** zero or more digit chars
     */
-  val digits0: CalibanSyntax[String, String] = digit.*.string
+  val digits0: CalibanSyntax[String] = digit.*.string
 
   /** one or more digit chars
     */
-  val digits: CalibanSyntax[String, String] = digit.+.string
+  val digits: CalibanSyntax[String] = digit.+.string
 
   /** a single base 10 digit excluding 0
     */
-  val nonZeroDigit: CalibanSyntax[Char, Char] =
+  val nonZeroDigit: CalibanSyntax[Char] =
     Syntax.charIn('1' to '9': _*)
 
   /** A String of either 1 '0' or 1 non-zero digit followed by zero or more digits
     */
-  val nonNegativeIntString: CalibanSyntax[String, String] =
-    (nonZeroDigit ~ digits0).unit
+  val nonNegativeIntString: CalibanSyntax[String] =
+    (nonZeroDigit ~ digits0)
+      .unit(('1', "")) // TODO: FIX THIS
       .orElse(Syntax.char('0'))
       .string
 
   /** A nonNegativeIntString possibly preceded by '-'
     */
-  val signedIntString: CalibanSyntax[String, String] =
+  val signedIntString: CalibanSyntax[String] =
     (Syntax.char('-').? ~ nonNegativeIntString).string
 
   /** map a signedIntString into a BigInt
     */
-  val bigInt: CalibanSyntax[String, BigInt] =
-    signedIntString.map(BigInt(_))
+  val bigInt: CalibanSyntax[String] =
+    signedIntString // .map(BigInt(_))
 
   /** A string matching the json specification for numbers. from: https://tools.ietf.org/html/rfc4627
     */
-  val jsonNumber: CalibanSyntax[String, String] = {
+  val jsonNumber: CalibanSyntax[String] = {
     /*
      *     number = [ minus ] int [ frac ] [ exp ]
      *     decimal-point = %x2E       ; .
@@ -907,9 +869,9 @@ object ZNumbers {
      *     plus = %x2B                ; +
      *     zero = %x30                ; 0
      */
-    val frac: CalibanSyntax[String, String]                    = Syntax.char('.') ~> digits
-    val exp: CalibanSyntax[(Char, Option[Char], String), Unit] =
-      (Syntax.charIn("eE") ~ Syntax.charIn("+-").? ~ digits).unit
+    val frac: CalibanSyntax[String]                      = Syntax.char('.') ~> digits
+    val exp: CalibanSyntax[(Char, Option[Char], String)] =
+      Syntax.charIn("eE") ~ Syntax.charIn("+-").? ~ digits
 
     (signedIntString ~ frac.? ~ exp.?).string
   }

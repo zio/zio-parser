@@ -9,7 +9,6 @@ object Macros {
       syntaxes: Expr[Seq[Syntax[String, I, O, _ <: A]]],
     )(using Quotes) = {
       import quotes.reflect._
-
       syntaxes match {
         case Varargs(exprs) =>
           val widenedSeq = Expr.ofSeq(exprs.prepended(syntax).map(widenImpl(_)))

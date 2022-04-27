@@ -503,7 +503,7 @@ object Syntax {
       Parser.ParseRegex(regex, None),
       Printer.ParseRegex(regex, None)
     )
-    
+
   /** Syntax that parses/prints a single character */
   val anyChar: Syntax[Nothing, Char, Char, Char] =
     unsafeRegexChar(

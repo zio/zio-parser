@@ -503,15 +503,7 @@ object Syntax {
       Parser.ParseRegex(regex, None),
       Printer.ParseRegex(regex, None)
     )
-
-  /** Syntax that combines all the constructors of subclasses of a sum type */
-  def oneOf[I, O, A](
-      x: SyntaxEnrichedForSubTyping[A, I, O],
-      xs: SyntaxEnrichedForSubTyping[A, I, O]*
-  ): Syntax[String, I, O, A] =
-    xs.map(enriched => enriched.syntax.widen[A](enriched.ev, enriched.tag))
-      .foldLeft(x.syntax.widen[A](x.ev, x.tag))(_ | _)
-
+    
   /** Syntax that parses/prints a single character */
   val anyChar: Syntax[Nothing, Char, Char, Char] =
     unsafeRegexChar(

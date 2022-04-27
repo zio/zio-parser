@@ -1,6 +1,7 @@
 package zio.parser
 
 import zio.parser.Parser.ParserError.AllBranchesFailed
+import zio.parser.SyntaxCompanionOps._
 import zio.test.Assertion._
 import zio.test._
 
@@ -54,7 +55,7 @@ object SyntaxSpec extends ZIOSpecDefault {
         Gen.const(Sunday)
       )
 
-    val weekDaySyntax = Syntax.oneOf(
+    val weekDaySyntax: Syntax[String, Char, Char, WeekDay] = Syntax.oneOf(
       mondaySyntax,
       tuesdaySyntax,
       wednesdaySyntax,

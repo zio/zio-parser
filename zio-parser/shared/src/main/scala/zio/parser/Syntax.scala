@@ -508,7 +508,7 @@ object Syntax {
   def oneOf[I, O, A](
       x: SyntaxEnrichedForSubTyping[A, I, O],
       xs: SyntaxEnrichedForSubTyping[A, I, O]*
-  ): Syntax[String, I, O, A, A] =
+  ): Syntax[String, I, O, A] =
     xs.map(enriched => enriched.syntax.widen[A](enriched.ev, enriched.tag))
       .foldLeft(x.syntax.widen[A](x.ev, x.tag))(_ | _)
 

@@ -416,7 +416,7 @@ class Syntax[+Err, -In, +Out, Value] private (
     )
 }
 
-object Syntax {
+object Syntax extends SyntaxCompanionVersionSpecific {
   private[parser] def from[Err, In, Out, Value](
       parser: Parser[Err, In, Value],
       printer: Printer[Err, Out, Value]

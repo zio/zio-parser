@@ -1,7 +1,6 @@
 package zio.parser
 
 import zio.parser.Parser.ParserError.AllBranchesFailed
-import zio.parser.SyntaxCompanionOps._
 import zio.test.Assertion._
 import zio.test._
 

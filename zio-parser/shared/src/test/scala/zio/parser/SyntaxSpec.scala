@@ -81,7 +81,6 @@ object SyntaxSpec extends ZIOSpecDefault {
       },
       test("oneOf fails to parse garbage") {
         val parsed = WeekDay.weekDaySyntax.parseString("garbage")
-        println(parsed)
         assert(parsed)(isLeft(isSubtype[AllBranchesFailed[String]](anything)))
       }
     )

@@ -35,13 +35,13 @@ object SyntaxSpec extends ZIOSpecDefault {
 
     case object Sunday extends WeekDay
 
-    val mondaySyntax    = Syntax.string("Mon", Monday)
-    val tuesdaySyntax   = Syntax.string("Tue", Tuesday)
-    val wednesdaySyntax = Syntax.string("Wed", Wednesday)
-    val thursdaySyntax  = Syntax.string("Thu", Thursday)
-    val fridaySyntax    = Syntax.string("Fri", Friday)
-    val saturdaySyntax  = Syntax.string("Sat", Saturday)
-    val sundaySyntax    = Syntax.string("Sun", Sunday)
+    val mondaySyntax: Syntax[String, Char, Char, Monday.type]       = Syntax.string("Mon", Monday)
+    val tuesdaySyntax: Syntax[String, Char, Char, Tuesday.type]     = Syntax.string("Tue", Tuesday)
+    val wednesdaySyntax: Syntax[String, Char, Char, Wednesday.type] = Syntax.string("Wed", Wednesday)
+    val thursdaySyntax: Syntax[String, Char, Char, Thursday.type]   = Syntax.string("Thu", Thursday)
+    val fridaySyntax: Syntax[String, Char, Char, Friday.type]       = Syntax.string("Fri", Friday)
+    val saturdaySyntax: Syntax[String, Char, Char, Saturday.type]   = Syntax.string("Sat", Saturday)
+    val sundaySyntax: Syntax[String, Char, Char, Sunday.type]       = Syntax.string("Sun", Sunday)
 
     val arbitrary: Gen[Any, WeekDay] =
       Gen.oneOf(

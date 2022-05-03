@@ -4,67 +4,66 @@ import zio.parser.Parser.ParserError.AllBranchesFailed
 import zio.test.Assertion._
 import zio.test._
 
-object SyntaxSpec extends ZIOSpecDefault {
+sealed trait WeekDay {
+  self =>
+  override def toString: String =
+    self match {
+      case WeekDay.Monday    => "Monday"
+      case WeekDay.Tuesday   => "Tuesday"
+      case WeekDay.Wednesday => "Wednesday"
+      case WeekDay.Thursday  => "Thursday"
+      case WeekDay.Friday    => "Friday"
+      case WeekDay.Saturday  => "Saturday"
+      case WeekDay.Sunday    => "Sunday"
+    }
+}
 
-  sealed trait WeekDay {
-    self =>
-    override def toString: String =
-      self match {
-        case WeekDay.Monday    => "Monday"
-        case WeekDay.Tuesday   => "Tuesday"
-        case WeekDay.Wednesday => "Wednesday"
-        case WeekDay.Thursday  => "Thursday"
-        case WeekDay.Friday    => "Friday"
-        case WeekDay.Saturday  => "Saturday"
-        case WeekDay.Sunday    => "Sunday"
-      }
-  }
+object WeekDay {
+  case object Monday extends WeekDay
 
-  object WeekDay {
-    case object Monday extends WeekDay
+  case object Tuesday extends WeekDay
 
-    case object Tuesday extends WeekDay
+  case object Wednesday extends WeekDay
 
-    case object Wednesday extends WeekDay
+  case object Thursday extends WeekDay
 
-    case object Thursday extends WeekDay
+  case object Friday extends WeekDay
 
-    case object Friday extends WeekDay
+  case object Saturday extends WeekDay
 
-    case object Saturday extends WeekDay
+  case object Sunday extends WeekDay
 
-    case object Sunday extends WeekDay
+  val mondaySyntax: Syntax[String, Char, Char, Monday.type]       = Syntax.string("Mon", Monday)
+  val tuesdaySyntax: Syntax[String, Char, Char, Tuesday.type]     = Syntax.string("Tue", Tuesday)
+  val wednesdaySyntax: Syntax[String, Char, Char, Wednesday.type] = Syntax.string("Wed", Wednesday)
+  val thursdaySyntax: Syntax[String, Char, Char, Thursday.type]   = Syntax.string("Thu", Thursday)
+  val fridaySyntax: Syntax[String, Char, Char, Friday.type]       = Syntax.string("Fri", Friday)
+  val saturdaySyntax: Syntax[String, Char, Char, Saturday.type]   = Syntax.string("Sat", Saturday)
+  val sundaySyntax: Syntax[String, Char, Char, Sunday.type]       = Syntax.string("Sun", Sunday)
 
-    val mondaySyntax: Syntax[String, Char, Char, Monday.type]       = Syntax.string("Mon", Monday)
-    val tuesdaySyntax: Syntax[String, Char, Char, Tuesday.type]     = Syntax.string("Tue", Tuesday)
-    val wednesdaySyntax: Syntax[String, Char, Char, Wednesday.type] = Syntax.string("Wed", Wednesday)
-    val thursdaySyntax: Syntax[String, Char, Char, Thursday.type]   = Syntax.string("Thu", Thursday)
-    val fridaySyntax: Syntax[String, Char, Char, Friday.type]       = Syntax.string("Fri", Friday)
-    val saturdaySyntax: Syntax[String, Char, Char, Saturday.type]   = Syntax.string("Sat", Saturday)
-    val sundaySyntax: Syntax[String, Char, Char, Sunday.type]       = Syntax.string("Sun", Sunday)
-
-    val arbitrary: Gen[Any, WeekDay] =
-      Gen.oneOf(
-        Gen.const(Monday),
-        Gen.const(Tuesday),
-        Gen.const(Wednesday),
-        Gen.const(Thursday),
-        Gen.const(Friday),
-        Gen.const(Saturday),
-        Gen.const(Sunday)
-      )
-
-    val weekDaySyntax: Syntax[String, Char, Char, WeekDay] = Syntax.oneOf(
-      mondaySyntax,
-      tuesdaySyntax,
-      wednesdaySyntax,
-      thursdaySyntax,
-      fridaySyntax,
-      saturdaySyntax,
-      sundaySyntax
+  val arbitrary: Gen[Any, WeekDay] =
+    Gen.oneOf(
+      Gen.const(Monday),
+      Gen.const(Tuesday),
+      Gen.const(Wednesday),
+      Gen.const(Thursday),
+      Gen.const(Friday),
+      Gen.const(Saturday),
+      Gen.const(Sunday)
     )
-  }
 
+  val weekDaySyntax: Syntax[String, Char, Char, WeekDay] = Syntax.oneOf(
+    mondaySyntax,
+    tuesdaySyntax,
+    wednesdaySyntax,
+    thursdaySyntax,
+    fridaySyntax,
+    saturdaySyntax,
+    sundaySyntax
+  )
+}
+
+object SyntaxSpec extends ZIOSpecDefault {
   override def spec =
     suite("Syntax")(
       test("oneOf can parse sum types") {

@@ -6,7 +6,7 @@ import zio.test.Assertion._
 import zio.test._
 
 object BashPrettyPrinterExample extends ZIOSpecDefault {
-  override def spec: ZSpec[TestEnvironment, Any] =
+  override def spec: Spec[TestEnvironment, Any] =
     suite("Bash pretty printer example")(
       suite("Conditions")(
         test("eq") {

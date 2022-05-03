@@ -1,9 +1,9 @@
 package zio.parser
 
-import zio.Chunk
 import zio.parser.Parser.ParserError
 import zio.test.Assertion._
 import zio.test._
+import zio.{Chunk, Scope}
 
 object ParserSpec extends ZIOSpecDefault {
   private val charA: Syntax[String, Char, Char, Char] = Syntax.char('a', "not a").as('a')
@@ -11,16 +11,16 @@ object ParserSpec extends ZIOSpecDefault {
 
   case class TestCaseClass(a: String, b: Int)
 
-  override def spec: ZSpec[Environment, Any] = {
+  override def spec: Spec[TestEnvironment with Scope, Any] = {
     suite("Parsing")(
       List(ParserImplementation.StackSafe, ParserImplementation.Recursive).map { implementation =>
         def parserTest[E, T](name: String, syntax: Syntax[E, Char, Char, T], input: String)(
             assertion: Assertion[Either[ParserError[E], T]]
-        ): ZSpec[Any, Nothing] = createParserTest(implementation)(name, syntax, input)(assertion)
+        ) = createParserTest(implementation)(name, syntax, input)(assertion)
 
         def parserTest_[E, T](name: String, parser: Parser[E, Char, T], input: String)(
             assertion: Assertion[Either[ParserError[E], T]]
-        ): ZSpec[Any, Nothing] = createParserTest_(implementation)(name, parser, input)(assertion)
+        ) = createParserTest_(implementation)(name, parser, input)(assertion)
 
         suite(implementation.toString)(
           suite("Invertible syntax")(
@@ -458,7 +458,7 @@ object ParserSpec extends ZIOSpecDefault {
       implementation: ParserImplementation
   )(name: String, syntax: Syntax[E, Char, Char, T], input: String)(
       assertion: Assertion[Either[ParserError[E], T]]
-  ): ZSpec[Any, Nothing] =
+  ): Spec[Any, Nothing] =
     test(name) {
 //      Debug.printParserTree(syntax.asParser.optimized)
       assert(syntax.parseString(input, implementation))(assertion)
@@ -468,7 +468,7 @@ object ParserSpec extends ZIOSpecDefault {
       implementation: ParserImplementation
   )(name: String, parser: Parser[E, Char, T], input: String)(
       assertion: Assertion[Either[ParserError[E], T]]
-  ): ZSpec[Any, Nothing] =
+  ): Spec[Any, Nothing] =
     test(name)(
       assert(parser.parseString(input, implementation))(assertion)
     )

@@ -69,7 +69,7 @@ object JsonExample extends ZIOSpecDefault {
 //  println("-----")
 //  Debug.printParserTree(json.asParser.optimized)
 
-  override def spec: ZSpec[Environment, Any] =
+  override def spec: Spec[Environment, Any] =
     suite("JSON example")(
       parsingTests("parsing with auto-backtrack", json.autoBacktracking),
       parsingTests("parsing with manual-backtrack", json.manualBacktracking)
@@ -78,7 +78,7 @@ object JsonExample extends ZIOSpecDefault {
   def parsingTests(
       name: String,
       json: Syntax[String, Char, Char, Json]
-  ): Spec[Any, TestFailure[Nothing], TestSuccess] =
+  ): Spec[Any, Nothing] =
     suite(name)(
       test("null") {
         assert(json.parseString("null"))(

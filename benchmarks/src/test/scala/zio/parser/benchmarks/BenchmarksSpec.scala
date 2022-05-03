@@ -10,7 +10,7 @@ import zio.test._
 
 /** Tests whether the benchmark examples run with success */
 object BenchmarksSpec extends ZIOSpecDefault {
-  override def spec: ZSpec[TestEnvironment, Any] =
+  override def spec: Spec[TestEnvironment, Any] =
     suite("Benchmarks")(
       suite("basic")(
         testParserBenchmark("RepeatAnyChar", new RepeatAnyChar),
@@ -45,7 +45,7 @@ object BenchmarksSpec extends ZIOSpecDefault {
   private def testParserBenchmark[T](
       name: String,
       create: => ParserBenchmark[T]
-  ): Spec[Any, TestFailure[Nothing], TestSuccess] = {
+  ): Spec[Any, Nothing] = {
     val benchmark = create
     benchmark.setUp()
 

@@ -42,7 +42,7 @@ object ContextualExample extends ZIOSpecDefault {
   lazy val node: Syntax[String, Char, Char, Node] =
     nodeParser <=> nodePrinter
 
-  override def spec: ZSpec[Environment, Any] =
+  override def spec: Spec[Environment, Any] =
     suite("Contextual example")(
       suite("Separate parser")(
         test("simple") {

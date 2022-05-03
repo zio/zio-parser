@@ -13,7 +13,7 @@ object PrinterSpec extends ZIOSpecDefault {
 
   case class TestCaseClass(a: Char, b: Char)
 
-  override def spec: ZSpec[Environment, Any] =
+  override def spec: Spec[Environment, Any] =
     suite("Printing")(
       suite("Invertible syntax")(
         printerTest("anyChar", Syntax.anyChar, 'x')(isRight(equalTo("x"))),
@@ -131,11 +131,11 @@ object PrinterSpec extends ZIOSpecDefault {
 
   private def printerTest[E, T](name: String, syntax: Syntax[E, Char, Char, T], input: T)(
       assertion: Assertion[Either[E, String]]
-  ): ZSpec[Any, Nothing] =
+  ): Spec[Any, Nothing] =
     test(name)(assert(syntax.printString(input))(assertion))
 
   private def printerTest_[E, T](name: String, printer: Printer[E, Char, T], input: T)(
       assertion: Assertion[Either[E, String]]
-  ): ZSpec[Any, Nothing] =
+  ): Spec[Any, Nothing] =
     test(name)(assert(printer.printString(input))(assertion))
 }

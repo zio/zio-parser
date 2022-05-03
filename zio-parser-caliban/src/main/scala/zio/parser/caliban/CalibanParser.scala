@@ -795,15 +795,15 @@ object CalibanParser {
     //      case Right(result) =>
     //        IO.succeed(Document(result._2.definitions,sm))
     //    }
-    Task
+    ZIO
       .attempt(document.parseString(query))
       .mapError(ex => ParsingError(s"Internal parsing error", innerThrowable = Some(ex)))
       .flatMap {
         case Left(error)   =>
           // IO.fail(ParsingError(error.toString, Some(sm.getLocation(error.failedAtOffset))))
-          IO.fail(ParsingError(error.toString, None))
+          ZIO.fail(ParsingError(error.toString, None))
         case Right(result) =>
-          IO.succeed(Document(result.definitions, sm))
+          ZIO.succeed(Document(result.definitions, sm))
       }
   }
 
@@ -896,13 +896,13 @@ object CalibanDemo extends ZIOAppDefault {
 """.trim
 
   val parsed: ZIO[Any, Nothing, Either[Parser.ParserError[String], StringValue]] =
-    UIO
+    ZIO
       .succeed(CalibanParser.stringValue.parseString(query))
       //  val parsed = UIO(CalibanSyntax.stringValue.parse("\"\"\"hello\"\"\""))
       .tap {
-        case Left(_)      => UIO.unit
+        case Left(_)      => ZIO.unit
         case Right(value) =>
-          UIO.succeed(value.getClass).debug("CLASS")
+          ZIO.succeed(value.getClass).debug("CLASS")
       }
 
 //  Debug.printParserTree(CalibanParser.document.asParser.optimized)

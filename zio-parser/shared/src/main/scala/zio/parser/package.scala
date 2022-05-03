@@ -3,6 +3,7 @@ package zio
 import zio.parser.internal.{PUnzippable, PZippable}
 
 import scala.reflect.ClassTag
+import scala.util.Try
 
 package object parser extends ImplicitTupleConversion {
 
@@ -77,7 +78,8 @@ package object parser extends ImplicitTupleConversion {
         if (tag.runtimeClass.isAssignableFrom(value.getClass)) {
           Right(value.asInstanceOf[Value])
         } else {
-          Left(s"Not a ${tag.runtimeClass.getSimpleName}")
+          val name = Try(tag.runtimeClass.getSimpleName).fold(error => error.getMessage, identity[String])
+          Left(s"Not a $name")
         }
       )
   }

@@ -435,7 +435,7 @@ object Regex {
         val supportsEmpty: Boolean = left.supportsEmpty || right.supportsEmpty
       }
       final case class Seq(first: LookupFunction, second: LookupFunction) extends ComputedLookupFunction {
-        val next = if (second.supportsEmpty) {
+        private val next: Step = if (second.supportsEmpty) {
           Step.MatchedOrJump(second)
         } else {
           Step.Jump(second)

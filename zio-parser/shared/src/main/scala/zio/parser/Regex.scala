@@ -441,21 +441,20 @@ object Regex {
           Step.Jump(second)
         }
 
-        def apply(char: Int): Step = {
+        def apply(char: Int): Step =
           first(char) ~ next
-        }
 
         val supportsEmpty: Boolean = first.supportsEmpty && second.supportsEmpty
       }
 
       /** A degenerate tabular result that can succeed without computing any input.
-       */
+        */
       case object Empty extends ComputedLookupFunction {
         def apply(char: Int): Step = Step.Error
         val supportsEmpty: Boolean = true
       }
 
-      final case class Table(parseChar: Chunk[Step])                      extends LookupFunction         { self =>
+      final case class Table(parseChar: Chunk[Step]) extends LookupFunction { self =>
         private[this] val len = parseChar.length
 
         val supportsEmpty: Boolean = false

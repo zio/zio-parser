@@ -174,7 +174,7 @@ object RegexSpec extends ZIOSpecDefault {
             val s = "abc" * len
             val r = Regex.string("abc").atMost(max).compile
 
-            val expected = math.min(len, max)*3
+            val expected = math.min(len, max) * 3
             assertTrue(r.test(0, s) == expected)
           }
         },

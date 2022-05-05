@@ -1,6 +1,7 @@
 package zio.parser
 
 import zio.Chunk
+import zio.parser.Regex.Tabular.LookupFunction.Empty
 
 import java.util.regex.Matcher
 import scala.annotation.nowarn
@@ -282,7 +283,7 @@ object Regex {
 
           val start = if (min == 0) Tabular(Succeed) else List.fill(min)(regex).reduce(_ ~ _)
 
-          (min to max)
+          (min until max)
             .foldLeft((Set(start), start)) { case ((choices, current), _) =>
               val next = current ~ regex
 
@@ -309,9 +310,7 @@ object Regex {
 
           case (Jump(left), Jump(right)) => Jump(left ~ right)
 
-          // case (MatchedOrJump(left), Jump(right)) => MatchedOrJump(left ~ right)
-          // case (Jump(left), MatchedOrJump(right)) => MatchedOrJump(left ~ right)
-          // case (MatchedOrJump(left), MatchedOrJump(right)) => MatchedOrJump(left ~ right)
+          case (MatchedOrJump(left), Jump(right)) => Jump((left ~ right) | right)
 
           case _ => Error
         }
@@ -325,25 +324,31 @@ object Regex {
 
       def |(that: Step): Step =
         (self, that) match {
-          case (_, Matched)              => Matched
-          case (Matched, _)              => Matched
-          case (left, Error)             => left
-          case (Error, right)            => right
-          case (Jump(left), Jump(right)) => Jump(left | right)
-          case _                         => Error
+          case (Matched, Jump(next))                       => MatchedOrJump(next)
+          case (Jump(next), Matched)                       => MatchedOrJump(next)
+          case (_, Matched)                                => Matched
+          case (Matched, _)                                => Matched
+          case (left, Error)                               => left
+          case (Error, right)                              => right
+          case (Jump(left), Jump(right))                   => Jump(left | right)
+          case (MatchedOrJump(left), Jump(right))          => MatchedOrJump(left | right)
+          case (Jump(left), MatchedOrJump(right))          => MatchedOrJump(left | right)
+          case (MatchedOrJump(left), MatchedOrJump(right)) => MatchedOrJump(left | right)
+          case _                                           => Error
         }
 
       override def toString(): String = self match {
-        case Matched => "Matched"
-        case Error   => "Error"
-        case Jump(_) => "Jump(<lookup>)"
+        case Matched          => "Matched"
+        case Error            => "Error"
+        case MatchedOrJump(_) => "MatchedOrJump(<lookup>)"
+        case Jump(_)          => "Jump(<lookup>)"
       }
     }
     object Step       {
-      case object Matched                           extends Step
-      case object Error                             extends Step
-      // final case class MatchedOrJump(lookup: LookupFunction) extends Step
-      final case class Jump(lookup: LookupFunction) extends Step
+      case object Matched                                    extends Step
+      case object Error                                      extends Step
+      final case class MatchedOrJump(lookup: LookupFunction) extends Step
+      final case class Jump(lookup: LookupFunction)          extends Step
     }
 
     sealed trait Tabular extends Compiled { self =>
@@ -357,8 +362,6 @@ object Regex {
 
       def |(that: Tabular): Tabular =
         (self, that) match {
-          case (Empty, lookup: LookupFunction)               => lookup
-          case (lookup: LookupFunction, Empty)               => lookup
           case (left: LookupFunction, right: LookupFunction) => (left | right): LookupFunction
           case _                                             => Empty
         }
@@ -372,14 +375,10 @@ object Regex {
         }
     }
 
-    /** A degenerate tabular result that always succeeds without consuming input.
-      */
-    case object Empty extends Tabular {
-      def test(index: Int, input: String): Int = index
-    }
-
     sealed trait LookupFunction extends Tabular { self =>
       def apply(char: Int): Step
+
+      def supportsEmpty: Boolean
 
       def ~(that: LookupFunction): LookupFunction
 
@@ -399,42 +398,72 @@ object Regex {
           curIdx = curIdx + 1
 
           curLookup(char) match {
-            case Step.Matched      => returnV = curIdx; curIdx = inputLen;
-            case Step.Error        => returnV = NotMatched; curIdx = inputLen;
-            case Step.Jump(lookup) => curLookup = lookup
+            case Step.Matched                           => returnV = curIdx; curIdx = inputLen;
+            case Step.Error if returnV == NeedMoreInput => returnV = NotMatched; curIdx = inputLen;
+            case Step.Error                             => curIdx = inputLen;
+            case Step.Jump(lookup)                      => curLookup = lookup
+            case Step.MatchedOrJump(lookup)             => returnV = curIdx; curLookup = lookup;
           }
         }
 
-        returnV
+        if ((returnV == NeedMoreInput || returnV == NotMatched) && self.supportsEmpty) {
+          index
+        } else {
+          returnV
+        }
       }
     }
     object LookupFunction {
-      abstract class ComputedLookupFunction                               extends LookupFunction         { self =>
+      abstract class ComputedLookupFunction extends LookupFunction { self =>
         final def ~(that: LookupFunction): LookupFunction = LookupFunction.Seq(self, that)
 
         final def |(that: LookupFunction): LookupFunction = LookupFunction.Or(self, that)
 
         final def &(that: LookupFunction): LookupFunction = LookupFunction.And(self, that)
       }
+
       case object AcceptAll                                               extends ComputedLookupFunction {
         def apply(char: Int): Step = Step.Matched
+        val supportsEmpty: Boolean = false
       }
       final case class And(left: LookupFunction, right: LookupFunction)   extends ComputedLookupFunction {
         def apply(char: Int): Step = left(char) & right(char)
+        val supportsEmpty: Boolean = left.supportsEmpty && right.supportsEmpty
       }
       final case class Or(left: LookupFunction, right: LookupFunction)    extends ComputedLookupFunction {
         def apply(char: Int): Step = left(char) | right(char)
+        val supportsEmpty: Boolean = left.supportsEmpty || right.supportsEmpty
       }
       final case class Seq(first: LookupFunction, second: LookupFunction) extends ComputedLookupFunction {
-        def apply(char: Int): Step = first(char) ~ second(char)
+        val next = if (second.supportsEmpty) {
+          Step.MatchedOrJump(second)
+        } else {
+          Step.Jump(second)
+        }
+
+        def apply(char: Int): Step = {
+          first(char) ~ next
+        }
+
+        val supportsEmpty: Boolean = first.supportsEmpty && second.supportsEmpty
       }
+
+      /** A degenerate tabular result that can succeed without computing any input.
+       */
+      case object Empty extends ComputedLookupFunction {
+        def apply(char: Int): Step = Step.Error
+        val supportsEmpty: Boolean = true
+      }
+
       final case class Table(parseChar: Chunk[Step])                      extends LookupFunction         { self =>
         private[this] val len = parseChar.length
 
+        val supportsEmpty: Boolean = false
+
         override def ~(that: LookupFunction): LookupFunction =
           that match {
-            case that @ Table(_) => copy(parseChar = parseChar.map(_ ~ Step.Jump(that)))
-            case that            => Seq(self, that)
+            case that if that.supportsEmpty => copy(parseChar = parseChar.map(_ ~ Step.MatchedOrJump(that)))
+            case that                       => copy(parseChar = parseChar.map(_ ~ Step.Jump(that)))
           }
 
         override def |(that: LookupFunction): LookupFunction =

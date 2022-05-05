@@ -174,10 +174,10 @@ object RegexSpec extends ZIOSpecDefault {
             val s = "abc" * len
             val r = Regex.string("abc").atMost(max).compile
 
-            val expected = math.min(len, max)
+            val expected = math.min(len, max)*3
             assertTrue(r.test(0, s) == expected)
           }
-        } @@ TestAspect.ignore, // TODO
+        },
         test("between") {
           check(Gen.int(0, 20), Gen.int(0, 20), Gen.int(0, 20)) { (len, a, b) =>
             val max = Math.max(a, b)
@@ -188,7 +188,7 @@ object RegexSpec extends ZIOSpecDefault {
             val expected = if (len >= min) Math.min(len, max) else Regex.NeedMoreInput
             assertTrue(r.test(0, s) == expected)
           }
-        } @@ TestAspect.ignore  // TODO
+        }
       ),
       suite("end of stream")(
         test("oneOf(a, b)") {

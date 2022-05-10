@@ -50,7 +50,7 @@ object ExpressionExample extends ZIOSpecDefault {
     Const(3)
   )
 
-  override def spec: ZSpec[Environment, Any] =
+  override def spec: Spec[Environment, Any] =
     suite("Expression example")(
       test("Parses expression correctly") {
 //        Debug.printParserTree(expr.asParser.optimized)

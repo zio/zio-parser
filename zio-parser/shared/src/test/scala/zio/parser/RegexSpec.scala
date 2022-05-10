@@ -60,7 +60,7 @@ object RegexSpec extends ZIOSpecDefault {
 
   val keywords: Regex.Tabular.Tabular = Regex.Tabular(keywordsRegex)
 
-  override def spec: ZSpec[TestEnvironment, Any] =
+  override def spec: Spec[TestEnvironment, Any] =
     suite("RegexSpec")(
       suite("string")(
         test("positive matches") {
@@ -214,7 +214,7 @@ object RegexSpec extends ZIOSpecDefault {
       r: Regex,
       f: Char => Boolean,
       gen: Gen[Any, Char] = Gen.char
-  ): ZSpec[TestConfig, Any] =
+  ): Spec[TestConfig, Any] =
     test(name) {
       val compiled = r.compile
       check(gen) { ch =>
@@ -226,7 +226,7 @@ object RegexSpec extends ZIOSpecDefault {
       name: String,
       r: Regex,
       gen: Gen[Any, Char]
-  ): ZSpec[Sized with TestConfig, Any] =
+  ): Spec[Sized with TestConfig, Any] =
     test(name) {
       val compiled = r.compile
       check(Gen.chunkOf1(gen)) { input =>
@@ -239,7 +239,7 @@ object RegexSpec extends ZIOSpecDefault {
       r: Regex,
       gen: Gen[Any, Char],
       counterexample: Char
-  ): ZSpec[Sized with TestConfig, Any] =
+  ): Spec[Sized with TestConfig, Any] =
     test(name) {
       val compiled = r.compile
       check(Gen.chunkOf1(gen)) { input =>

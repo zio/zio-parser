@@ -1,9 +1,9 @@
 package zio.parser
 
+import zio._
 import zio.parser.Parser.ParserError.AllBranchesFailed
 import zio.test.Assertion._
 import zio.test._
-import zio._
 
 sealed trait WeekDay {
   self =>

@@ -76,7 +76,7 @@ lazy val zioParser = crossProject(JSPlatform, JVMPlatform, NativePlatform)
     libraryDependencies ++= Seq(
       "dev.zio"               %% "zio"          % zioVersion,
       "dev.zio"               %% "zio-streams"  % zioVersion,
-      "com.github.ghostdogpr" %% "caliban"      % "1.4.0",
+      "com.github.ghostdogpr" %% "caliban"      % "1.4.1",
       "dev.zio"               %% "zio-test"     % zioVersion % Test,
       "dev.zio"               %% "zio-test-sbt" % zioVersion % Test
     ),
@@ -100,7 +100,7 @@ lazy val calibanParser = project
   .settings(
     publish / skip := true,
     libraryDependencies ++= Seq(
-      "com.github.ghostdogpr" %% "caliban"      % "1.4.0",
+      "com.github.ghostdogpr" %% "caliban"      % "1.4.1",
       "dev.zio"               %% "zio"          % zioVersion,
       "dev.zio"               %% "zio-streams"  % zioVersion,
       "dev.zio"               %% "zio-test"     % zioVersion % Test,

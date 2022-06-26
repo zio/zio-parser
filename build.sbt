@@ -42,7 +42,7 @@ addCommandAlias(
   ";zioParserNative/test"
 )
 
-val zioVersion = "2.0.0-RC6"
+val zioVersion = "2.0.0"
 
 lazy val root = (project in file("."))
   .aggregate(
@@ -74,11 +74,10 @@ lazy val zioParser = crossProject(JSPlatform, JVMPlatform, NativePlatform)
           )
       }),
     libraryDependencies ++= Seq(
-      "dev.zio"               %% "zio"          % zioVersion,
-      "dev.zio"               %% "zio-streams"  % zioVersion,
-      "com.github.ghostdogpr" %% "caliban"      % "1.4.1",
-      "dev.zio"               %% "zio-test"     % zioVersion % Test,
-      "dev.zio"               %% "zio-test-sbt" % zioVersion % Test
+      "dev.zio" %% "zio"          % zioVersion,
+      "dev.zio" %% "zio-streams"  % zioVersion,
+      "dev.zio" %% "zio-test"     % zioVersion % Test,
+      "dev.zio" %% "zio-test-sbt" % zioVersion % Test
     ),
     testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
   )

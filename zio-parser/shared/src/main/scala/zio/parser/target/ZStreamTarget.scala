@@ -2,10 +2,12 @@ package zio.parser.target
 
 import zio.parser.internal.Stack
 import zio.stream.ZStream
-import zio.{ChunkBuilder, Queue, Runtime, UIO, ZIO}
+import zio.{ChunkBuilder, Queue, Runtime, UIO, Unsafe, ZIO}
 
 class ZStreamTarget[R, Output](runtime: Runtime[R]) extends Target[Output] {
-  private val queue: Queue[Output] = runtime.unsafeRun(Queue.unbounded[Output])
+  private val queue: Queue[Output] = Unsafe.unsafeCompat { implicit u =>
+    runtime.unsafe.run(Queue.unbounded[Output]).getOrThrowFiberFailure()
+  }
 
   val stream: ZStream[Any, Nothing, Output] = ZStream.fromQueue(queue)
 
@@ -16,7 +18,9 @@ class ZStreamTarget[R, Output](runtime: Runtime[R]) extends Target[Output] {
 
   override def write(value: Output): Unit =
     if (currentBuilder == null) {
-      runtime.unsafeRun(queue.offer(value).unit)
+      Unsafe.unsafeCompat { implicit u =>
+        runtime.unsafe.run(queue.offer(value).unit).getOrThrowFiberFailure()
+      }
     } else {
       currentBuilder += value
       ()
@@ -40,7 +44,9 @@ class ZStreamTarget[R, Output](runtime: Runtime[R]) extends Target[Output] {
       ()
     } else {
       currentBuilder = null
-      runtime.unsafeRun(queue.offerAll(capture.subBuilder.result()).unit)
+      Unsafe.unsafeCompat { implicit u =>
+        runtime.unsafe.run(queue.offerAll(capture.subBuilder.result()).unit).getOrThrowFiberFailure()
+      }
     }
   }
 

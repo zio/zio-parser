@@ -1,6 +1,7 @@
 ---
 id: index
 title: "Introduction to ZIO Parser"
+sidebar_label: "ZIO Parser"
 ---
 
 Library for constructing parsers and pretty printers based on invertible syntax descriptions

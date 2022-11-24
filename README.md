@@ -12,14 +12,14 @@ Library for constructing parsers and pretty printers based on invertible syntax 
 [![Zymposium - ZIO Parser](https://i.ytimg.com/vi/DEPpL9LBiyA/maxresdefault.jpg)](https://www.youtube.com/watch?v=DEPpL9LBiyA)
 
 # Documentation
-[ZIO Parser Microsite](https://zio.github.io/zio-parser/)
+[ZIO Parser Microsite](https://zio.dev/zio-parser/)
 
 # Contributing
-[Documentation for contributors](https://zio.github.io/zio-parser/docs/about/about_contributing)
+[Documentation for contributors](https://zio.dev/about/contributing)
 
 ## Code of Conduct
 
-See the [Code of Conduct](https://zio.github.io/zio-parser/docs/about/about_coc)
+See the [Code of Conduct](https://zio.dev/about/code-of-conduct)
 
 ## Support
 

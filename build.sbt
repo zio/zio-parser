@@ -131,13 +131,13 @@ lazy val docs = project
   .settings(stdSettings("zio-parser"))
   .settings(macroDefinitionSettings)
   .settings(
-    scalaVersion   := Scala213,
-    publish / skip := true,
-    moduleName     := "zio-parser-docs",
+    scalaVersion      := Scala213,
+    publish / skip    := true,
+    moduleName        := "zio-parser-docs",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
-    projectName := "ZIO Parser",
-    badgeInfo := Some(
+    projectName       := "ZIO Parser",
+    badgeInfo         := Some(
       BadgeInfo(
         artifact = "zio-parser_2.12",
         projectStage = ProjectStage.Development

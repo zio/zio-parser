@@ -49,7 +49,8 @@ lazy val root = (project in file("."))
     zioParserJVM,
     zioParserJS,
     zioParserNative,
-    calibanParser
+    calibanParser,
+    docs
   )
   .settings(
     crossScalaVersions := Nil,
@@ -131,19 +132,16 @@ lazy val docs = project
   .settings(stdSettings("zio-parser"))
   .settings(macroDefinitionSettings)
   .settings(
-    scalaVersion      := Scala213,
-    publish / skip    := true,
-    moduleName        := "zio-parser-docs",
+    scalaVersion                               := Scala213,
+    publish / skip                             := true,
+    moduleName                                 := "zio-parser-docs",
     scalacOptions -= "-Yno-imports",
     scalacOptions -= "-Xfatal-warnings",
-    projectName       := "ZIO Parser",
-    badgeInfo         := Some(
-      BadgeInfo(
-        artifact = "zio-parser_2.12",
-        projectStage = ProjectStage.Development
-      )
-    ),
-    docsPublishBranch := "master"
+    projectName                                := "ZIO Parser",
+    mainModuleName                             := (zioParserJVM / moduleName).value,
+    projectStage                               := ProjectStage.Development,
+    docsPublishBranch                          := "master",
+    ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(zioParserJVM)
   )
   .dependsOn(zioParserJVM)
   .enablePlugins(WebsitePlugin)

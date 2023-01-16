@@ -4,7 +4,6 @@ import zio.Chunk
 import zio.parser.Regex.Tabular.LookupFunction.Empty
 
 import java.util.regex.Matcher
-import scala.annotation.nowarn
 import scala.collection.immutable.BitSet
 
 /** A model of a regular expression.
@@ -500,7 +499,7 @@ object Regex {
   }
 
   private[parser] object BuiltIn {
-    @nowarn def apply(regex: Regex): Option[BuiltIn] =
+    def apply(regex: Regex): Option[BuiltIn] =
       None // NOTE: enabling it makes the parser non-threadsafe
 //      val builder = new StringBuilder
 //      builder.append("\\G")

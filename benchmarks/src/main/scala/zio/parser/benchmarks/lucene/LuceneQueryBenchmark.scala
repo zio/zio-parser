@@ -64,19 +64,19 @@ class LuceneQueryBenchmark {
 //    zioParserStrippedQuery.parseChars(testQueryChunk, ParserImplementation.VM)
 }
 
-object LuceneQueryBenchmark extends LuceneQueryBenchmark {
-  def main(args: Array[String]): Unit = {
-    setUp()
-    Debug.printParserTree(zioParserQuery.asParser.optimized)
-    println("----")
-    Debug.printParserTree(zioParserStrippedQuery.asParser.optimized)
-    println(s"ZIO Parser result: ${zioParse()}")
-    println(s"ZIO Parser stripped result: ${zioParseStrippedRecursive()}")
-    println(s"ZIO Parser stripped op-stack result: ${zioParseStrippedOpStack()}")
-    println(s"Cats Parser result: ${catsParse()}")
-
-//    val builder = new VMBuilder
-//    builder.compile(zioParserQuery.asParser.asInstanceOf[ErasedParser])
-//    println(builder.result())
-  }
-}
+//object LuceneQueryBenchmark extends LuceneQueryBenchmark {
+//  def main(args: Array[String]): Unit = {
+//    setUp()
+//    Debug.printParserTree(zioParserQuery.asParser.optimized)
+//    println("----")
+//    Debug.printParserTree(zioParserStrippedQuery.asParser.optimized)
+//    println(s"ZIO Parser result: ${zioParse()}")
+//    println(s"ZIO Parser stripped result: ${zioParseStrippedRecursive()}")
+//    println(s"ZIO Parser stripped op-stack result: ${zioParseStrippedOpStack()}")
+//    println(s"Cats Parser result: ${catsParse()}")
+//
+////    val builder = new VMBuilder
+////    builder.compile(zioParserQuery.asParser.asInstanceOf[ErasedParser])
+////    println(builder.result())
+//  }
+//}

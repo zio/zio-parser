@@ -9,7 +9,7 @@ import zio.parser.Parser.ParserError
   * @param source
   *   The parsed string
   */
-final class ParserState(val source: String) {
+final class ParserState[+Source](val source: Source) {
 
   /** Position in the parsed string (source) */
   var position: Int = 0

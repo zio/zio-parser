@@ -1,6 +1,7 @@
 package zio.parser
 
 import zio.parser.Parser.{ErasedParser, ParserError}
+import zio.parser.internal.recursive.ParserState
 import zio.parser.internal.stacksafe.ParserOp.InitialParser
 import zio.parser.internal.stacksafe.{CharParserImpl, ParserOp}
 import zio.parser.internal.{PZippable, recursive}
@@ -282,7 +283,7 @@ sealed trait Parser[+Err, -In, +Result] { self =>
         parser.run()
       case ParserImplementation.Recursive =>
         val state  = new recursive.ParserState(input)
-        val result = self.optimized.parseRec(state)
+        val result = self.optimized.parseRecString(state)
 
         if (state.error != null)
           Left(state.error.asInstanceOf[ParserError[Err]])
@@ -299,6 +300,17 @@ sealed trait Parser[+Err, -In, +Result] { self =>
       ev: Char <:< In
   ): Either[ParserError[Err], Result] =
     parseString(new String(input.toArray), parserImplementation)
+
+  /** Run this parser on the given 'input' chunk */
+  final def parseChunk(input: Chunk[In]): Either[ParserError[Err], Result] = {
+    val state  = new recursive.ParserState(input)
+    val result = self.optimized.parseRec(state)
+
+    if (state.error != null)
+      Left(state.error.asInstanceOf[ParserError[Err]])
+    else
+      Right(result)
+  }
 
   /** The optimized parser tree used by the parser implementations */
   lazy val optimized: Parser[Err, In, Result] = {
@@ -361,7 +373,9 @@ sealed trait Parser[+Err, -In, +Result] { self =>
     // NOTE: here we can analyse the parser tree to select an implementation (for example check if it has FlatMap)
     ParserImplementation.Recursive
 
-  protected def parseRec(state: recursive.ParserState): Result
+  protected def parseRecString(state: recursive.ParserState[String]): Result
+
+  protected def parseRec(state: recursive.ParserState[Chunk[In]]): Result
 
   protected def needsBacktrack: Boolean
 }
@@ -397,7 +411,10 @@ object Parser {
         memoized.runStripNode(state)
       }
 
-    override protected def parseRec(state: recursive.ParserState): Result =
+    override protected def parseRecString(state: recursive.ParserState[String]): Result =
+      memoized.parseRecString(state)
+
+    override protected def parseRec(state: ParserState[Chunk[In]]): Result =
       memoized.parseRec(state)
 
     override protected lazy val needsBacktrack: Boolean = true
@@ -413,7 +430,10 @@ object Parser {
         state: OptimizerState
     ): Parser[Nothing, Any, Result] = this
 
-    override protected def parseRec(state: recursive.ParserState): Result =
+    override protected def parseRecString(state: recursive.ParserState[String]): Result =
+      value
+
+    override protected def parseRec(state: ParserState[Chunk[Any]]): Result =
       value
 
     override protected val needsBacktrack: Boolean = false
@@ -429,7 +449,12 @@ object Parser {
         state: OptimizerState
     ): Parser[Err, Any, Nothing] = this
 
-    override protected def parseRec(state: recursive.ParserState): Nothing = {
+    override protected def parseRecString(state: recursive.ParserState[String]): Nothing = {
+      state.error = ParserError.Failure(state.nameStack, state.position, failure)
+      null.asInstanceOf[Nothing]
+    }
+
+    override protected def parseRec(state: ParserState[Chunk[Any]]): Nothing = {
       state.error = ParserError.Failure(state.nameStack, state.position, failure)
       null.asInstanceOf[Nothing]
     }
@@ -447,7 +472,12 @@ object Parser {
         state: OptimizerState
     ): Parser[Err, Any, Nothing] = this
 
-    override protected def parseRec(state: recursive.ParserState): Nothing = {
+    override protected def parseRecString(state: recursive.ParserState[String]): Nothing = {
+      state.error = failure
+      null.asInstanceOf[Nothing]
+    }
+
+    override protected def parseRec(state: ParserState[Chunk[Any]]): Nothing = {
       state.error = failure
       null.asInstanceOf[Nothing]
     }
@@ -465,7 +495,14 @@ object Parser {
     override protected def stripNode(state: OptimizerState): Parser[Err, In, Result] =
       parser.runStripNode(state)
 
-    override protected def parseRec(state: recursive.ParserState): Result = {
+    override protected def parseRecString(state: recursive.ParserState[String]): Result = {
+      state.pushName(name)
+      val result = parser.parseRecString(state)
+      state.popName()
+      result
+    }
+
+    override protected def parseRec(state: ParserState[Chunk[In]]): Result = {
       state.pushName(name)
       val result = parser.parseRec(state)
       state.popName()
@@ -486,7 +523,24 @@ object Parser {
 
     override protected def stripNode(state: OptimizerState): Parser[Err, Char, Unit] = this
 
-    override protected def parseRec(state: recursive.ParserState): Unit = {
+    override protected def parseRecString(state: recursive.ParserState[String]): Unit = {
+      val position = state.position
+      val result   = compiledRegex.test(position, state.source)
+      if (result == Regex.NeedMoreInput) {
+        state.error = ParserError.UnexpectedEndOfInput
+      } else if (result == Regex.NotMatched) {
+        onFailure match {
+          case Some(failure) =>
+            state.error = ParserError.Failure(state.nameStack, position, failure)
+          case None          =>
+            state.error = ParserError.UnknownFailure(state.nameStack, position)
+        }
+      } else {
+        state.position = result
+      }
+    }
+
+    override protected def parseRec(state: ParserState[Chunk[Char]]): Unit = {
       val position = state.position
       val result   = compiledRegex.test(position, state.source)
       if (result == Regex.NeedMoreInput) {
@@ -527,7 +581,7 @@ object Parser {
 
     override protected def stripNode(state: OptimizerState): Parser[Err, Char, Chunk[Char]] = this
 
-    override protected def parseRec(state: recursive.ParserState): Chunk[Char] = {
+    override protected def parseRecString(state: recursive.ParserState[String]): Chunk[Char] = {
       val position = state.position
       val result   = compiledRegex.test(position, state.source)
       if (result == Regex.NeedMoreInput) {
@@ -540,6 +594,23 @@ object Parser {
         state.position = result
         if (!state.discard) {
           Chunk.fromArray(state.source.slice(position, result).toCharArray)
+        } else null
+      }
+    }
+
+    override protected def parseRec(state: ParserState[Chunk[Char]]): Chunk[Char] = {
+      val position = state.position
+      val result   = compiledRegex.test(position, state.source)
+      if (result == Regex.NeedMoreInput) {
+        state.error = ParserError.UnexpectedEndOfInput
+        null.asInstanceOf[Chunk[Char]]
+      } else if (result == Regex.NotMatched) {
+        state.error = getFailure(position, state.nameStack)
+        null.asInstanceOf[Chunk[Char]]
+      } else {
+        state.position = result
+        if (!state.discard) {
+          state.source.slice(position, result)
         } else null
       }
     }
@@ -568,7 +639,24 @@ object Parser {
 
     override protected def stripNode(state: OptimizerState): Parser[Err, Char, Char] = this
 
-    override protected def parseRec(state: recursive.ParserState): Char = {
+    override protected def parseRecString(state: recursive.ParserState[String]): Char = {
+      val position = state.position
+      val result   = compiledRegex.test(position, state.source)
+      if (result == Regex.NeedMoreInput) {
+        state.error = ParserError.UnexpectedEndOfInput
+        null.asInstanceOf[Char]
+      } else if (result == Regex.NotMatched) {
+        state.error = getFailure(position, state.nameStack)
+        null.asInstanceOf[Char]
+      } else {
+        state.position = result
+        if (!state.discard) {
+          state.source(result - 1)
+        } else null.asInstanceOf[Char]
+      }
+    }
+
+    override protected def parseRec(state: ParserState[Chunk[Char]]): Char = {
       val position = state.position
       val result   = compiledRegex.test(position, state.source)
       if (result == Regex.NeedMoreInput) {
@@ -619,7 +707,26 @@ object Parser {
       TransformEither(inner, to)
     }
 
-    override protected def parseRec(state: recursive.ParserState): Result2 = {
+    override protected def parseRecString(state: recursive.ParserState[String]): Result2 = {
+      // NOTE: cannot skip in discard mode, we need to detect failures
+      val discard     = state.discard
+      state.discard = false
+      val innerResult = parser.parseRecString(state)
+      state.discard = discard
+      if (state.error == null) {
+        to(innerResult) match {
+          case Left(failure) =>
+            state.error = ParserError.Failure(state.nameStack, state.position, failure)
+            null.asInstanceOf[Result2]
+          case Right(value)  =>
+            value
+        }
+      } else {
+        null.asInstanceOf[Result2]
+      }
+    }
+
+    override protected def parseRec(state: ParserState[Chunk[In]]): Result2 = {
       // NOTE: cannot skip in discard mode, we need to detect failures
       val discard     = state.discard
       state.discard = false
@@ -670,7 +777,16 @@ object Parser {
       Transform(inner, to)
     }
 
-    override protected def parseRec(state: recursive.ParserState): Result2 = {
+    override protected def parseRecString(state: recursive.ParserState[String]): Result2 = {
+      val result = parser.parseRecString(state)
+      if (!state.discard && state.error == null) {
+        to(result)
+      } else {
+        null.asInstanceOf[Result2]
+      }
+    }
+
+    override protected def parseRec(state: ParserState[Chunk[In]]): Result2 = {
       val result = parser.parseRec(state)
       if (!state.discard && state.error == null) {
         to(result)
@@ -719,7 +835,15 @@ object Parser {
       Ignore(inner, to)
     }
 
-    override protected def parseRec(state: recursive.ParserState): Result2 = {
+    override protected def parseRecString(state: recursive.ParserState[String]): Result2 = {
+      val discard = state.discard
+      state.discard = true
+      val _       = parser.parseRecString(state)
+      state.discard = discard
+      to
+    }
+
+    override protected def parseRec(state: ParserState[Chunk[In]]): Result2 = {
       val discard = state.discard
       state.discard = true
       val _       = parser.parseRec(state)
@@ -752,11 +876,11 @@ object Parser {
     override protected def stripNode(state: OptimizerState): Parser[Err2, Char, String] =
       CaptureString(parser.stripNode(state))
 
-    override protected def parseRec(state: recursive.ParserState): String = {
+    override protected def parseRecString(state: recursive.ParserState[String]): String = {
       val discard       = state.discard
       val startPosition = state.position
       state.discard = true
-      val _             = parser.parseRec(state)
+      val _             = parser.parseRecString(state)
       state.discard = discard
       if (!discard && state.error == null) {
         val endPosition = state.position
@@ -766,10 +890,24 @@ object Parser {
       }
     }
 
+    override protected def parseRec(state: ParserState[Chunk[Char]]): String = {
+      val discard       = state.discard
+      val startPosition = state.position
+      state.discard = true
+      val _             = parser.parseRec(state)
+      state.discard = discard
+      if (!discard && state.error == null) {
+        val endPosition = state.position
+        state.source.slice(startPosition, endPosition).mkString
+      } else {
+        null
+      }
+    }
+
     override protected lazy val needsBacktrack: Boolean = parser.needsBacktrack
   }
 
-  final case class Zip[Err, Err2, In, In2, Result, Result2, ZippedResult](
+  final case class Zip[Err, Err2, In, In2 <: In, Result, Result2, ZippedResult](
       left: Parser[Err, In, Result],
       right: Parser[Err2, In2, Result2],
       zip: (Result, Result2) => ZippedResult
@@ -783,7 +921,21 @@ object Parser {
         state: OptimizerState
     ): Parser[Err2, In2, ZippedResult] = Zip(left.runStripNode(state), right.runOptimizeNode(state), zip)
 
-    override protected def parseRec(state: recursive.ParserState): ZippedResult = {
+    override protected def parseRecString(state: recursive.ParserState[String]): ZippedResult = {
+      val l = left.parseRecString(state)
+      if (state.error == null) {
+        val r = right.parseRecString(state)
+        if (!state.discard && state.error == null) {
+          zip(l, r)
+        } else {
+          null.asInstanceOf[ZippedResult]
+        }
+      } else {
+        null.asInstanceOf[ZippedResult]
+      }
+    }
+
+    override protected def parseRec(state: ParserState[Chunk[In2]]): ZippedResult = {
       val l = left.parseRec(state)
       if (state.error == null) {
         val r = right.parseRec(state)
@@ -800,7 +952,7 @@ object Parser {
     override protected val needsBacktrack: Boolean = true
   }
 
-  final case class ZipLeft[Err, Err2, In, In2, Result](
+  final case class ZipLeft[Err, Err2, In, In2 <: In, Result](
       left: Parser[Err, In, Result],
       right: Parser[Err2, In2, Any]
   ) extends Parser[Err2, In2, Result] {
@@ -813,7 +965,24 @@ object Parser {
         state: OptimizerState
     ): Parser[Err2, In2, Result] = ZipLeft(left.runStripNode(state), right.runStripNode(state))
 
-    override protected def parseRec(state: recursive.ParserState): Result = {
+    override protected def parseRecString(state: recursive.ParserState[String]): Result = {
+      val l = left.parseRecString(state)
+      if (state.error == null) {
+        val discard = state.discard
+        state.discard = true
+        val _       = right.parseRecString(state)
+        state.discard = discard
+        if (state.error == null) {
+          l
+        } else {
+          null.asInstanceOf[Result]
+        }
+      } else {
+        null.asInstanceOf[Result]
+      }
+    }
+
+    override protected def parseRec(state: ParserState[Chunk[In2]]): Result = {
       val l = left.parseRec(state)
       if (state.error == null) {
         val discard = state.discard
@@ -833,7 +1002,7 @@ object Parser {
     override protected val needsBacktrack: Boolean = true
   }
 
-  final case class ZipRight[Err, Err2, In, In2, Result, Result2](
+  final case class ZipRight[Err, Err2, In, In2 <: In, Result, Result2](
       left: Parser[Err, In, Result],
       right: Parser[Err2, In2, Result2]
   ) extends Parser[Err2, In2, Result2] {
@@ -846,7 +1015,24 @@ object Parser {
         state: OptimizerState
     ): Parser[Err2, In2, Result2] = ZipRight(left.runStripNode(state), right.runStripNode(state))
 
-    override protected def parseRec(state: recursive.ParserState): Result2 = {
+    override protected def parseRecString(state: recursive.ParserState[String]): Result2 = {
+      val discard = state.discard
+      state.discard = true
+      val _       = left.parseRecString(state)
+      state.discard = discard
+      if (state.error == null) {
+        val r = right.parseRecString(state)
+        if (state.error == null) {
+          r
+        } else {
+          null.asInstanceOf[Result2]
+        }
+      } else {
+        null.asInstanceOf[Result2]
+      }
+    }
+
+    override protected def parseRec(state: ParserState[Chunk[In2]]): Result2 = {
       val discard = state.discard
       state.discard = true
       val _       = left.parseRec(state)
@@ -866,7 +1052,7 @@ object Parser {
     override protected val needsBacktrack: Boolean = true
   }
 
-  final case class FlatMap[Err, Err2, In, In2, Result, Result2](
+  final case class FlatMap[Err, Err2, In, In2 <: In, Result, Result2](
       parser: Parser[Err, In, Result],
       f: Result => Parser[Err2, In2, Result2]
   ) extends Parser[Err2, In2, Result2] {
@@ -879,7 +1065,20 @@ object Parser {
         state: OptimizerState
     ): Parser[Err2, In2, Result2] = FlatMap(parser.runStripNode(state), f)
 
-    override protected def parseRec(state: recursive.ParserState): Result2 = {
+    override protected def parseRecString(state: recursive.ParserState[String]): Result2 = {
+      val discard = state.discard
+      state.discard = false
+      val value   = parser.parseRecString(state)
+      state.discard = discard
+      if (state.error == null) {
+        val next = f(value)
+        next.parseRecString(state)
+      } else {
+        null.asInstanceOf[Result2]
+      }
+    }
+
+    override protected def parseRec(state: ParserState[Chunk[In2]]): Result2 = {
       val discard = state.discard
       state.discard = false
       val value   = parser.parseRec(state)
@@ -895,7 +1094,7 @@ object Parser {
     override protected val needsBacktrack: Boolean = true
   }
 
-  final case class OrElseEither[Err, Err2, In, In2, Result, Result2](
+  final case class OrElseEither[Err, Err2, In, In2 <: In, Result, Result2](
       left: Parser[Err, In, Result],
       right: Parser[Err2, In2, Result2]
   ) extends Parser[Err2, In2, Either[Result, Result2]] {
@@ -916,7 +1115,36 @@ object Parser {
     ): Parser[Err2, In2, Either[Result, Result2]] =
       OrElseEither(left.runStripNode(state), right.runStripNode(state))
 
-    override protected def parseRec(state: recursive.ParserState): Either[Result, Result2] = {
+    override protected def parseRecString(state: recursive.ParserState[String]): Either[Result, Result2] = {
+      val startPosition = state.position
+      val leftResult    = left.parseRecString(state)
+      if (state.error == null) {
+        if (!state.discard)
+          Left(leftResult)
+        else
+          null
+      } else {
+        if (state.position == startPosition) {
+          val leftFailure = state.error
+          state.error = null
+
+          val rightResult = right.parseRecString(state)
+          if (state.error == null) {
+            if (!state.discard)
+              Right(rightResult)
+            else
+              null
+          } else {
+            state.error = leftFailure.addFailedBranch(state.error)
+            null.asInstanceOf[Either[Result, Result2]]
+          }
+        } else {
+          null.asInstanceOf[Either[Result, Result2]]
+        }
+      }
+    }
+
+    override protected def parseRec(state: ParserState[Chunk[In2]]): Either[Result, Result2] = {
       val startPosition = state.position
       val leftResult    = left.parseRec(state)
       if (state.error == null) {
@@ -948,7 +1176,7 @@ object Parser {
     override protected lazy val needsBacktrack: Boolean = left.needsBacktrack || right.needsBacktrack
   }
 
-  final case class OrElse[Err, Err2, In, In2, Result, Result2](
+  final case class OrElse[Err, Err2, In, In2 <: In, Result, Result2](
       left: Parser[Err, In, Result],
       right: Parser[Err2, In2, Result2]
   ) extends Parser[Err2, In2, Result2] {
@@ -991,7 +1219,30 @@ object Parser {
         state: OptimizerState
     ): Parser[Err2, In2, Result2] = OrElse(left.runStripNode(state), right.runStripNode(state))
 
-    override protected def parseRec(state: recursive.ParserState): Result2 = {
+    override protected def parseRecString(state: recursive.ParserState[String]): Result2 = {
+      val startPosition = state.position
+      val leftResult    = left.parseRecString(state)
+      if (state.error == null) {
+        leftResult.asInstanceOf[Result2]
+      } else {
+        if (state.position == startPosition) {
+          val leftFailure = state.error
+          state.error = null
+
+          val rightResult = right.parseRecString(state)
+          if (state.error == null) {
+            rightResult
+          } else {
+            state.error = leftFailure.addFailedBranch(state.error)
+            null.asInstanceOf[Result2]
+          }
+        } else {
+          null.asInstanceOf[Result2]
+        }
+      }
+    }
+
+    override protected def parseRec(state: ParserState[Chunk[In2]]): Result2 = {
       val startPosition = state.position
       val leftResult    = left.parseRec(state)
       if (state.error == null) {
@@ -1033,7 +1284,24 @@ object Parser {
         state: OptimizerState
     ): Parser[Err, In, Option[Result]] = Optional(parser.runStripNode(state))
 
-    override protected def parseRec(state: recursive.ParserState): Option[Result] = {
+    override protected def parseRecString(state: recursive.ParserState[String]): Option[Result] = {
+      val startPos = state.position
+      val result   = parser.parseRecString(state)
+      if (state.error == null) {
+        if (!state.discard)
+          Some(result)
+        else null
+      } else {
+        if (state.position != startPos) {
+          null.asInstanceOf[Option[Result]]
+        } else {
+          state.error = null
+          None
+        }
+      }
+    }
+
+    override protected def parseRec(state: ParserState[Chunk[In]]): Option[Result] = {
       val startPos = state.position
       val result   = parser.parseRec(state)
       if (state.error == null) {
@@ -1089,7 +1357,38 @@ object Parser {
       Repeat(optimizedInner, min, max)
     }
 
-    override protected def parseRec(state: recursive.ParserState): Chunk[Result] = {
+    override protected def parseRecString(state: recursive.ParserState[String]): Chunk[Result] = {
+      val discard       = state.discard
+      val builder       = if (discard) null else ChunkBuilder.make[Result](hint)
+      var count         = 0
+      var lastItemStart = -1
+      val sourceLength  = state.source.length
+
+      while (state.error == null && count < maxCount && lastItemStart < sourceLength) {
+        lastItemStart = state.position
+
+        val item = parser.parseRecString(state)
+        if (state.error == null) {
+          count = count + 1
+          if (!discard)
+            builder += item
+        }
+      }
+
+      if (count < min) {
+        state.error = ParserError.UnexpectedEndOfInput
+      } else {
+        state.error = null
+      }
+
+      if (!discard && state.error == null) {
+        builder.result()
+      } else {
+        null.asInstanceOf[Chunk[Result]]
+      }
+    }
+
+    override protected def parseRec(state: ParserState[Chunk[In]]): Chunk[Result] = {
       val discard       = state.discard
       val builder       = if (discard) null else ChunkBuilder.make[Result](hint)
       var count         = 0
@@ -1130,7 +1429,19 @@ object Parser {
     override protected def stripNode(state: OptimizerState): Parser[Err, In, Unit] =
       Not(parser.runStripNode(state), failure)
 
-    override protected def parseRec(state: recursive.ParserState): Unit = {
+    override protected def parseRecString(state: recursive.ParserState[String]): Unit = {
+      val discard = state.discard
+      state.discard = true
+      val _       = parser.parseRecString(state)
+      state.discard = discard
+      if (state.error == null) {
+        state.error = ParserError.Failure(state.nameStack, state.position, failure)
+      } else {
+        state.error = null
+      }
+    }
+
+    override protected def parseRec(state: ParserState[Chunk[In]]): Unit = {
       val discard = state.discard
       state.discard = true
       val _       = parser.parseRec(state)
@@ -1160,7 +1471,16 @@ object Parser {
         state: OptimizerState
     ): Parser[Err, In, Result] = Backtrack(parser.runStripNode(state))
 
-    override protected def parseRec(state: recursive.ParserState): Result = {
+    override protected def parseRecString(state: recursive.ParserState[String]): Result = {
+      val position = state.position
+      val result   = parser.parseRecString(state)
+      if (state.error != null) {
+        state.position = position
+      }
+      result
+    }
+
+    override protected def parseRec(state: ParserState[Chunk[In]]): Result = {
       val position = state.position
       val result   = parser.parseRec(state)
       if (state.error != null) {
@@ -1184,7 +1504,10 @@ object Parser {
         state: OptimizerState
     ): Parser[Err, In, Result] = SetAutoBacktrack(parser.runStripNode(state), enabled)
 
-    override protected def parseRec(state: recursive.ParserState): Result =
+    override protected def parseRecString(state: recursive.ParserState[String]): Result =
+      ??? // Optimize always removes this node
+
+    override protected def parseRec(state: ParserState[Chunk[In]]): Result =
       ??? // Optimize always removes this node
 
     override protected lazy val needsBacktrack: Boolean = parser.needsBacktrack
@@ -1203,7 +1526,14 @@ object Parser {
         state: OptimizerState
     ): Parser[Err2, In, Result] = MapError(parser.runStripNode(state), mapParserErr)
 
-    override protected def parseRec(state: recursive.ParserState): Result = {
+    override protected def parseRecString(state: recursive.ParserState[String]): Result = {
+      val result = parser.parseRecString(state)
+      if (state.error != null)
+        state.error = mapParserErr(state.error.asInstanceOf[ParserError[Err]])
+      result
+    }
+
+    override protected def parseRec(state: ParserState[Chunk[In]]): Result = {
       val result = parser.parseRec(state)
       if (state.error != null)
         state.error = mapParserErr(state.error.asInstanceOf[ParserError[Err]])
@@ -1217,7 +1547,9 @@ object Parser {
     override protected def optimizeNode(state: OptimizerState): Parser[Nothing, Any, Int] = this
     override protected def stripNode(state: OptimizerState): Parser[Nothing, Any, Int]    = this
 
-    override protected def parseRec(state: recursive.ParserState): Int = state.position
+    override protected def parseRecString(state: recursive.ParserState[String]): Int = state.position
+
+    override protected def parseRec(state: ParserState[Chunk[Any]]): Int = state.position
 
     override protected val needsBacktrack: Boolean = false
   }
@@ -1226,7 +1558,11 @@ object Parser {
     override protected def optimizeNode(state: OptimizerState): Parser[Nothing, Any, Unit] = this
     override protected def stripNode(state: OptimizerState): Parser[Nothing, Any, Unit]    = this
 
-    override protected def parseRec(state: recursive.ParserState): Unit =
+    override protected def parseRecString(state: recursive.ParserState[String]): Unit =
+      if (state.position < state.source.length)
+        state.error = ParserError.NotConsumedAll(None)
+
+    override protected def parseRec(state: ParserState[Chunk[Any]]): Unit =
       if (state.position < state.source.length)
         state.error = ParserError.NotConsumedAll(None)
 

@@ -394,6 +394,10 @@ class Syntax[+Err, -In, +Out, Value] private (
       ev: Char <:< In
   ): Either[ParserError[Err], Value] = asParser.parseChars(input, parserImplementation)
 
+  /** Run this parser on the given 'input' chunk */
+  final def parseChunk(input: Chunk[In]): Either[ParserError[Err], Value] =
+    asParser.parseChunk(input)
+
   /** Prints a value 'value' to the target implementation 'target' */
   final def print[Out2 >: Out](value: Value, target: Target[Out2]): Either[Err, Unit] =
     asPrinter.print(value, target)

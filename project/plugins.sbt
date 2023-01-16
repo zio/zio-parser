@@ -18,6 +18,6 @@ addSbtPlugin("pl.project13.scala"                % "sbt-jmh"                    
 addSbtPlugin("com.timushev.sbt"                  % "sbt-updates"                   % "0.6.4")
 addSbtPlugin("dev.zio"                           % "zio-sbt-website"               % "0.3.4")
 
-libraryDependencies += "org.snakeyaml" % "snakeyaml-engine" % "2.5"
+libraryDependencies += "org.snakeyaml" % "snakeyaml-engine" % "2.6"
 
 resolvers += Resolver.sonatypeRepo("public")

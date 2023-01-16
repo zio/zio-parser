@@ -5,7 +5,7 @@ import zio.stream.ZStream
 import zio.{ChunkBuilder, Queue, Runtime, UIO, Unsafe, ZIO}
 
 class ZStreamTarget[R, Output](runtime: Runtime[R]) extends Target[Output] {
-  private val queue: Queue[Output] = Unsafe.unsafeCompat { implicit u =>
+  private val queue: Queue[Output] = Unsafe.unsafe { implicit u =>
     runtime.unsafe.run(Queue.unbounded[Output]).getOrThrowFiberFailure()
   }
 
@@ -18,7 +18,7 @@ class ZStreamTarget[R, Output](runtime: Runtime[R]) extends Target[Output] {
 
   override def write(value: Output): Unit =
     if (currentBuilder == null) {
-      Unsafe.unsafeCompat { implicit u =>
+      Unsafe.unsafe { implicit u =>
         runtime.unsafe.run(queue.offer(value).unit).getOrThrowFiberFailure()
       }
     } else {
@@ -44,7 +44,7 @@ class ZStreamTarget[R, Output](runtime: Runtime[R]) extends Target[Output] {
       ()
     } else {
       currentBuilder = null
-      Unsafe.unsafeCompat { implicit u =>
+      Unsafe.unsafe { implicit u =>
         runtime.unsafe.run(queue.offerAll(capture.subBuilder.result()).unit).getOrThrowFiberFailure()
       }
     }

@@ -303,7 +303,9 @@ sealed trait Parser[+Err, -In, +Result] { self =>
     parseString(new String(input.toArray), parserImplementation)
 
   /** Run this parser on the given 'input' chunk */
-  final def parseChunk[In0 <: In](input: Chunk[In0])(implicit stateSelector: StateSelector[In0]): Either[ParserError[Err], Result] = {
+  final def parseChunk[In0 <: In](
+      input: Chunk[In0]
+  )(implicit stateSelector: StateSelector[In0]): Either[ParserError[Err], Result] = {
     val state  = recursive.ParserState.fromChunk(input)
     val result = self.optimized.parseRec(state)
 
@@ -593,7 +595,7 @@ object Parser {
       } else {
         state.position = result
         if (!state.discard) {
-          state.at(result - 1)
+          state.char(result - 1)
         } else null.asInstanceOf[Char]
       }
     }

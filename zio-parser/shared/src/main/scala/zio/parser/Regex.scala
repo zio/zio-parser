@@ -256,17 +256,17 @@ object Regex {
           regex match {
             case Succeed => (idx: Int, _: Chunk[Char]) => idx
 
-            case oneOf@OneOf(_) =>
+            case oneOf @ OneOf(_) =>
               (idx: Int, input: Chunk[Char]) =>
                 if (idx >= input.length) NeedMoreInput else if (oneOf.contains(input(idx))) idx + 1 else NotMatched
 
-            case s@Sequence(_, _) =>
+            case s @ Sequence(_, _) =>
               val compiled = Chunk.fromIterable(sequence(s).map(compileChunk(_)))
 
               (idx0: Int, input: Chunk[Char]) => {
                 val compiledLen = compiled.length
 
-                var i = 0
+                var i   = 0
                 var idx = idx0
 
                 while (i < compiledLen) {
@@ -290,7 +290,7 @@ object Regex {
               (idx0: Int, input: Chunk[Char]) => {
                 val len = input.length
 
-                var idx = idx0
+                var idx     = idx0
                 var lastIdx = idx0
                 var matched = 0
 
@@ -307,25 +307,25 @@ object Regex {
               }
 
             case Or(left0, right0) =>
-              val left = compileChunk(left0)
+              val left  = compileChunk(left0)
               val right = compileChunk(right0)
 
               (idx: Int, input: Chunk[Char]) =>
                 left(idx, input) match {
-                  case NotMatched => right(idx, input)
+                  case NotMatched    => right(idx, input)
                   case NeedMoreInput => right(idx, input)
-                  case idx => idx
+                  case idx           => idx
                 }
 
             case And(left0, right0) =>
-              val left = compileChunk(left0)
+              val left  = compileChunk(left0)
               val right = compileChunk(right0)
 
               (idx: Int, input: Chunk[Char]) =>
                 left(idx, input) match {
-                  case NotMatched => NotMatched
+                  case NotMatched    => NotMatched
                   case NeedMoreInput => NeedMoreInput
-                  case _ => right(idx, input)
+                  case _             => right(idx, input)
                 }
           }
         }
@@ -333,7 +333,7 @@ object Regex {
 
     def apply(regex: Regex): Compiled =
       new Compiled {
-        val compiled = compile(regex)
+        val compiled      = compile(regex)
         val compiledChunk = compileChunk(regex)
 
         def test(index: Int, input: String): Int =

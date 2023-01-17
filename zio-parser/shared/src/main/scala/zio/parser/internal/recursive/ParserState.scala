@@ -16,6 +16,9 @@ sealed trait ParserState[+In] {
   def at(pos: Int): In
   val length: Int
 
+  def char(index: Int)(implicit ev: In <:< Char): Char =
+    ev(at(index))
+
   /** Position in the parsed string (source) */
   var position: Int = 0
 
@@ -44,7 +47,6 @@ object ParserState {
 
     override def sliceToChunk(pos: Int, until: Int): Chunk[Char] =
       Chunk.fromArray(source.slice(pos, until).toCharArray)
-
 
     override def sliceToString(pos: Int, until: Int): String =
       source.slice(pos, until)

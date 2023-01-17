@@ -396,7 +396,9 @@ class Syntax[+Err, -In, +Out, Value] private (
   ): Either[ParserError[Err], Value] = asParser.parseChars(input, parserImplementation)
 
   /** Run this parser on the given 'input' chunk */
-  final def parseChunk[In0 <: In](input: Chunk[In0])(implicit stateSelector: StateSelector[In0]): Either[ParserError[Err], Value] =
+  final def parseChunk[In0 <: In](input: Chunk[In0])(implicit
+      stateSelector: StateSelector[In0]
+  ): Either[ParserError[Err], Value] =
     asParser.parseChunk(input)
 
   /** Prints a value 'value' to the target implementation 'target' */

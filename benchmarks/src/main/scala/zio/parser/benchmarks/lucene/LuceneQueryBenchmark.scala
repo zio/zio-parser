@@ -28,6 +28,7 @@ import java.util.concurrent.TimeUnit
 @Fork(value = 1)
 class LuceneQueryBenchmark {
   var testQuery: String                                         = _
+  var testQueryChunk: Chunk[Char]                               = _
   var catsParser: CatsLuceneQueryParser                         = _
   var zioParserQuery: Syntax[String, Char, Char, Query]         = _
   var zioParserStrippedQuery: Syntax[String, Char, Char, Query] = _
@@ -36,6 +37,7 @@ class LuceneQueryBenchmark {
   def setUp(): Unit = {
     testQuery =
       "status:(active OR pending) AND title:(full text search)^2 AND date:[2012-01-01 TO 2012-12-31] AND (quikc~ brwn~ foks~)"
+    testQueryChunk = Chunk.fromArray(testQuery.toCharArray)
 
     catsParser = new CatsLuceneQueryParser()
     val zioParser = new ZioLuceneQueryParser()
@@ -54,6 +56,10 @@ class LuceneQueryBenchmark {
   @Benchmark
   def zioParseStrippedRecursive(): Either[ParserError[String], Query] =
     zioParserStrippedQuery.parseString(testQuery, ParserImplementation.Recursive)
+
+  @Benchmark
+  def zioParseStrippedRecursiveChunk(): Either[ParserError[String], Query] =
+    zioParserStrippedQuery.parseChunk(testQueryChunk)
 
   @Benchmark
   def zioParseStrippedOpStack(): Either[ParserError[String], Query] =

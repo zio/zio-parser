@@ -499,8 +499,10 @@ object Regex {
   }
 
   private[parser] object BuiltIn {
-    def apply(regex: Regex): Option[BuiltIn] =
+    def apply(regex: Regex): Option[BuiltIn] = {
+      val _ = regex
       None // NOTE: enabling it makes the parser non-threadsafe
+    }
 //      val builder = new StringBuilder
 //      builder.append("\\G")
 //      if (toRegexString(regex, builder)) {

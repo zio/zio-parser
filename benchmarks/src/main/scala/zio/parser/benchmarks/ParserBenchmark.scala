@@ -24,10 +24,12 @@ abstract class ParserBenchmark[T] {
   val parserz: Parserz.Grammar[Any, Nothing, String, T]
 
   var value: String = _
+  var valueAsChunk: Chunk[Char] = _
 
   @Setup
   def setUp(): Unit = {
     value = loadInput()
+    valueAsChunk = Chunk.fromArray(value.toCharArray)
     zioSyntax.parseString("")
   }
 
@@ -47,6 +49,12 @@ abstract class ParserBenchmark[T] {
   def zioParserRecursive(): Either[zio.parser.Parser.ParserError[String], T] = {
     import zio.parser._
     zioSyntax.parseString(value, ParserImplementation.Recursive)
+  }
+
+  @Benchmark
+  def zioParserRecursiveOnChunk(): Either[zio.parser.Parser.ParserError[String], T] = {
+    import zio.parser._
+    zioSyntax.parseChunk(valueAsChunk)
   }
 
   @Benchmark

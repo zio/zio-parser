@@ -88,13 +88,13 @@ class CharParserMicroBenchmarks {
     repeatWithSep0Syntax.parseString(hellosSep)
 }
 
-object CharParserMicroBenchmarks extends CharParserMicroBenchmarks {
-  def main(args: Array[String]): Unit = {
-    setUp()
-//    println(skipAndTransform())
-//    println(skipAndTransformOrElse())
-//    println(skipAndTransformRepeat())
-//    println(skipAndTransformZip())
-    println(repeatWithSep0().map(_.length))
-  }
-}
+//object CharParserMicroBenchmarks extends CharParserMicroBenchmarks {
+//  def main(args: Array[String]): Unit = {
+//    setUp()
+////    println(skipAndTransform())
+////    println(skipAndTransformOrElse())
+////    println(skipAndTransformRepeat())
+////    println(skipAndTransformZip())
+//    println(repeatWithSep0().map(_.length))
+//  }
+//}

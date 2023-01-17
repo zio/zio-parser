@@ -130,9 +130,13 @@ object Regex {
 
   trait Compiled {
 
-    /** Tests the compiled regex against the specified character sequence. Returns the new index into the chunk.
+    /** Tests the compiled regex against the specified character sequence. Returns the new index into the string.
       */
     def test(index: Int, chars: String): Int
+
+    /** Tests the compiled regex against the specified character sequence. Returns the new index into the chunk.
+      */
+    def test(index: Int, chars: Chunk[Char]): Int
 
     /** Determines if the compiled regex matches the specified string.
       */
@@ -166,8 +170,8 @@ object Regex {
     }
 
     def compile(regex: Regex): (Int, String) => Int =
-      regex.compileToTabular.map(compiled => compiled.test(_, _)).getOrElse {
-        BuiltIn(regex).map(compiled => compiled.test(_, _)).getOrElse {
+      regex.compileToTabular.map(compiled => compiled.test(_: Int, _: String)).getOrElse {
+        BuiltIn(regex).map(compiled => compiled.test(_: Int, _: String)).getOrElse {
           regex match {
             case Succeed => (idx: Int, _: String) => idx
 
@@ -246,12 +250,97 @@ object Regex {
         }
       }
 
+    def compileChunk(regex: Regex): (Int, Chunk[Char]) => Int =
+      regex.compileToTabular.map(compiled => compiled.test(_: Int, _: Chunk[Char])).getOrElse {
+        BuiltIn(regex).map(compiled => compiled.test(_: Int, _: Chunk[Char])).getOrElse {
+          regex match {
+            case Succeed => (idx: Int, _: Chunk[Char]) => idx
+
+            case oneOf @ OneOf(_) =>
+              (idx: Int, input: Chunk[Char]) =>
+                if (idx >= input.length) NeedMoreInput else if (oneOf.contains(input(idx))) idx + 1 else NotMatched
+
+            case s @ Sequence(_, _) =>
+              val compiled = Chunk.fromIterable(sequence(s).map(compileChunk(_)))
+
+              (idx0: Int, input: Chunk[Char]) => {
+                val compiledLen = compiled.length
+
+                var i   = 0
+                var idx = idx0
+
+                while (i < compiledLen) {
+                  val current = compiled(i)
+
+                  idx = current(idx, input)
+
+                  if (idx < 0) i = compiledLen // Terminate loop because current parser didn't match
+                  else i = i + 1
+                }
+
+                idx
+              }
+
+            case Repeat(regex, min0, max0) =>
+              val min = min0.getOrElse(0)
+              val max = max0.getOrElse(Int.MaxValue)
+
+              val compiled = compileChunk(regex)
+
+              (idx0: Int, input: Chunk[Char]) => {
+                val len = input.length
+
+                var idx     = idx0
+                var lastIdx = idx0
+                var matched = 0
+
+                while (idx >= 0 && idx < len && matched < max) {
+                  idx = compiled(idx, input)
+
+                  if (idx >= 0) {
+                    lastIdx = idx
+                    matched = matched + 1
+                  }
+                }
+
+                if (matched < min) NeedMoreInput else lastIdx
+              }
+
+            case Or(left0, right0) =>
+              val left  = compileChunk(left0)
+              val right = compileChunk(right0)
+
+              (idx: Int, input: Chunk[Char]) =>
+                left(idx, input) match {
+                  case NotMatched    => right(idx, input)
+                  case NeedMoreInput => right(idx, input)
+                  case idx           => idx
+                }
+
+            case And(left0, right0) =>
+              val left  = compileChunk(left0)
+              val right = compileChunk(right0)
+
+              (idx: Int, input: Chunk[Char]) =>
+                left(idx, input) match {
+                  case NotMatched    => NotMatched
+                  case NeedMoreInput => NeedMoreInput
+                  case _             => right(idx, input)
+                }
+          }
+        }
+      }
+
     def apply(regex: Regex): Compiled =
       new Compiled {
-        val compiled = compile(regex)
+        val compiled      = compile(regex)
+        val compiledChunk = compileChunk(regex)
 
         def test(index: Int, input: String): Int =
           compiled(index, input)
+
+        override def test(index: Int, chars: Chunk[Char]): Int =
+          compiledChunk(index, chars)
       }
   }
 
@@ -411,7 +500,35 @@ object Regex {
           returnV
         }
       }
+
+      def test(index: Int, input: Chunk[Char]): Int = {
+        var curLookup = self
+        var curIdx    = index
+        val inputLen  = input.length
+        var returnV   = NeedMoreInput
+
+        while (curIdx < inputLen) {
+          val char = input(curIdx).toInt
+
+          curIdx = curIdx + 1
+
+          curLookup(char) match {
+            case Step.Matched                           => returnV = curIdx; curIdx = inputLen;
+            case Step.Error if returnV == NeedMoreInput => returnV = NotMatched; curIdx = inputLen;
+            case Step.Error                             => curIdx = inputLen;
+            case Step.Jump(lookup)                      => curLookup = lookup
+            case Step.MatchedOrJump(lookup)             => returnV = curIdx; curLookup = lookup;
+          }
+        }
+
+        if ((returnV == NeedMoreInput || returnV == NotMatched) && self.supportsEmpty) {
+          index
+        } else {
+          returnV
+        }
+      }
     }
+
     object LookupFunction {
       abstract class ComputedLookupFunction extends LookupFunction { self =>
         final def ~(that: LookupFunction): LookupFunction = LookupFunction.Seq(self, that)
@@ -616,6 +733,9 @@ object Regex {
           Regex.NotMatched
         }
       }
+
+      override def test(index: Int, chars: Chunk[Char]): Int =
+        throw new UnsupportedOperationException("BuiltIn regexes are not supported on Chunk[Char]")
     }
   }
 }

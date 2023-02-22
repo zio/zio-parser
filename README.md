@@ -17,7 +17,7 @@ Library for constructing parsers and pretty printers based on invertible syntax 
 Start by adding `zio-parser` as a dependency to your project:
   
 ```scala
-libraryDependencies += "dev.zio" %% "zio-parser" % "0.1.7"
+libraryDependencies += "dev.zio" %% "zio-parser" % "0.1.8"
 ```
 
 [//]: # (TODO: Add example section)

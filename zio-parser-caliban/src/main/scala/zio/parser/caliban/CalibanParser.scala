@@ -501,7 +501,7 @@ object CalibanParser {
       String,
       Char,
       Char,
-      (String, Option[List[Directive]], NamedType, Chunk[NamedType]),
+      (String, Option[List[Directive]], NamedType, Chunk[NamedType])
     ] =
       (Syntax.string("union", ()) ~> whitespaceWithComment1 ~> name <~ whitespaceWithComment) ~
         ((directives <~ whitespaceWithComment).? <~ Syntax.char('=') <~ whitespaceWithComment) ~

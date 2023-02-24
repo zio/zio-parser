@@ -23,7 +23,7 @@ abstract class ParserBenchmark[T] {
   val parsley: org.http4s.parsley.Parsley[T]
   val parserz: Parserz.Grammar[Any, Nothing, String, T]
 
-  var value: String = _
+  var value: String             = _
   var valueAsChunk: Chunk[Char] = _
 
   @Setup

@@ -1,5 +1,6 @@
 package zio.parser
 
+import scala.annotation.nowarn
 import scala.reflect.macros.whitebox
 
 trait TupleConversion[A, B] {
@@ -10,7 +11,7 @@ trait TupleConversion[A, B] {
 object TupleConversion        {
   def apply[P, T]: TupleConversion[P, T] = macro genTupleConversion[P, T]
 
-  def genTupleConversion[P: c.WeakTypeTag, T: c.WeakTypeTag](
+  @nowarn def genTupleConversion[P: c.WeakTypeTag, T: c.WeakTypeTag](
       c: whitebox.Context
   ): c.Expr[TupleConversion[P, T]] = {
     import c.universe._

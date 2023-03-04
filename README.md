@@ -10,7 +10,7 @@ Library for constructing parsers and pretty printers based on invertible syntax 
 
 ## Introduction
 
-[![Zymposium - ZIO Parser](https://i.ytimg.com/vi/DEPpL9LBiyA/maxresdefault.jpg)](https://www.youtube.com/watch?v=DEPpL9LBiyA)
+[![Zymposium - ZIO Parser](docs/https://i.ytimg.com/vi/DEPpL9LBiyA/maxresdefault.jpg)](https://www.youtube.com/watch?v=DEPpL9LBiyA)
 
 ## Installation
 

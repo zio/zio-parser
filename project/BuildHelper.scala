@@ -228,7 +228,7 @@ object BuildHelper {
     }
   )
 
-  def stdSettings(prjName: String) = Seq(
+  def stdSettings_(prjName: String) = Seq(
     name                                   := s"$prjName",
     crossScalaVersions                     := Seq(Scala212, Scala213),
     ThisBuild / scalaVersion               := ScalaDotty,
@@ -274,7 +274,7 @@ object BuildHelper {
     }
   )
 
-  def macroDefinitionSettings = Seq(
+  def macroDefinitionSettings_ = Seq(
     scalacOptions += "-language:experimental.macros",
     libraryDependencies ++= {
       if (scalaVersion.value == ScalaDotty) Seq()
@@ -291,7 +291,7 @@ object BuildHelper {
     libraryDependencies += "io.github.cquiroz" %%% "scala-java-time-tzdb" % "2.2.2"
   )
 
-  def nativeSettings = Seq(
+  def nativeSettings_ = Seq(
     Test / test             := (Test / compile).value,
     doc / skip              := true,
     Compile / doc / sources := Seq.empty
@@ -335,6 +335,6 @@ object BuildHelper {
   }
 
   implicit class ModuleHelper(p: Project) {
-    def module: Project = p.in(file(p.id)).settings(stdSettings(p.id))
+    def module: Project = p.in(file(p.id)).settings(stdSettings_(p.id))
   }
 }

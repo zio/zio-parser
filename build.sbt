@@ -1,11 +1,12 @@
 import BuildHelper._
 
+enablePlugins(ZioSbtCiPlugin)
+
 inThisBuild(
   List(
-    organization  := "dev.zio",
-    homepage      := Some(url("https://zio.dev/zio-parser/")),
-    licenses      := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
-    developers    := List(
+    name              := "ZIO Parser",
+    ciEnabledBranches := Seq("master"),
+    developers        := List(
       Developer(
         "jdegoes",
         "John De Goes",
@@ -18,10 +19,7 @@ inThisBuild(
         "daniel.vigovszky@gmail.com",
         url("https://github.com/vigoo")
       )
-    ),
-    pgpPassphrase := sys.env.get("PGP_PASSWORD").map(_.toArray),
-    pgpPublicRing := file("/tmp/public.asc"),
-    pgpSecretRing := file("/tmp/secret.asc")
+    )
   )
 )
 
@@ -42,8 +40,6 @@ addCommandAlias(
   ";zioParserNative/test"
 )
 
-val zioVersion = "2.0.9"
-
 lazy val root = (project in file("."))
   .aggregate(
     zioParserJVM,
@@ -59,12 +55,10 @@ lazy val root = (project in file("."))
 
 lazy val zioParser = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .in(file("zio-parser"))
-  .settings(stdSettings("zio-parser"))
-  .settings(crossProjectSettings)
-  .settings(dottySettings)
-  .settings(buildInfoSettings("zio.parser"))
+  .settings(stdSettings(name = "zio-parser", packageName = Some("zio.parser"), enableCrossProject = true))
   .settings(macroDefinitionSettings)
   .settings(
+    enableZIO(enableStreaming = true),
     libraryDependencies ++=
       (CrossVersion.partialVersion(scalaVersion.value) match {
         case Some((3, _)) => Seq.empty
@@ -72,20 +66,13 @@ lazy val zioParser = crossProject(JSPlatform, JVMPlatform, NativePlatform)
           Seq(
             compilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full)
           )
-      }),
-    libraryDependencies ++= Seq(
-      "dev.zio" %% "zio"          % zioVersion,
-      "dev.zio" %% "zio-streams"  % zioVersion,
-      "dev.zio" %% "zio-test"     % zioVersion % Test,
-      "dev.zio" %% "zio-test-sbt" % zioVersion % Test
-    ),
-    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
+      })
   )
   .enablePlugins(BuildInfoPlugin)
 
 lazy val zioParserJVM = zioParser.jvm
 lazy val zioParserJS  = zioParser.js
-  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion % Test)
+  .settings(libraryDependencies += "dev.zio" %%% "zio-test-sbt" % zioVersion.value % Test)
   .settings(scalaJSUseMainModuleInitializer := true)
 
 lazy val zioParserNative = zioParser.native
@@ -94,35 +81,28 @@ lazy val zioParserNative = zioParser.native
 lazy val calibanParser = project
   .in(file("zio-parser-caliban"))
   .settings(stdSettings("zio-parser-caliban"))
-  .settings(dottySettings)
+  .settings(enableZIO())
   .dependsOn(zioParserJVM)
   .settings(
     publish / skip := true,
     libraryDependencies ++= Seq(
-      "com.github.ghostdogpr" %% "caliban"      % "2.0.2",
-      "dev.zio"               %% "zio"          % zioVersion,
-      "dev.zio"               %% "zio-streams"  % zioVersion,
-      "dev.zio"               %% "zio-test"     % zioVersion % Test,
-      "dev.zio"               %% "zio-test-sbt" % zioVersion % Test
-    ),
-    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
+      "com.github.ghostdogpr" %% "caliban" % "2.0.2"
+    )
   )
 
 lazy val benchmarks = (project in file("benchmarks"))
   .settings(
     scalaVersion   := Scala213,
     publish / skip := true,
+    enableZIO(),
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-parse"   % "0.3.6",
-      "com.lihaoyi"   %% "fastparse"    % "2.3.3",
-      "org.tpolecat"  %% "atto-core"    % "0.9.5",
-      "org.parboiled" %% "parboiled"    % "2.3.0",
-      "org.http4s"    %% "parsley"      % "1.5.0-M3",
-      "org.spartanz"  %% "parserz"      % "0.2.4",
-      "dev.zio"       %% "zio-test"     % zioVersion % Test,
-      "dev.zio"       %% "zio-test-sbt" % zioVersion % Test
-    ),
-    testFrameworks += new TestFramework("zio.test.sbt.ZTestFramework")
+      "org.typelevel" %% "cats-parse" % "0.3.6",
+      "com.lihaoyi"   %% "fastparse"  % "2.3.3",
+      "org.tpolecat"  %% "atto-core"  % "0.9.5",
+      "org.parboiled" %% "parboiled"  % "2.3.0",
+      "org.http4s"    %% "parsley"    % "1.5.0-M3",
+      "org.spartanz"  %% "parserz"    % "0.2.4"
+    )
   )
   .enablePlugins(JmhPlugin)
   .dependsOn(zioParserJVM)
@@ -140,7 +120,6 @@ lazy val docs = project
     projectName                                := "ZIO Parser",
     mainModuleName                             := (zioParserJVM / moduleName).value,
     projectStage                               := ProjectStage.Development,
-    docsPublishBranch                          := "master",
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(zioParserJVM)
   )
   .dependsOn(zioParserJVM)

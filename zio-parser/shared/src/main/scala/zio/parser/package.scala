@@ -121,7 +121,6 @@ package object parser extends ImplicitTupleConversion {
         if (tag.runtimeClass.isAssignableFrom(value.getClass)) {
           Right(value.asInstanceOf[Value])
         } else {
-          val name = Try(tag.runtimeClass.getSimpleName).fold(error => error.getMessage, identity[String])
           Left(err)
         }
       )

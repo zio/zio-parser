@@ -5,8 +5,6 @@ import zio.parser.internal.PrinterImpl
 import zio.parser.target.{ChunkTarget, Target}
 import zio.{=!=, Chunk}
 
-import scala.reflect.ClassTag
-
 /** A Printer takes a value of type 'Value' and either produces a stream of 'Out' elements and a result value of type
   * 'Result', or fails with a custom error of type 'Err'.
   *

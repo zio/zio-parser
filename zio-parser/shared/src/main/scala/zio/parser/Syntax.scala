@@ -5,8 +5,6 @@ import zio.parser.Parser.ParserError
 import zio.parser.internal.recursive.ParserState.StateSelector
 import zio.parser.target.Target
 
-import scala.reflect.ClassTag
-
 /** Syntax defines a parser and a printer together and provides combinators to simultaneously build them up from smaller
   * syntax fragments.
   *

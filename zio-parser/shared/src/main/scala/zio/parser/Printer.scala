@@ -5,6 +5,8 @@ import zio.parser.internal.PrinterImpl
 import zio.parser.target.{ChunkTarget, Target}
 import zio.{=!=, Chunk}
 
+import scala.reflect.ClassTag
+
 /** A Printer takes a value of type 'Value' and either produces a stream of 'Out' elements and a result value of type
   * 'Result', or fails with a custom error of type 'Err'.
   *
@@ -18,7 +20,7 @@ import zio.{=!=, Chunk}
   * @tparam Value
   *   The type of the value to be printed
   */
-sealed trait Printer[+Err, +Out, -Value] { self =>
+sealed trait Printer[+Err, +Out, -Value] extends VersionSpecificPrinter[Err, Out, Value] { self =>
 
   /** Maps the printer's result with function 'to' and its input value with 'from'. Both functions can fail the printer.
     */
@@ -260,7 +262,8 @@ object Printer {
       right: Printer[Err2, Out2, Value2]
   ) extends Printer[Err2, Out2, Value2]
 
-  final case class FlatMapValue[Err, Out, Value](f: Value => Printer[Err, Out, Any]) extends Printer[Err, Out, Value]
+  final case class FlatMapValue[Err, Out, Value](f: Value => Printer[Err, Out, Nothing])
+      extends Printer[Err, Out, Value]
 
   final case class OrElseEither[Err, Err2, Out, Out2, Value2, Value](
       left: Printer[Err, Out, Value],
@@ -289,10 +292,10 @@ object Printer {
   def fail[Err](failure: Err): Printer[Err, Nothing, Any] = Fail(failure)
 
   /** Printer that just emits its input value */
-  def any: Printer[Nothing, Nothing, Any] = Passthrough()
+  def any[T]: Printer[Nothing, T, T] = Passthrough[T, T]()
 
   /** Printer determined by a function on the input value */
-  def byValue[Err, Out, Value](f: Value => Printer[Err, Out, Any]): Printer[Err, Out, Value] =
+  def byValue[Err, Out, Value](f: Value => Printer[Err, Out, Nothing]): Printer[Err, Out, Value] =
     Printer.FlatMapValue[Err, Out, Value](f)
 
   /** Printer emitting a specific value */

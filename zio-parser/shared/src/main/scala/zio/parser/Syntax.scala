@@ -5,6 +5,8 @@ import zio.parser.Parser.ParserError
 import zio.parser.internal.recursive.ParserState.StateSelector
 import zio.parser.target.Target
 
+import scala.reflect.ClassTag
+
 /** Syntax defines a parser and a printer together and provides combinators to simultaneously build them up from smaller
   * syntax fragments.
   *
@@ -20,7 +22,14 @@ import zio.parser.target.Target
 class Syntax[+Err, -In, +Out, Value] private (
     val asParser: Parser[Err, In, Value],
     val asPrinter: Printer[Err, Out, Value]
-) { self =>
+) extends VersionSpecificSyntax[Err, In, Out, Value] { self =>
+
+  /** Prints a debug message when this syntax parses a value */
+  def debug(msg: String): Syntax[Err, In, Out, Value] =
+    new Syntax(
+      asParser.map { v => println(s"$msg: $v"); v },
+      asPrinter
+    )
 
   /** Maps the parser's successful result with the given function 'to', and maps the value to be printed with the given
     * function 'from'
@@ -436,7 +445,7 @@ object Syntax extends SyntaxCompanionVersionSpecific {
 
   /** Syntax that does not pares or print anything but fails with 'failure' */
   def fail[Err](failure: Err): Syntax[Err, Any, Nothing, Nothing] =
-    new Syntax(Parser.Fail(failure), Printer.Fail(failure))
+    new Syntax(Parser.fail(failure), Printer.Fail(failure))
 
   // Char variants
   /** Parse or print a specific character 'value' and result in unit */
@@ -510,6 +519,10 @@ object Syntax extends SyntaxCompanionVersionSpecific {
       Parser.ParseRegex(regex, None),
       Printer.ParseRegex(regex, None)
     )
+
+  /** Syntax that reads or writes one element without modification */
+  def any[T]: Syntax[Nothing, T, T, T] =
+    Syntax.from(Parser.any[T], Printer.any[T])
 
   /** Syntax that parses/prints a single character */
   val anyChar: Syntax[Nothing, Char, Char, Char] =

@@ -115,6 +115,16 @@ package object parser extends ImplicitTupleConversion {
         ev: Value =:= Value
     ): Syntax[Err, In, Out, Value2] =
       self.transform(conversion.from, conversion.to)
+
+    def widenWith[D](err: Err)(implicit ev: Value <:< D, tag: ClassTag[Value]): Syntax[Err, In, Out, D] =
+      self.asParser.asInstanceOf[Parser[Err, In, D]] <=> self.asPrinter.contramapEither((value: D) =>
+        if (tag.runtimeClass.isAssignableFrom(value.getClass)) {
+          Right(value.asInstanceOf[Value])
+        } else {
+          val name = Try(tag.runtimeClass.getSimpleName).fold(error => error.getMessage, identity[String])
+          Left(err)
+        }
+      )
   }
 
   implicit class ParserOps[Err, In, Value](private val self: Parser[Err, In, Value]) extends AnyVal {

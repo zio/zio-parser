@@ -23,23 +23,6 @@ inThisBuild(
   )
 )
 
-addCommandAlias("fmt", "all scalafmtSbt scalafmt test:scalafmt")
-addCommandAlias("fix", "; all compile:scalafix test:scalafix; all scalafmtSbt scalafmtAll")
-addCommandAlias("check", "; scalafmtSbtCheck; scalafmtCheckAll; compile:scalafix --check; test:scalafix --check")
-
-addCommandAlias(
-  "testJVM",
-  ";zioParserJVM/test; calibanParser/test"
-)
-addCommandAlias(
-  "testJS",
-  ";zioParserJS/test"
-)
-addCommandAlias(
-  "testNative",
-  ";zioParserNative/test"
-)
-
 lazy val root = (project in file("."))
   .aggregate(
     zioParserJVM,

@@ -5,7 +5,8 @@ inThisBuild(
     name                   := "ZIO Parser",
     ciEnabledBranches      := Seq("master"),
     javaPlatforms          := Seq("8", "11"),
-    parallelTestExecution  := false,
+    ciGroupSimilarTests    := false,
+    ciMatrixMaxParallel    := Some(3),
     developers             := List(
       Developer(
         "jdegoes",

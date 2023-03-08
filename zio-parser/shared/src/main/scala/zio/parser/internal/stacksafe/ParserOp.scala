@@ -364,6 +364,9 @@ object ParserOp       {
 
       case Parser.End =>
         ParserOp.CheckEnd()
+
+      case Parser.Passthrough() =>
+        ??? // TODO
     }
   }
 

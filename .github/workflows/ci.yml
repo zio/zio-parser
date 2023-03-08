@@ -71,18 +71,15 @@ jobs:
         - '11'
         scala-project:
         - ++2.13.10 benchmarks
-        - ++2.11.12 zioParserNative
         - ++2.12.17 zioParserNative
         - ++2.13.10 zioParserNative
         - ++3.2.2 zioParserNative
         - ++2.12.17 zioParserJS
         - ++2.13.10 zioParserJS
         - ++3.2.2 zioParserJS
-        - ++2.11.12 calibanParser
         - ++2.12.17 calibanParser
         - ++2.13.10 calibanParser
         - ++3.2.2 calibanParser
-        - ++2.11.12 zioParserJVM
         - ++2.12.17 zioParserJVM
         - ++2.13.10 zioParserJVM
         - ++3.2.2 zioParserJVM

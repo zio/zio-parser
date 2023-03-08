@@ -3,6 +3,7 @@ enablePlugins(ZioSbtCiPlugin)
 inThisBuild(
   List(
     name                   := "ZIO Parser",
+    crossScalaVersions -= scala211.value,
     ciEnabledBranches      := Seq("master"),
     javaPlatforms          := Seq("8", "11"),
     ciGroupSimilarTests    := false,
@@ -62,7 +63,6 @@ lazy val zioParser = crossProject(JSPlatform, JVMPlatform, NativePlatform)
 lazy val zioParserJVM = zioParser.jvm
 lazy val zioParserJS  = zioParser.js
   .settings(
-    crossScalaVersions -= scala211.value,
     scalaJSUseMainModuleInitializer := true
   )
 

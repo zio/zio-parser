@@ -7,7 +7,7 @@ inThisBuild(
     ciEnabledBranches      := Seq("master"),
     javaPlatforms          := Seq("8", "11"),
     ciGroupSimilarTests    := false,
-    ciMatrixMaxParallel    := Some(6),
+    ciMatrixMaxParallel    := Some(8),
     sbtBuildOptions        := List("-J-XX:+UseG1GC", "-J-Xmx6g", "-J-Xms4g", "-J-Xss16m"),
     developers             := List(
       Developer(
@@ -71,12 +71,13 @@ lazy val zioParserNative = zioParser.native
 
 lazy val calibanParser = project
   .in(file("zio-parser-caliban"))
-  .settings(stdSettings("zio-parser-caliban"), enableZIO())
-  .dependsOn(zioParserJVM)
   .settings(
+    stdSettings("zio-parser-caliban"),
+    enableZIO(),
     publish / skip := true,
     libraryDependencies ++= Seq("com.github.ghostdogpr" %% "caliban" % "2.0.2")
   )
+  .dependsOn(zioParserJVM)
 
 lazy val benchmarks = (project in file("benchmarks"))
   .settings(

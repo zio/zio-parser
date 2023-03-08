@@ -118,6 +118,9 @@ object Debug {
           case Parser.End                                  =>
             printIndented("End")
             state
+          case Parser.Passthrough()                        =>
+            printIndented("Passthrough")
+            state
         }
     }
   }

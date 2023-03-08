@@ -32,7 +32,7 @@ import scala.collection.mutable
   * @tparam Result
   *   The type of the parsed result value
   */
-sealed trait Parser[+Err, -In, +Result] { self =>
+sealed trait Parser[+Err, -In, +Result] extends VersionSpecificParser[Err, In, Result] { self =>
 
   /** Maps the parser's successful result with the given function 'to' */
   final def map[Result2](to: Result => Result2): Parser[Err, In, Result2] =
@@ -82,6 +82,10 @@ sealed trait Parser[+Err, -In, +Result] { self =>
       that: => Parser[Err2, In2, Any]
   ): Parser[Err2, In2, Result] =
     Parser.ZipLeft(Parser.Lazy(() => self), Parser.Lazy(() => that))
+
+  /** Repeats this parser exactly N times */
+  final def exactly(n: Int): Parser[Err, In, Chunk[Result]] =
+    Parser.Repeat(self, n, Some(n))
 
   /** Determines the continuation of the parser by the result of this parser, expressed by the function 'that' */
   final def flatMap[Err2 >: Err, In2 <: In, Result2](
@@ -434,19 +438,19 @@ object Parser {
     override protected val needsBacktrack: Boolean = false
   }
 
-  final case class Fail[+Err](failure: Err) extends Parser[Err, Any, Nothing] {
+  final case class Fail[+Err](failure: Err) extends Parser[Err, Any, Any] {
 
     override protected def optimizeNode(
         state: OptimizerState
-    ): Parser[Err, Any, Nothing] = this
+    ): Parser[Err, Any, Any] = this
 
     override protected def stripNode(
         state: OptimizerState
-    ): Parser[Err, Any, Nothing] = this
+    ): Parser[Err, Any, Any] = this
 
-    override protected def parseRec(state: ParserState[Any]): Nothing = {
+    override protected def parseRec(state: ParserState[Any]): Any = {
       state.error = ParserError.Failure(state.nameStack, state.position, failure)
-      null.asInstanceOf[Nothing]
+      null
     }
 
     override protected val needsBacktrack: Boolean = false
@@ -488,6 +492,24 @@ object Parser {
     }
 
     override protected lazy val needsBacktrack: Boolean = parser.needsBacktrack
+  }
+
+  final case class Passthrough[-D1, +D2]() extends Parser[Nothing, D1, D2] {
+    override protected def optimizeNode(state: OptimizerState): Parser[Nothing, D1, D2] = Passthrough()
+
+    override protected def stripNode(state: OptimizerState): Parser[Nothing, D1, D2] = Passthrough()
+
+    override protected def parseRec(state: ParserState[D1]): D2 =
+      if (state.position < state.length) {
+        val result = state.at(state.position)
+        state.position += 1
+        result.asInstanceOf[D2]
+      } else {
+        state.error = ParserError.UnexpectedEndOfInput
+        null.asInstanceOf[D2]
+      }
+
+    override protected def needsBacktrack: Boolean = false
   }
 
   final case class SkipRegex[Err](regex: Regex, onFailure: Option[Err]) extends Parser[Err, Char, Unit] {
@@ -1122,10 +1144,12 @@ object Parser {
         }
       }
 
-      if (count < min) {
+      if (count < min && state.error == null) {
         state.error = ParserError.UnexpectedEndOfInput
       } else {
-        state.error = null
+        if (count >= min) {
+          state.error = null
+        }
       }
 
       if (!discard && state.error == null) {
@@ -1252,7 +1276,7 @@ object Parser {
   def succeed[Result](value: Result): Parser[Nothing, Any, Result] = Succeed(value)
 
   /** Parser that always fails with 'failure' */
-  def fail[Err](failure: Err): Parser[Err, Any, Nothing] = Fail(failure)
+  def fail[Err](failure: Err): Parser[Err, Any, Nothing] = Fail(failure).asInstanceOf[Parser[Err, Any, Nothing]]
 
   // Char variants
   /** Parser that consumes the exact character 'value' or fails if it did not match, and results in the unit value. */
@@ -1308,6 +1332,8 @@ object Parser {
     */
   def unsafeRegex(regex: Regex): Parser.ParseRegex[Nothing] =
     Parser.ParseRegex(regex, None)
+
+  def any[T]: Parser[Nothing, T, T] = Parser.Passthrough[T, T]()
 
   /** Parser that consumes a single character and returns it */
   val anyChar: Parser[Nothing, Char, Char] =

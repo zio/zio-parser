@@ -7,7 +7,7 @@ inThisBuild(
     ciEnabledBranches      := Seq("master"),
     javaPlatforms          := Seq("8", "11"),
     ciGroupSimilarTests    := false,
-    ciMatrixMaxParallel    := Some(3),
+    ciMatrixMaxParallel    := Some(6),
     sbtBuildOptions        := List("-J-XX:+UseG1GC", "-J-Xmx6g", "-J-Xms4g", "-J-Xss16m"),
     developers             := List(
       Developer(

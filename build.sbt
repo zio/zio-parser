@@ -42,7 +42,7 @@ addCommandAlias(
   ";zioParserNative/test"
 )
 
-val zioVersion = "2.0.9"
+val zioVersion = "2.0.19"
 
 lazy val root = (project in file("."))
   .aggregate(
@@ -99,7 +99,7 @@ lazy val calibanParser = project
   .settings(
     publish / skip := true,
     libraryDependencies ++= Seq(
-      "com.github.ghostdogpr" %% "caliban"      % "2.0.2",
+      "com.github.ghostdogpr" %% "caliban"      % "2.4.3",
       "dev.zio"               %% "zio"          % zioVersion,
       "dev.zio"               %% "zio-streams"  % zioVersion,
       "dev.zio"               %% "zio-test"     % zioVersion % Test,
@@ -113,10 +113,10 @@ lazy val benchmarks = (project in file("benchmarks"))
     scalaVersion   := Scala213,
     publish / skip := true,
     libraryDependencies ++= Seq(
-      "org.typelevel" %% "cats-parse"   % "0.3.6",
-      "com.lihaoyi"   %% "fastparse"    % "2.3.3",
+      "org.typelevel" %% "cats-parse"   % "1.0.0",
+      "com.lihaoyi"   %% "fastparse"    % "3.0.2",
       "org.tpolecat"  %% "atto-core"    % "0.9.5",
-      "org.parboiled" %% "parboiled"    % "2.3.0",
+      "org.parboiled" %% "parboiled"    % "2.5.1",
       "org.http4s"    %% "parsley"      % "1.5.0-M3",
       "org.spartanz"  %% "parserz"      % "0.2.4",
       "dev.zio"       %% "zio-test"     % zioVersion % Test,

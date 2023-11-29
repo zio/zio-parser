@@ -6,6 +6,8 @@ import zio.parser.internal.Stack
 import zio.parser.internal.stacksafe.ParserOp.InitialParser
 import zio.{Chunk, ChunkBuilder}
 
+import scala.annotation.nowarn
+
 /** Stack safe interpreter for Parser
   */
 final class CharParserImpl[Err, Result](parser: InitialParser, source: String) {
@@ -121,7 +123,7 @@ final class CharParserImpl[Err, Result](parser: InitialParser, source: String) {
             lastSuccess1 = null
             lastFailure1 = ParserError.NotConsumedAll(None)
           } else {
-            lastSuccess1 = ().asInstanceOf[AnyRef]
+            lastSuccess1 = ().asInstanceOf[AnyRef]: @nowarn
             lastFailure1 = null
           }
           opStack.pop()
@@ -189,7 +191,7 @@ final class CharParserImpl[Err, Result](parser: InitialParser, source: String) {
               case RegexResultPush.SingleChar   =>
                 lastSuccess1 = source(result - 1).asInstanceOf[AnyRef]
               case RegexResultPush.Ignored      =>
-                lastSuccess1 = ().asInstanceOf[AnyRef]
+                lastSuccess1 = ().asInstanceOf[AnyRef]: @nowarn
             }
           }
           opStack.pop()

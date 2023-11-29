@@ -14,7 +14,7 @@ on:
 
 jobs:
   lint:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
       - name: Checkout current branch
@@ -26,10 +26,10 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Lint code
-        run: sbt ++2.13.10 check
+        run: sbt ++2.13.12 check
 
   website:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
       - name: Checkout current branch
@@ -42,13 +42,13 @@ jobs:
         run: sbt docs/compileDocs
 
   test:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     strategy:
       fail-fast: false
       matrix:
-        java: ['adopt@1.8', 'adopt@1.11']
-        scala: ['2.12.17', '2.13.10', '3.2.2']
+        java: ['temurin@17']
+        scala: ['2.12.18', '2.13.12', '3.3.1']
         platform: ['JVM', 'JS', 'Native']
     steps:
       - name: Checkout current branch
@@ -72,14 +72,14 @@ jobs:
         run: sbt ++${{ matrix.scala }}! benchmarks/test
 
   ci:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     needs: [lint, website, test]
     steps:
       - name: Aggregate of lint, and all tests
         run: echo "ci passed"
 
   publish:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     needs: [ci]
     if: github.event_name != 'pull_request'

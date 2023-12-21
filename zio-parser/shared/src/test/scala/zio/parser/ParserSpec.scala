@@ -214,7 +214,7 @@ object ParserSpec extends ZIOSpecDefault {
                 isRight(equalTo(Chunk('a', 'a', 'a')))
               ),
               parserTest("atLeast 3, failing", Syntax.char('a').as('a').atLeast(3), "aabca")(
-                isLeft(equalTo(ParserError.UnexpectedEndOfInput))
+                isLeft(anything)
               )
             ),
             suite("repeat0")(

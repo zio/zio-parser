@@ -42,7 +42,7 @@ addCommandAlias("testJVM_212", s"++$scala212 ;zioParserJVM/test; calibanParser/t
 addCommandAlias("testJS_212", s"++$scala212 ;zioParserJS/test")
 addCommandAlias("testNative_212", s"++$scala212 ;zioParserNative/test")
 
-addCommandAlias("testJVM_213", s"++$scala213 ;zioParserJVM/test; calibanParser/test")
+addCommandAlias("testJVM_213", s"++$scala213 ;zioParserJVM/test; calibanParser/test; benchmarks/test")
 addCommandAlias("testJS_213", s"++$scala213 ;zioParserJS/test")
 addCommandAlias("testNative_213", s"++$scala213 ;zioParserNative/test")
 

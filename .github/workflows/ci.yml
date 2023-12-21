@@ -59,13 +59,12 @@ jobs:
         uses: olafurpg/setup-scala@v11
         with:
           java-version: ${{ matrix.java }}
+      - name: Install libuv
+        run: sudo apt-get update && sudo apt-get install -y libuv1-dev
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Run tests
         run: sbt test${{ matrix.platform }}_${{ matrix.scala }}
-      - name: Run benchmark tests
-        if: ${{ matrix.scala == '213' && matrix.platform == 'JVM' }}
-        run: sbt ++${{ matrix.scala }}! benchmarks/test
 
   ci:
     runs-on: ubuntu-latest

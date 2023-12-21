@@ -447,13 +447,15 @@ object CalibanParser {
       description: Option[String]
   ): CalibanSyntax[InterfaceTypeDefinition] =
     ((Syntax.string("interface", ()) ~> whitespaceWithComment1 ~> name <~ whitespaceWithComment) ~
+      (implements <~ whitespaceWithComment).? ~
       (directives <~ whitespaceWithComment).? ~ wrapBrackets(
         fieldDefinition.repeatWithSep0(whitespaceWithComment)
       )).transform(
-      { case (name, directives, fields) =>
-        InterfaceTypeDefinition(description, name, directives.getOrElse(Nil), fields.toList)
+      { case (name, implements, directives, fields) =>
+        InterfaceTypeDefinition(description, name, implements.getOrElse(Nil), directives.getOrElse(Nil), fields.toList)
       },
-      (d: InterfaceTypeDefinition) => (d.name, optColl(d.directives), Chunk.fromIterable(d.fields))
+      (d: InterfaceTypeDefinition) =>
+        (d.name, optColl(d.implements), optColl(d.directives), Chunk.fromIterable(d.fields))
     )
 
   private def inputObjectTypeDefinition(
@@ -541,19 +543,24 @@ object CalibanParser {
     (operationType <~ wrapWhitespaces(Syntax.char(':'))) ~ namedType
 
   lazy val schemaDefinition: CalibanSyntax[SchemaDefinition] =
-    ((Syntax.string("schema", ()) ~> whitespaceWithComment ~> (directives <~ whitespaceWithComment).?) ~
+    ((stringValue <~ whitespaceWithComment).? ~ (Syntax.string(
+      "schema",
+      ()
+    ) ~> whitespaceWithComment ~> (directives <~ whitespaceWithComment).?) ~
       wrapBrackets(rootOperationTypeDefinition.repeatWithSep0(whitespaceWithComment))).transform(
-      { case (directives, ops) =>
+      { case (description, directives, ops) =>
         val opsMap = ops.toMap
         SchemaDefinition(
           directives.getOrElse(Nil),
           opsMap.get(OperationType.Query).map(_.name),
           opsMap.get(OperationType.Mutation).map(_.name),
-          opsMap.get(OperationType.Subscription).map(_.name)
+          opsMap.get(OperationType.Subscription).map(_.name),
+          description.map(_.value)
         )
       },
       (d: SchemaDefinition) =>
         (
+          d.description.map(s => StringValue(s)),
           optColl(d.directives),
           Chunk.fromIterable(
             Seq(
@@ -709,18 +716,27 @@ object CalibanParser {
   lazy val directiveDefinition: CalibanSyntax[DirectiveDefinition] =
     ((stringValue <~ whitespaceWithComment).? ~
       (Syntax.string("directive @", ()) ~> name <~ whitespaceWithComment) ~
-      ((argumentDefinitions <~ whitespaceWithComment).? <~ Syntax.string("on", ()) <~ whitespaceWithComment1) ~
+      (((argumentDefinitions <~ whitespaceWithComment).?) ~ (Syntax.string("repeatable", ()).?) <~ Syntax.string(
+        "on",
+        ()
+      ) <~ whitespaceWithComment1) ~
       ((Syntax.char('|') <~ whitespaceWithComment).?.unit(None) ~> directiveLocation <~ whitespaceWithComment) ~
       (Syntax.char('|') ~> whitespaceWithComment ~> directiveLocation).repeatWithSep(whitespaceWithComment))
       .transform(
-        { case (description, name, args, firstLoc, otherLoc) =>
-          DirectiveDefinition(description.map(_.value), name, args.getOrElse(Nil), otherLoc.toList.toSet + firstLoc)
+        { case (description, name, (args, repeatable), firstLoc, otherLoc) =>
+          DirectiveDefinition(
+            description.map(_.value),
+            name,
+            args.getOrElse(Nil),
+            repeatable.isDefined,
+            otherLoc.toList.toSet + firstLoc
+          )
         },
         (d: DirectiveDefinition) =>
           (
             d.description.map(StringValue.apply),
             d.name,
-            optColl(d.args),
+            (optColl(d.args), if (d.isRepeatable) Some(()) else None),
             d.locations.head,
             Chunk.fromIterable(d.locations.tail)
           )

@@ -11,6 +11,6 @@ trait VersionSpecificSyntax[+Err, -In, +Out, Value] { self: Syntax[Err, In, Out,
     */
   final def orElseU[Err2 >: Err, In2 <: In, Out2 >: Out, Value2: ClassTag](
       that: => Syntax[Err2, In2, Out2, Value2]
-  ): Syntax[Err2, In2, Out2, Value | Value2] =
+  )(implicit vtag: ClassTag[Value]): Syntax[Err2, In2, Out2, Value | Value2] =
     asParser.orElseU(that.asParser) <=> asPrinter.orElseU(that.asPrinter)
 }

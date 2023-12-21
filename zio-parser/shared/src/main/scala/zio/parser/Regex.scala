@@ -4,6 +4,7 @@ import zio.Chunk
 import zio.parser.Regex.Tabular.LookupFunction.Empty
 
 import java.util.regex.Matcher
+import scala.annotation.nowarn
 import scala.collection.immutable.BitSet
 
 /** A model of a regular expression.
@@ -440,7 +441,7 @@ object Regex {
     }
 
     sealed trait Tabular extends Compiled { self =>
-      def ~(that: Tabular): Tabular =
+      @nowarn def ~(that: Tabular): Tabular =
         (self, that) match {
           case (Empty, lookup: LookupFunction)               => lookup
           case (lookup: LookupFunction, Empty)               => lookup
@@ -448,13 +449,13 @@ object Regex {
           case _                                             => Empty
         }
 
-      def |(that: Tabular): Tabular =
+      @nowarn def |(that: Tabular): Tabular =
         (self, that) match {
           case (left: LookupFunction, right: LookupFunction) => (left | right): LookupFunction
           case _                                             => Empty
         }
 
-      def &(that: Tabular): Tabular =
+      @nowarn def &(that: Tabular): Tabular =
         (self, that) match {
           case (Empty, lookup: LookupFunction)               => lookup
           case (lookup: LookupFunction, Empty)               => lookup

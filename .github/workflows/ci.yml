@@ -47,7 +47,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: ['temurin@17']
+        java: ['zulu@1.17']
         scala: ['212', '213', '3']
         platform: ['JVM', 'JS', 'Native']
     steps:

@@ -26,7 +26,7 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Lint code
-        run: sbt ++2.13.12 check
+        run: sbt check
 
   website:
     runs-on: ubuntu-latest
@@ -48,7 +48,7 @@ jobs:
       fail-fast: false
       matrix:
         java: ['temurin@17']
-        scala: ['2.12.18', '2.13.12', '3.3.1']
+        scala: ['212', '213', '3']
         platform: ['JVM', 'JS', 'Native']
     steps:
       - name: Checkout current branch
@@ -62,13 +62,9 @@ jobs:
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Run tests
-        if: ${{ !startsWith(matrix.scala, '3.') }}
-        run: sbt ++${{ matrix.scala }}! test${{ matrix.platform }}
-      - name: Run dotty tests
-        if: ${{ startsWith(matrix.scala, '3.') && matrix.platform == 'JVM' }}
-        run: sbt ++${{ matrix.scala }}! testJVM
+        run: sbt test${{ matrix.platform }}_${{ matrix.scala }}
       - name: Run benchmark tests
-        if: ${{ startsWith(matrix.scala, '2.13.') && matrix.platform == 'JVM' }}
+        if: ${{ matrix.scala == '213' && matrix.platform == 'JVM' }}
         run: sbt ++${{ matrix.scala }}! benchmarks/test
 
   ci:

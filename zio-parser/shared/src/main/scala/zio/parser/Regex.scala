@@ -441,14 +441,13 @@ object Regex {
     }
 
     sealed trait Tabular extends Compiled { self =>
-      @nowarn def ~(that: Tabular): Tabular = {
+      @nowarn def ~(that: Tabular): Tabular =
         (self, that) match {
-          case (Empty, lookup: LookupFunction) => lookup
-          case (lookup: LookupFunction, Empty) => lookup
+          case (Empty, lookup: LookupFunction)               => lookup
+          case (lookup: LookupFunction, Empty)               => lookup
           case (left: LookupFunction, right: LookupFunction) => (left ~ right): LookupFunction
-          case _ => Empty
+          case _                                             => Empty
         }
-      }
 
       @nowarn def |(that: Tabular): Tabular =
         (self, that) match {

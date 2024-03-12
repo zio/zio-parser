@@ -29,7 +29,7 @@ object ParserSpec extends ZIOSpecDefault {
               isRight(equalTo("hello"))
             ),
             parserTest("end, failing", Syntax.digit.repeat0.string <~ Syntax.end, "123!!!")(
-              isLeft(equalTo(ParserError.NotConsumedAll(None)))
+              isLeft(equalTo(ParserError.NotConsumedAll(Nil, 3)))
             ),
             parserTest("char, passing", Syntax.char('x'), "x")(isRight(equalTo(()))),
             parserTest("char, failing", Syntax.char('y'), "x")(

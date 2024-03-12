@@ -121,7 +121,7 @@ final class CharParserImpl[Err, Result](parser: InitialParser, source: String) {
         case CheckEnd()                              =>
           if (position < source.length) {
             lastSuccess1 = null
-            lastFailure1 = ParserError.NotConsumedAll(None)
+            lastFailure1 = ParserError.NotConsumedAll(nameStack, position)
           } else {
             lastSuccess1 = ().asInstanceOf[AnyRef]: @nowarn
             lastFailure1 = null

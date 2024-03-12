@@ -1267,7 +1267,7 @@ object Parser {
 
     override protected def parseRec(state: ParserState[Any]): Unit =
       if (state.position < state.length)
-        state.error = ParserError.NotConsumedAll(None)
+        state.error = ParserError.NotConsumedAll(state.nameStack, state.position)
 
     override protected def needsBacktrack: Boolean = false
   }
@@ -1392,7 +1392,7 @@ object Parser {
       case ParserError.Failure(nameStack, position, failure) => ParserError.Failure(nameStack, position, f(failure))
       case ParserError.UnknownFailure(nameStack, position)   => ParserError.UnknownFailure(nameStack, position)
       case ParserError.UnexpectedEndOfInput                  => ParserError.UnexpectedEndOfInput
-      case ParserError.NotConsumedAll(lastFailure)           => ParserError.NotConsumedAll(lastFailure.map(_.map(f)))
+      case ParserError.NotConsumedAll(nameStack, position)   => ParserError.NotConsumedAll(nameStack, position)
       case ParserError.AllBranchesFailed(left, right)        => ParserError.AllBranchesFailed(left.map(f), right.map(f))
     }
   }
@@ -1430,7 +1430,7 @@ object Parser {
       * @param lastFailure
       *   the last encountered failure, if any
       */
-    final case class NotConsumedAll[Err](lastFailure: Option[ParserError[Err]]) extends ParserError[Err]
+    final case class NotConsumedAll[Err](nameStack: List[String], position: Int) extends ParserError[Err]
 
     /** All branches failed in a sequence of orElse or orElseEither parsers.
       *

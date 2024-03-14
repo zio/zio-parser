@@ -10,7 +10,7 @@ trait VersionSpecificPrinter[+Err, +Out, -Value] { self: Printer[Err, Out, Value
   )(implicit vtag: ClassTag[Value1]): Printer[Err2, Out2, Value1 | Value2] =
     orElseEither(that).contramap {
       case v2: Value2 => Right(v2)
-      case v: Value1   => Left(v)
+      case v: Value1  => Left(v)
     }
 
 }

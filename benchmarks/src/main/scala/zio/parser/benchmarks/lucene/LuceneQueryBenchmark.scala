@@ -15,6 +15,7 @@ import org.openjdk.jmh.annotations.{
 }
 import zio.Chunk
 import zio.parser.{ParserImplementation, Syntax}
+import zio.parser.StringParserError
 import zio.parser.Parser.ParserError
 import zio.parser.internal.Debug
 
@@ -50,11 +51,11 @@ class LuceneQueryBenchmark {
     catsParser.query.parseAll(testQuery)
 
   @Benchmark
-  def zioParse(): Either[ParserError[String], Query] =
+  def zioParse(): Either[StringParserError[String], Query] =
     zioParserQuery.parseString(testQuery)
 
   @Benchmark
-  def zioParseStrippedRecursive(): Either[ParserError[String], Query] =
+  def zioParseStrippedRecursive(): Either[StringParserError[String], Query] =
     zioParserStrippedQuery.parseString(testQuery, ParserImplementation.Recursive)
 
   @Benchmark
@@ -62,7 +63,7 @@ class LuceneQueryBenchmark {
     zioParserStrippedQuery.parseChunk(testQueryChunk)
 
   @Benchmark
-  def zioParseStrippedOpStack(): Either[ParserError[String], Query] =
+  def zioParseStrippedOpStack(): Either[StringParserError[String], Query] =
     zioParserStrippedQuery.parseString(testQuery, ParserImplementation.StackSafe)
 
 //  @Benchmark

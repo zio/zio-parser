@@ -911,7 +911,7 @@ object CalibanDemo extends ZIOAppDefault {
 (id: "1000", int: 3, float: 3.14, bool: true, nope: null, enum: YES, list: [1,2,3])
 """.trim
 
-  val parsed: ZIO[Any, Nothing, Either[Parser.ParserError[String], StringValue]] =
+  val parsed: ZIO[Any, Nothing, Either[StringParserError[String], StringValue]] =
     ZIO
       .succeed(CalibanParser.stringValue.parseString(query))
       //  val parsed = UIO(CalibanSyntax.stringValue.parse("\"\"\"hello\"\"\""))

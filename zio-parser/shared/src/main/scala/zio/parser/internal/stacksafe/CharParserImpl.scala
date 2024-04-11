@@ -138,7 +138,7 @@ final class CharParserImpl[Err, Result](parser: InitialParser, source: String) {
             position = position + 1
             lastSuccess1 = source(position - 1).asInstanceOf[AnyRef]
           } else {
-            lastFailure1 = ParserError.UnexpectedEndOfInput
+            lastFailure1 = ParserError.UnexpectedEndOfInput(nameStack)
           }
           opStack.pop()
 
@@ -157,7 +157,7 @@ final class CharParserImpl[Err, Result](parser: InitialParser, source: String) {
                 )
               }
             } else {
-              failure = ParserError.UnexpectedEndOfInput
+              failure = ParserError.UnexpectedEndOfInput(nameStack)
             }
             pos = pos + 1
           }
@@ -174,7 +174,7 @@ final class CharParserImpl[Err, Result](parser: InitialParser, source: String) {
         case MatchRegex(regex, pushAs, failAs) =>
           val result = regex.test(position, source)
           if (result == Regex.NeedMoreInput) {
-            lastFailure1 = ParserError.UnexpectedEndOfInput
+            lastFailure1 = ParserError.UnexpectedEndOfInput(nameStack)
           } else if (result == Regex.NotMatched) {
             failAs match {
               case Some(failure) =>
@@ -355,7 +355,7 @@ final class CharParserImpl[Err, Result](parser: InitialParser, source: String) {
             val result = builder.result()
             if (result.length < min) {
               // not enough elements
-              lastFailure1 = ParserError.UnexpectedEndOfInput
+              lastFailure1 = ParserError.UnexpectedEndOfInput(nameStack)
               opStack.pop()
             } else {
               lastIgnoredError = lastFailure1

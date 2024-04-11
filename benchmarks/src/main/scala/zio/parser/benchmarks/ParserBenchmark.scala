@@ -46,7 +46,7 @@ abstract class ParserBenchmark[T] {
 //  }
 
   @Benchmark
-  def zioParserRecursive(): Either[zio.parser.Parser.ParserError[String], T] = {
+  def zioParserRecursive(): Either[zio.parser.StringParserError[String], T] = {
     import zio.parser._
     zioSyntax.parseString(value, ParserImplementation.Recursive)
   }
@@ -58,7 +58,7 @@ abstract class ParserBenchmark[T] {
   }
 
   @Benchmark
-  def zioParserOpStack(): Either[zio.parser.Parser.ParserError[String], T] = {
+  def zioParserOpStack(): Either[zio.parser.StringParserError[String], T] = {
     import zio.parser._
     zioSyntax.parseString(value, ParserImplementation.StackSafe)
   }

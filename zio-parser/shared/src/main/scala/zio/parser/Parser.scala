@@ -272,38 +272,38 @@ sealed trait Parser[+Err, -In, +Result] extends VersionSpecificParser[Err, In, R
 
   // Execution
   /** Run this parser on the given 'input' string */
-  final def parseString(input: String)(implicit ev: Char <:< In): Either[ParserError[Err], Result] =
+  final def parseString(input: String)(implicit ev: Char <:< In): Either[StringParserError[Err], Result] =
     parseString(input, self.defaultImplementation)
 
   /** Run this parser on the given 'input' string using a specific parser implementation */
   final def parseString(input: String, parserImplementation: ParserImplementation)(implicit
       ev: Char <:< In
-  ): Either[ParserError[Err], Result] =
+  ): Either[StringParserError[Err], Result] =
     parserImplementation match {
       case ParserImplementation.StackSafe =>
         val parser = new CharParserImpl[Err, Result](
           self.compiledOpStack,
           input
         )
-        parser.run()
+        parser.run().left.map(err => StringParserError(input, err))
       case ParserImplementation.Recursive =>
         val state  = recursive.ParserState.fromString(input)
         val result = self.optimized.parseRec(state.asInstanceOf[ParserState[In]])
 
         if (state.error != null)
-          Left(state.error.asInstanceOf[ParserError[Err]])
+          Left(StringParserError(input, state.error.asInstanceOf[ParserError[Err]]))
         else
           Right(result)
     }
 
   /** Run this parser on the given 'input' chunk of characters */
-  final def parseChars(input: Chunk[Char])(implicit ev: Char <:< In): Either[ParserError[Err], Result] =
+  final def parseChars(input: Chunk[Char])(implicit ev: Char <:< In): Either[StringParserError[Err], Result] =
     parseChars(input, self.defaultImplementation)
 
   /** Run this parser on the given 'input' chunk of characters using a specific parser implementation */
   final def parseChars(input: Chunk[Char], parserImplementation: ParserImplementation)(implicit
       ev: Char <:< In
-  ): Either[ParserError[Err], Result] =
+  ): Either[StringParserError[Err], Result] =
     parseString(new String(input.toArray), parserImplementation)
 
   /** Run this parser on the given 'input' chunk */
@@ -505,7 +505,7 @@ object Parser {
         state.position += 1
         result.asInstanceOf[D2]
       } else {
-        state.error = ParserError.UnexpectedEndOfInput
+        state.error = ParserError.UnexpectedEndOfInput(state.nameStack)
         null.asInstanceOf[D2]
       }
 
@@ -527,7 +527,7 @@ object Parser {
       val position = state.position
       val result   = state.regex(compiledRegex)
       if (result == Regex.NeedMoreInput) {
-        state.error = ParserError.UnexpectedEndOfInput
+        state.error = ParserError.UnexpectedEndOfInput(state.nameStack)
       } else if (result == Regex.NotMatched) {
         onFailure match {
           case Some(failure) =>
@@ -568,7 +568,7 @@ object Parser {
       val position = state.position
       val result   = state.regex(compiledRegex)
       if (result == Regex.NeedMoreInput) {
-        state.error = ParserError.UnexpectedEndOfInput
+        state.error = ParserError.UnexpectedEndOfInput(state.nameStack)
         null.asInstanceOf[Chunk[Char]]
       } else if (result == Regex.NotMatched) {
         state.error = getFailure(position, state.nameStack)
@@ -609,7 +609,7 @@ object Parser {
       val position = state.position
       val result   = state.regex(compiledRegex)
       if (result == Regex.NeedMoreInput) {
-        state.error = ParserError.UnexpectedEndOfInput
+        state.error = ParserError.UnexpectedEndOfInput(state.nameStack)
         null.asInstanceOf[Char]
       } else if (result == Regex.NotMatched) {
         state.error = getFailure(position, state.nameStack)
@@ -1145,7 +1145,7 @@ object Parser {
       }
 
       if (count < min && state.error == null) {
-        state.error = ParserError.UnexpectedEndOfInput
+        state.error = ParserError.UnexpectedEndOfInput(state.nameStack)
       } else {
         if (count >= min) {
           state.error = null
@@ -1391,7 +1391,7 @@ object Parser {
     def map[Err2](f: Err => Err2): ParserError[Err2] = self match {
       case ParserError.Failure(nameStack, position, failure) => ParserError.Failure(nameStack, position, f(failure))
       case ParserError.UnknownFailure(nameStack, position)   => ParserError.UnknownFailure(nameStack, position)
-      case ParserError.UnexpectedEndOfInput                  => ParserError.UnexpectedEndOfInput
+      case ParserError.UnexpectedEndOfInput(nameStack)       => ParserError.UnexpectedEndOfInput(nameStack)
       case ParserError.NotConsumedAll(nameStack, position)   => ParserError.NotConsumedAll(nameStack, position)
       case ParserError.AllBranchesFailed(left, right)        => ParserError.AllBranchesFailed(left.map(f), right.map(f))
     }
@@ -1423,7 +1423,7 @@ object Parser {
     final case class UnknownFailure(nameStack: List[String], position: Int) extends ParserError[Nothing]
 
     /** The input stream ended before the parser finished */
-    case object UnexpectedEndOfInput extends ParserError[Nothing]
+    final case class UnexpectedEndOfInput(nameStack: List[String]) extends ParserError[Nothing]
 
     /** The parser was supposed to consume the full input but it did not.
       *
@@ -1437,5 +1437,78 @@ object Parser {
       * Every failed branch's failure is preserved.
       */
     final case class AllBranchesFailed[Err](left: ParserError[Err], right: ParserError[Err]) extends ParserError[Err]
+  }
+}
+
+final case class StringParserError[+Err](input: String, error: ParserError[Err]) {
+  def pretty: String = {
+    val sb = new StringBuilder
+
+    def errorBuilder(error: ParserError[Err]): Unit =
+      error match {
+        case ParserError.Failure(nameStack, position, failure) =>
+          sb.append(s"Failure at position $position: $failure")
+          if (nameStack.nonEmpty) {
+            sb.append(" in ")
+            sb.append(nameStack.mkString(" -> "))
+          }
+        case ParserError.UnknownFailure(nameStack, position)   =>
+          sb.append(s"Unknown failure at position $position")
+          if (nameStack.nonEmpty) {
+            sb.append(" in ")
+            sb.append(nameStack.mkString(" -> "))
+          }
+        case ParserError.UnexpectedEndOfInput(nameStack)       =>
+          sb.append("Unexpected end of input")
+          if (nameStack.nonEmpty) {
+            sb.append(" in ")
+            sb.append(nameStack.mkString(" -> "))
+          }
+        case ParserError.NotConsumedAll(nameStack, position)   =>
+          sb.append(s"Parser did not consume all input at position $position")
+          if (nameStack.nonEmpty) {
+            sb.append(" in ")
+            sb.append(nameStack.mkString(" -> "))
+          }
+        case ParserError.AllBranchesFailed(left, right)        =>
+          sb.append("All branches failed: ")
+          errorBuilder(left)
+          sb.append(" and ")
+          errorBuilder(right)
+      }
+
+    def printError(pos: Int) = {
+      val lines          = input.split("\n")
+      val positions      = lines.scanLeft(0)(_ + _.length + 1) // +1 for newline character
+      val errorLineIndex = positions.indexWhere(_ > pos) - 1
+
+      val contextRange = (math.max(errorLineIndex - 2, 0), math.min(errorLineIndex + 2, lines.length - 1))
+
+      if (contextRange._1 > 0) sb.append("...\n")
+
+      lines.slice(contextRange._1, contextRange._2 + 1).zipWithIndex.foreach { case (line, index) =>
+        val actualIndex = contextRange._1 + index
+        sb.append(line).append("\n")
+        if (actualIndex == errorLineIndex) {
+          val columnPos = pos - positions(errorLineIndex)
+          sb.append(" " * columnPos)
+          sb.append("^\n")
+          sb.append("error: ")
+          errorBuilder(error)
+          sb.append("\n")
+        }
+      }
+
+      if (contextRange._2 < lines.length - 1) sb.append("...\n")
+    }
+
+    error match {
+      case ParserError.Failure(_, position, _)     => printError(position)
+      case ParserError.UnknownFailure(_, position) => printError(position)
+      case ParserError.NotConsumedAll(_, position) => printError(position)
+      case _                                       => errorBuilder(error)
+    }
+
+    sb.toString()
   }
 }

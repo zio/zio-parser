@@ -384,23 +384,23 @@ class Syntax[+Err, -In, +Out, Value] private (
     )
 
   /** Run this parser on the given 'input' string */
-  final def parseString(input: String)(implicit ev: Char <:< In): Either[ParserError[Err], Value] =
+  final def parseString(input: String)(implicit ev: Char <:< In): Either[StringParserError[Err], Value] =
     asParser.parseString(input)
 
   /** Run this parser on the given 'input' string using a specific parser implementation */
   final def parseString(input: String, parserImplementation: ParserImplementation)(implicit
       ev: Char <:< In
-  ): Either[ParserError[Err], Value] =
+  ): Either[StringParserError[Err], Value] =
     asParser.parseString(input, parserImplementation)
 
   /** Run this parser on the given 'input' chunk of characters */
-  final def parseChars(input: Chunk[Char])(implicit ev: Char <:< In): Either[ParserError[Err], Value] =
+  final def parseChars(input: Chunk[Char])(implicit ev: Char <:< In): Either[StringParserError[Err], Value] =
     asParser.parseChars(input)
 
   /** Run this parser on the given 'input' chunk of characters using a specific parser implementation */
   final def parseChars(input: Chunk[Char], parserImplementation: ParserImplementation)(implicit
       ev: Char <:< In
-  ): Either[ParserError[Err], Value] = asParser.parseChars(input, parserImplementation)
+  ): Either[StringParserError[Err], Value] = asParser.parseChars(input, parserImplementation)
 
   /** Run this parser on the given 'input' chunk */
   final def parseChunk[In0 <: In](input: Chunk[In0])(implicit

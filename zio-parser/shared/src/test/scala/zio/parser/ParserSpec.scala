@@ -197,7 +197,7 @@ object ParserSpec extends ZIOSpecDefault {
                 isLeft(equalTo(ParserError.Failure(Nil, 0, "not a")))
               ) @@ TestAspect.ignore, // With compiling to Regex it fails with UnexpectedEndOfInput - to be discussed
               parserTest("repeat immediate end of stream", Syntax.char('a', "not a").repeat, "")(
-                isLeft(equalTo(ParserError.UnexpectedEndOfInput))
+                isLeft(equalTo(ParserError.UnexpectedEndOfInput(Nil)))
               ),
               parserTest("repeat 1", charA.repeat, "abc")(
                 isRight(equalTo(Chunk('a')))
@@ -412,7 +412,7 @@ object ParserSpec extends ZIOSpecDefault {
                 isRight(equalTo("123"))
               ),
               parserTest("digits, failing", Syntax.digit.+.string, "abc123")(
-                isLeft(equalTo(ParserError.UnexpectedEndOfInput))
+                isLeft(equalTo(ParserError.UnexpectedEndOfInput(Nil)))
               )
             ),
             parserTest("Not, inner failing", Syntax.string("hello", ()).not("it was hello"), "world")(
@@ -461,7 +461,7 @@ object ParserSpec extends ZIOSpecDefault {
   ): Spec[Any, Nothing] =
     test(name) {
 //      Debug.printParserTree(syntax.asParser.optimized)
-      assert(syntax.parseString(input, implementation))(assertion)
+      assert(syntax.parseString(input, implementation).left.map(_.error))(assertion)
     }
 
   private def createParserTest_[E, T](
@@ -470,7 +470,7 @@ object ParserSpec extends ZIOSpecDefault {
       assertion: Assertion[Either[ParserError[E], T]]
   ): Spec[Any, Nothing] =
     test(name)(
-      assert(parser.parseString(input, implementation))(assertion)
+      assert(parser.parseString(input, implementation).left.map(_.error))(assertion)
     )
 //    test(name)(assert(syntax.parseString(input))(assertion))
 }

@@ -75,7 +75,7 @@ object ContextualExample extends ZIOSpecDefault {
           )
         },
         test("parse wrong") {
-          assert(node.parseString("<hello></world>"))(
+          assert(node.parseString("<hello></world>").left.map(_.error))(
             isLeft(equalTo(ParserError.Failure(List("close tag (hello)"), 7, "Not '</hello>'")))
           )
         },

@@ -13,6 +13,7 @@ import org.openjdk.jmh.annotations.{
   Warmup
 }
 import zio.Chunk
+import zio.parser.StringParserError
 import zio.parser.Parser.ParserError
 import zio.parser.{Regex, Syntax}
 
@@ -68,23 +69,23 @@ class CharParserMicroBenchmarks {
   }
 
   @Benchmark
-  def skipAndTransform(): Either[ParserError[Nothing], String] =
+  def skipAndTransform(): Either[StringParserError[Nothing], String] =
     skipAndTransformSyntax.parseChars(hello)
 
   @Benchmark
-  def skipAndTransformOrElse(): Either[ParserError[String], String] =
+  def skipAndTransformOrElse(): Either[StringParserError[String], String] =
     skipAndTransformOrElseSyntax.parseChars(world)
 
   @Benchmark
-  def skipAndTransformRepeat(): Either[ParserError[String], Chunk[String]] =
+  def skipAndTransformRepeat(): Either[StringParserError[String], Chunk[String]] =
     skipAndTransformRepeatSyntax.parseChars(hellos)
 
   @Benchmark
-  def skipAndTransformZip(): Either[ParserError[String], String10] =
+  def skipAndTransformZip(): Either[StringParserError[String], String10] =
     skipAndTransformZipSyntax.parseChars(hellos)
 
   @Benchmark
-  def repeatWithSep0(): Either[ParserError[String], Chunk[String]] =
+  def repeatWithSep0(): Either[StringParserError[String], Chunk[String]] =
     repeatWithSep0Syntax.parseString(hellosSep)
 }
 

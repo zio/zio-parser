@@ -1441,6 +1441,8 @@ object Parser {
 }
 
 final case class StringParserError[+Err](input: String, error: ParserError[Err]) {
+
+  /** Pretty prints the error with the input context */
   def pretty: String = {
     val sb = new StringBuilder
 

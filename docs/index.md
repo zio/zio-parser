@@ -20,5 +20,29 @@ Start by adding `zio-parser` as a dependency to your project:
 libraryDependencies += "dev.zio" %% "zio-parser" % "@VERSION@"
 ```
 
+## Getting Started
+
+```scala mdoc
+import zio.parser.*
+```
+
+Declare your parsing syntax:
+
+```scala mdoc:silent
+val digitSyntax: Syntax[String, Char, Char, Char] = Syntax.digit
+```
+
+Parse your string:
+
+```scala mdoc
+val result: Either[StringParserError[String], Char] = digitSyntax.parseString("1")
+```
+
+Pretty print the parsing errors:
+
+```scala mdoc
+println(digitSyntax.parseString("Hello").left.map(_.pretty).merge)
+```
+
 [//]: # (TODO: Add example section)
 [//]: # (## Example)

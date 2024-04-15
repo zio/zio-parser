@@ -6,7 +6,7 @@
 
 Library for constructing parsers and pretty printers based on invertible syntax descriptions
 
-[![Development](https://img.shields.io/badge/Project%20Stage-Development-green.svg)](https://github.com/zio/zio/wiki/Project-Stages) ![CI Badge](https://github.com/zio/zio-parser/workflows/CI/badge.svg) [![Sonatype Releases](https://img.shields.io/nexus/r/https/oss.sonatype.org/dev.zio/zio-parser_2.13.svg?label=Sonatype%20Release)](https://oss.sonatype.org/content/repositories/releases/dev/zio/zio-parser_2.13/) [![Sonatype Snapshots](https://img.shields.io/nexus/s/https/oss.sonatype.org/dev.zio/zio-parser_2.13.svg?label=Sonatype%20Snapshot)](https://oss.sonatype.org/content/repositories/snapshots/dev/zio/zio-parser_2.13/) [![javadoc](https://javadoc.io/badge2/dev.zio/zio-parser-docs_2.13/javadoc.svg)](https://javadoc.io/doc/dev.zio/zio-parser-docs_2.13) [![ZIO Parser](https://img.shields.io/github/stars/zio/zio-parser?style=social)](https://github.com/zio/zio-parser)
+[![Development](https://img.shields.io/badge/Project%20Stage-Development-green.svg)](https://github.com/zio/zio/wiki/Project-Stages) ![CI Badge](https://github.com/zio/zio-parser/workflows/CI/badge.svg) [![Sonatype Releases](https://img.shields.io/nexus/r/https/oss.sonatype.org/dev.zio/zio-parser_3.svg?label=Sonatype%20Release)](https://oss.sonatype.org/content/repositories/releases/dev/zio/zio-parser_3/) [![Sonatype Snapshots](https://img.shields.io/nexus/s/https/oss.sonatype.org/dev.zio/zio-parser_3.svg?label=Sonatype%20Snapshot)](https://oss.sonatype.org/content/repositories/snapshots/dev/zio/zio-parser_3/) [![javadoc](https://javadoc.io/badge2/dev.zio/zio-parser-docs_3/javadoc.svg)](https://javadoc.io/doc/dev.zio/zio-parser-docs_3) [![ZIO Parser](https://img.shields.io/github/stars/zio/zio-parser?style=social)](https://github.com/zio/zio-parser)
 
 ## Introduction
 
@@ -20,12 +20,41 @@ Start by adding `zio-parser` as a dependency to your project:
 libraryDependencies += "dev.zio" %% "zio-parser" % "0.1.9"
 ```
 
+## Getting Started
+
+```scala
+import zio.parser.*
+```
+
+Declare your parsing syntax:
+
+```scala
+val digitSyntax: Syntax[String, Char, Char, Char] = Syntax.digit
+```
+
+Parse your string:
+
+```scala
+val result: Either[StringParserError[String], Char] = digitSyntax.parseString("1")
+// result: Either[StringParserError[String], Char] = Right(value = '1')
+```
+
+Pretty print the parsing errors:
+
+```scala
+println(digitSyntax.parseString("Hello").left.map(_.pretty).merge)
+// Hello
+// ^
+// error: Failure at position 0: not a digit
+//
+```
+
 [//]: # (TODO: Add example section)
 [//]: # (## Example)
 
 ## Documentation
 
-Learn more on the [ZIO Parser homepage](https://zio.dev/zio-parser)!
+Learn more on the [ZIO Parser homepage](https://zio.dev/zio-parser/)!
 
 ## Contributing
 

@@ -28,7 +28,7 @@ val scala212 = "2.12.19"
 val scala213 = "2.13.12"
 val scala3   = "3.3.3"
 
-val zioVersion = "2.1.1"
+val zioVersion = "2.1.4"
 
 // Command aliases for convenience and for CI
 addCommandAlias("fmt", s"++$scala213; scalafmtSbt; scalafmtAll")

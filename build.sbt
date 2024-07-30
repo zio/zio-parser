@@ -132,7 +132,7 @@ lazy val zioParserJS     = zioParser.js
   .settings(
     scalaJSUseMainModuleInitializer := true,
     libraryDependencies ++= Seq(
-      ("org.scala-js"               %% "scalajs-test-interface" % scalaJSVersion).cross(CrossVersion.for3Use2_13)
+      ("org.scala-js" %% "scalajs-test-interface" % scalaJSVersion).cross(CrossVersion.for3Use2_13)
     )
   )
 lazy val zioParserNative = zioParser.native

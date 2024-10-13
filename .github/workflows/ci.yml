@@ -18,11 +18,15 @@ jobs:
     timeout-minutes: 30
     steps:
       - name: Checkout current branch
-        uses: actions/checkout@v2.4.0
+        uses: actions/checkout@v4.2.0
         with:
           fetch-depth: 0
       - name: Setup Scala and Java
-        uses: olafurpg/setup-scala@v11
+        uses: actions/setup-java@v4.4.0
+        with:
+          distribution: zulu
+          java-version: 17
+          check-latest: true
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Lint code
@@ -33,9 +37,13 @@ jobs:
     timeout-minutes: 60
     steps:
       - name: Checkout current branch
-        uses: actions/checkout@v2.4.0
+        uses: actions/checkout@v4.2.0
       - name: Setup Scala and Java
-        uses: olafurpg/setup-scala@v11
+        uses: actions/setup-java@v4.4.0
+        with:
+          distribution: zulu
+          java-version: 17
+          check-latest: true
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Check Document Generation
@@ -47,18 +55,20 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        java: ['zulu@1.17']
+        java: ['17']
         scala: ['212', '213', '3']
         platform: ['JVM', 'JS', 'Native']
     steps:
       - name: Checkout current branch
-        uses: actions/checkout@v2.4.0
+        uses: actions/checkout@v4.2.0
         with:
           fetch-depth: 0
       - name: Setup Scala and Java
-        uses: olafurpg/setup-scala@v11
+        uses: actions/setup-java@v4.4.0
         with:
+          distribution: zulu
           java-version: ${{ matrix.java }}
+          check-latest: true
       - name: Install libuv
         run: sudo apt-get update && sudo apt-get install -y libuv1-dev
       - name: Cache scala dependencies
@@ -80,11 +90,15 @@ jobs:
     if: github.event_name != 'pull_request'
     steps:
       - name: Checkout current branch
-        uses: actions/checkout@v2.4.0
+        uses: actions/checkout@v4.2.0
         with:
           fetch-depth: 0
       - name: Setup Scala and Java
-        uses: olafurpg/setup-scala@v11
+        uses: actions/setup-java@v4.4.0
+        with:
+          distribution: zulu
+          java-version: 17
+          check-latest: true
       - name: Cache scala dependencies
         uses: coursier/cache-action@v6
       - name: Release artifacts

@@ -28,6 +28,8 @@ val scala212 = "2.12.20"
 val scala213 = "2.13.15"
 val scala3   = "3.3.4"
 
+val javaPlatform = "11"
+
 val zioVersion = "2.1.11"
 
 // Command aliases for convenience and for CI
@@ -61,7 +63,8 @@ lazy val commonSettings = Seq(
     "UTF-8",
     "-feature",
     "-unchecked",
-    "-language:experimental.macros"
+    "-language:experimental.macros",
+    s"-release:$javaPlatform"
   ) ++ (CrossVersion.partialVersion(scalaVersion.value) match {
     case Some((2, 12)) =>
       Seq(

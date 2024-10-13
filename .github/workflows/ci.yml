@@ -14,7 +14,7 @@ on:
 
 jobs:
   lint:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     steps:
       - name: Checkout current branch
@@ -33,7 +33,7 @@ jobs:
         run: sbt check
 
   website:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 60
     steps:
       - name: Checkout current branch
@@ -50,7 +50,7 @@ jobs:
         run: sbt docs/compileDocs
 
   test:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     strategy:
       fail-fast: false
@@ -75,14 +75,14 @@ jobs:
         run: sbt test${{ matrix.platform }}_${{ matrix.scala }}
 
   ci:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     needs: [lint, website, test]
     steps:
       - name: Aggregate of lint, and all tests
         run: echo "ci passed"
 
   publish:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     timeout-minutes: 30
     needs: [ci]
     if: github.event_name != 'pull_request'

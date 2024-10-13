@@ -24,11 +24,11 @@ inThisBuild(
 )
 
 // Versions
-val scala212 = "2.12.19"
-val scala213 = "2.13.12"
-val scala3   = "3.3.3"
+val scala212 = "2.12.20"
+val scala213 = "2.13.15"
+val scala3   = "3.3.4"
 
-val zioVersion = "2.1.1"
+val zioVersion = "2.1.11"
 
 // Command aliases for convenience and for CI
 addCommandAlias("fmt", s"++$scala213; scalafmtSbt; scalafmtAll")
@@ -113,7 +113,7 @@ lazy val zioParser = crossProject(JSPlatform, JVMPlatform, NativePlatform)
           Seq.empty
         case _            =>
           Seq(
-            compilerPlugin("org.typelevel" % "kind-projector" % "0.13.2" cross CrossVersion.full),
+            compilerPlugin("org.typelevel" % "kind-projector" % "0.13.3" cross CrossVersion.full),
             "org.scala-lang" % "scala-reflect"  % scalaVersion.value % Provided,
             "org.scala-lang" % "scala-compiler" % scalaVersion.value % Provided
           )

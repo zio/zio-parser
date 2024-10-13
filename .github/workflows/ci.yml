@@ -24,7 +24,7 @@ jobs:
       - name: Setup Scala and Java
         uses: actions/setup-java@v4.4.0
         with:
-          distribution: temurin
+          distribution: zulu
           java-version: 17
           check-latest: true
       - name: Setup sbt
@@ -43,7 +43,7 @@ jobs:
       - name: Setup Scala and Java
         uses: actions/setup-java@v4.4.0
         with:
-          distribution: temurin
+          distribution: zulu
           java-version: 17
           check-latest: true
       - name: Setup sbt
@@ -70,7 +70,7 @@ jobs:
       - name: Setup Scala and Java
         uses: actions/setup-java@v4.4.0
         with:
-          distribution: temurin
+          distribution: zulu
           java-version: ${{ matrix.java }}
           check-latest: true
       - name: Setup sbt
@@ -100,7 +100,7 @@ jobs:
       - name: Setup Scala and Java
         uses: actions/setup-java@v4.4.0
         with:
-          distribution: temurin
+          distribution: zulu
           java-version: 17
           check-latest: true
       - name: Setup sbt

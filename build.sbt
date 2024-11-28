@@ -30,7 +30,7 @@ val scala3   = "3.3.4"
 
 val javaPlatform = "11"
 
-val zioVersion = "2.1.12"
+val zioVersion = "2.1.13"
 
 // Command aliases for convenience and for CI
 addCommandAlias("fmt", s"++$scala213; scalafmtSbt; scalafmtAll")

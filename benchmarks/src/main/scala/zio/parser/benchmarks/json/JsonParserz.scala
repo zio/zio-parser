@@ -79,10 +79,13 @@ object JsonParserz {
   val field: G[(String, Json)] = (string <~ (':', colon)) ~ js
 
   val obj: G[Json.Obj] =
-    ((brace1, '{') ~> field.separated(comma).map(_.values, { _: List[(String, Json)] => ??? }) <~ ((
-      (),
-      '}'
-    ), spacing ~ brace2)).map(
+    ((brace1, '{') ~> field.separated(comma).map(_.values, { _: List[(String, Json)] => ??? }) <~ (
+      (
+        (),
+        '}'
+      ),
+      spacing ~ brace2
+    )).map(
       lst => Json.Obj(Chunk.fromIterable(lst)),
       obj => obj.fields.toList
     )

@@ -1005,30 +1005,30 @@ object BashPrettyPrinterExample extends ZIOSpecDefault {
 
   sealed trait BashArithmeticExpression
   object BashArithmeticExpressions {
-    case class Number(value: Int)                         extends BashArithmeticExpression // n
-    case class Variable(variable: BashVariable)           extends BashArithmeticExpression // $X
-    case class PostIncrement(x: BashArithmeticExpression) extends BashArithmeticExpression // x++
-    case class PostDecrement(x: BashArithmeticExpression) extends BashArithmeticExpression // x--
-    case class PreIncrement(x: BashArithmeticExpression)  extends BashArithmeticExpression // ++x
-    case class PreDecrement(x: BashArithmeticExpression)  extends BashArithmeticExpression // --x
-    case class Minus(x: BashArithmeticExpression)         extends BashArithmeticExpression // -x
-    case class Plus(x: BashArithmeticExpression)          extends BashArithmeticExpression // +x
-    case class LogicalNot(x: BashArithmeticExpression)    extends BashArithmeticExpression // !x
-    case class BitwiseNot(x: BashArithmeticExpression)    extends BashArithmeticExpression // ~x
+    case class Number(value: Int)                                              extends BashArithmeticExpression // n
+    case class Variable(variable: BashVariable)                                extends BashArithmeticExpression // $X
+    case class PostIncrement(x: BashArithmeticExpression)                      extends BashArithmeticExpression // x++
+    case class PostDecrement(x: BashArithmeticExpression)                      extends BashArithmeticExpression // x--
+    case class PreIncrement(x: BashArithmeticExpression)                       extends BashArithmeticExpression // ++x
+    case class PreDecrement(x: BashArithmeticExpression)                       extends BashArithmeticExpression // --x
+    case class Minus(x: BashArithmeticExpression)                              extends BashArithmeticExpression // -x
+    case class Plus(x: BashArithmeticExpression)                               extends BashArithmeticExpression // +x
+    case class LogicalNot(x: BashArithmeticExpression)                         extends BashArithmeticExpression // !x
+    case class BitwiseNot(x: BashArithmeticExpression)                         extends BashArithmeticExpression // ~x
     case class Exponentiation(x: BashArithmeticExpression, y: BashArithmeticExpression)
         extends BashArithmeticExpression // x ** y
-    case class Add(x: BashArithmeticExpression, y: BashArithmeticExpression) extends BashArithmeticExpression // x + y
-    case class Sub(x: BashArithmeticExpression, y: BashArithmeticExpression) extends BashArithmeticExpression // x - y
-    case class Mul(x: BashArithmeticExpression, y: BashArithmeticExpression) extends BashArithmeticExpression // x * y
-    case class Div(x: BashArithmeticExpression, y: BashArithmeticExpression) extends BashArithmeticExpression // x / y
-    case class Rem(x: BashArithmeticExpression, y: BashArithmeticExpression) extends BashArithmeticExpression // x % y
+    case class Add(x: BashArithmeticExpression, y: BashArithmeticExpression)   extends BashArithmeticExpression // x + y
+    case class Sub(x: BashArithmeticExpression, y: BashArithmeticExpression)   extends BashArithmeticExpression // x - y
+    case class Mul(x: BashArithmeticExpression, y: BashArithmeticExpression)   extends BashArithmeticExpression // x * y
+    case class Div(x: BashArithmeticExpression, y: BashArithmeticExpression)   extends BashArithmeticExpression // x / y
+    case class Rem(x: BashArithmeticExpression, y: BashArithmeticExpression)   extends BashArithmeticExpression // x % y
     case class BitwiseLeftShift(x: BashArithmeticExpression, y: BashArithmeticExpression)
         extends BashArithmeticExpression // x << y
     case class BitwiseRightShift(x: BashArithmeticExpression, y: BashArithmeticExpression)
         extends BashArithmeticExpression // x >> y
     case class LessEq(x: BashArithmeticExpression, y: BashArithmeticExpression)
         extends BashArithmeticExpression // x <= y
-    case class Less(x: BashArithmeticExpression, y: BashArithmeticExpression) extends BashArithmeticExpression // x < y
+    case class Less(x: BashArithmeticExpression, y: BashArithmeticExpression)  extends BashArithmeticExpression // x < y
     case class Greater(x: BashArithmeticExpression, y: BashArithmeticExpression)
         extends BashArithmeticExpression // x > y
     case class GreaterEq(x: BashArithmeticExpression, y: BashArithmeticExpression)
@@ -1052,13 +1052,13 @@ object BashPrettyPrinterExample extends ZIOSpecDefault {
         trueCase: BashArithmeticExpression,
         falseCase: BashArithmeticExpression
     ) extends BashArithmeticExpression // condition ? trueCase : falseCase
-    case class Assign(x: BashVariable, y: BashArithmeticExpression) extends BashArithmeticExpression // x = y
-    case class AssignMul(x: BashVariable, y: BashArithmeticExpression)       extends BashArithmeticExpression // x *= y
-    case class AssignDiv(x: BashVariable, y: BashArithmeticExpression)       extends BashArithmeticExpression // x /= y
-    case class AssignRem(x: BashVariable, y: BashArithmeticExpression)       extends BashArithmeticExpression // x %= y
-    case class AssignAdd(x: BashVariable, y: BashArithmeticExpression)       extends BashArithmeticExpression // x += y
-    case class AssignSub(x: BashVariable, y: BashArithmeticExpression)       extends BashArithmeticExpression // x -= y
-    case class AssignShiftLeft(x: BashVariable, y: BashArithmeticExpression) extends BashArithmeticExpression // x <<= y
+    case class Assign(x: BashVariable, y: BashArithmeticExpression)            extends BashArithmeticExpression // x = y
+    case class AssignMul(x: BashVariable, y: BashArithmeticExpression)         extends BashArithmeticExpression // x *= y
+    case class AssignDiv(x: BashVariable, y: BashArithmeticExpression)         extends BashArithmeticExpression // x /= y
+    case class AssignRem(x: BashVariable, y: BashArithmeticExpression)         extends BashArithmeticExpression // x %= y
+    case class AssignAdd(x: BashVariable, y: BashArithmeticExpression)         extends BashArithmeticExpression // x += y
+    case class AssignSub(x: BashVariable, y: BashArithmeticExpression)         extends BashArithmeticExpression // x -= y
+    case class AssignShiftLeft(x: BashVariable, y: BashArithmeticExpression)   extends BashArithmeticExpression // x <<= y
     case class AssignShiftRight(x: BashVariable, y: BashArithmeticExpression)
         extends BashArithmeticExpression // x >>= y
     case class AssignAnd(x: BashVariable, y: BashArithmeticExpression)         extends BashArithmeticExpression // x &= y

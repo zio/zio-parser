@@ -78,7 +78,7 @@ class Syntax[+Err, -In, +Out, Value] private (
     *
     * This can be used to define separate syntaxes for subtypes, that can be later combined.
     */
-  final def transformTo[Err2 >: Err, Value2, Result2](
+  final def transformTo[Err2 >: Err, Value2](
       to: Value => Value2,
       from: PartialFunction[Value2, Value],
       failure: Err2

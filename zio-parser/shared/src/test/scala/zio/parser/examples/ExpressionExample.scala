@@ -18,20 +18,20 @@ object ExpressionExample extends ZIOSpecDefault {
     .filter[String, Char](_.isDigit, "not a digit")
     .repeat
     .string
-    .transformTo[String, Expr, Expr](
+    .transformTo[String, Expr](
       s => Const(s.toInt),
       { case (n: Const) => n.value.toString },
       "Not a constant"
     ) ?? "constant"
   val operator: Syntax[String, Char, Char, OpType] =
-    (Syntax.charIn('+').transformTo[String, OpType, OpType](_ => Add, { case Add => '+' }, "Not +") <>
-      Syntax.charIn('-').transformTo[String, OpType, OpType](_ => Sub, { case Sub => '-' }, "Not -")) ?? "operator"
+    (Syntax.charIn('+').transformTo[String, OpType](_ => Add, { case Add => '+' }, "Not +") <>
+      Syntax.charIn('-').transformTo[String, OpType](_ => Sub, { case Sub => '-' }, "Not -")) ?? "operator"
   val lparen: Syntax[String, Char, Char, Unit]     = Syntax.char('(')
   val rparen: Syntax[String, Char, Char, Unit]     = Syntax.char(')')
 
   lazy val subExpr: Syntax[String, Char, Char, Expr] =
     (expr ~ operator ~ expr)
-      .transformTo[String, Expr, Expr](
+      .transformTo[String, Expr](
         { case (a, op, b) =>
           Op(op, a, b)
         },

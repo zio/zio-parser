@@ -4,6 +4,8 @@ import zio.parser.Parser.ParserError
 import zio.test.Assertion._
 import zio.test._
 import zio.{Chunk, Scope}
+import zio.test.TestAspect._
+import zio.durationInt
 
 object ParserSpec extends ZIOSpecDefault {
   private val charA: Syntax[String, Char, Char, Char] = Syntax.char('a', "not a").as('a')
@@ -22,8 +24,17 @@ object ParserSpec extends ZIOSpecDefault {
             assertion: Assertion[Either[ParserError[E], T]]
         ) = createParserTest_(implementation)(name, parser, input)(assertion)
 
+
+        def wrappedN(foo: Syntax[String, Char, Char, String]): Syntax[String, Char, Char, String] = {
+          val wrapped = foo.between(Syntax.char('['), Syntax.char(']'))
+          wrapped | wrappedN(wrapped)
+        }
+
+        
+
         suite(implementation.toString)(
           suite("Invertible syntax")(
+            parserTest("wrapped nested",  wrappedN(Syntax.string("FOO", "foo")), "[[FOO]]")(isRight(equalTo("test"))),
             parserTest("succeed", Syntax.succeed("test"), "hello world")(isRight(equalTo("test"))),
             parserTest("end, passing", Syntax.anyChar.repeat0.string <~ Syntax.end, "hello")(
               isRight(equalTo("hello"))
@@ -451,7 +462,7 @@ object ParserSpec extends ZIOSpecDefault {
           )
         )
       }: _*
-    )
+    ) @@ timeout(10.seconds)
   }
 
   private def createParserTest[E, T](

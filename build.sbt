@@ -116,7 +116,7 @@ lazy val zioParser = crossProject(JSPlatform, JVMPlatform, NativePlatform)
           Seq.empty
         case _            =>
           Seq(
-            compilerPlugin("org.typelevel" % "kind-projector" % "0.13.3" cross CrossVersion.full),
+            compilerPlugin("org.typelevel" % "kind-projector" % "0.13.4" cross CrossVersion.full),
             "org.scala-lang" % "scala-reflect"  % scalaVersion.value % Provided,
             "org.scala-lang" % "scala-compiler" % scalaVersion.value % Provided
           )

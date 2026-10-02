@@ -35,6 +35,7 @@ val zioVersion = "2.1.13"
 // Command aliases for convenience and for CI
 addCommandAlias("fmt", s"++$scala213; scalafmtSbt; scalafmtAll")
 addCommandAlias("check", s"++$scala213; scalafmtSbtCheck; scalafmtCheckAll")
+addCommandAlias("lint", "check")
 
 addCommandAlias("testJVM", ";zioParserJVM/test; calibanParser/test")
 addCommandAlias("testJS", ";zioParserJS/test")
@@ -91,6 +92,14 @@ lazy val commonSettings = Seq(
     case _             => Seq()
   })
 )
+
+// Generated GitHub workflows: run `sbt ciGenerateGithubWorkflow` after changing these settings
+// sorted so the generated matrix is deterministic (ciCheckGithubWorkflow compares it byte for byte)
+ThisBuild / ciTargetScalaVersions :=
+  scala.collection.immutable.ListMap(
+    targetScalaVersionsFor(zioParserJVM, zioParserJS, zioParserNative, calibanParser).value.toSeq.sortBy(_._1): _*
+  )
+ThisBuild / ciEnabledBranches     := Seq("master")
 
 lazy val root = (project in file("."))
   .aggregate(
@@ -191,7 +200,6 @@ lazy val docs = project
     projectName                                := "ZIO Parser",
     mainModuleName                             := (zioParserJVM / moduleName).value,
     projectStage                               := ProjectStage.Development,
-    docsPublishBranch                          := "master",
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(zioParserJVM)
   )
   .dependsOn(zioParserJVM)

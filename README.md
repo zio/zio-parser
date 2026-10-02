@@ -6,7 +6,7 @@
 
 Library for constructing parsers and pretty printers based on invertible syntax descriptions
 
-[![Development](https://img.shields.io/badge/Project%20Stage-Development-green.svg)](https://github.com/zio/zio/wiki/Project-Stages) ![CI Badge](https://github.com/zio/zio-parser/workflows/CI/badge.svg) [![Sonatype Releases](https://img.shields.io/nexus/r/https/oss.sonatype.org/dev.zio/zio-parser_3.svg?label=Sonatype%20Release)](https://oss.sonatype.org/content/repositories/releases/dev/zio/zio-parser_3/) [![Sonatype Snapshots](https://img.shields.io/nexus/s/https/oss.sonatype.org/dev.zio/zio-parser_3.svg?label=Sonatype%20Snapshot)](https://oss.sonatype.org/content/repositories/snapshots/dev/zio/zio-parser_3/) [![javadoc](https://javadoc.io/badge2/dev.zio/zio-parser-docs_3/javadoc.svg)](https://javadoc.io/doc/dev.zio/zio-parser-docs_3) [![ZIO Parser](https://img.shields.io/github/stars/zio/zio-parser?style=social)](https://github.com/zio/zio-parser)
+[![Development](https://img.shields.io/badge/Project%20Stage-Development-green.svg)](https://github.com/zio/zio/wiki/Project-Stages) ![CI Badge](https://github.com/zio/zio-parser/workflows/CI/badge.svg) [![Sonatype Releases](https://img.shields.io/maven-central/v/dev.zio/zio-parser_3.svg?label=Sonatype%20Release)](https://central.sonatype.com/artifact/dev.zio/zio-parser_3) [![Sonatype Snapshots](https://img.shields.io/maven-metadata/v?metadataUrl=https%3A%2F%2Fcentral.sonatype.com%2Frepository%2Fmaven-snapshots%2Fdev%2Fzio%2Fzio-parser_3%2Fmaven-metadata.xml&label=Sonatype%20Snapshot)](https://central.sonatype.com/repository/maven-snapshots/dev/zio/zio-parser_3/) [![javadoc](https://javadoc.io/badge2/dev.zio/zio-parser_3/javadoc.svg)](https://javadoc.io/doc/dev.zio/zio-parser_3) [![ZIO Parser](https://img.shields.io/github/stars/zio/zio-parser?style=social)](https://github.com/zio/zio-parser)
 
 ## Introduction
 
@@ -17,7 +17,7 @@ Library for constructing parsers and pretty printers based on invertible syntax 
 Start by adding `zio-parser` as a dependency to your project:
   
 ```scala
-libraryDependencies += "dev.zio" %% "zio-parser" % "0.1.9"
+libraryDependencies += "dev.zio" %% "zio-parser" % "0.1.11"
 ```
 
 ## Getting Started
@@ -36,7 +36,7 @@ Parse your string:
 
 ```scala
 val result: Either[StringParserError[String], Char] = digitSyntax.parseString("1")
-// result: Either[StringParserError[String], Char] = Right(value = '1')
+// result: Either[StringParserError[String], Char] = Right('1')
 ```
 
 Pretty print the parsing errors:
@@ -58,11 +58,11 @@ Learn more on the [ZIO Parser homepage](https://zio.dev/zio-parser/)!
 
 ## Contributing
 
-For the general guidelines, see ZIO [contributor's guide](https://zio.dev/about/contributing).
+For the general guidelines, see ZIO [contributor's guide](https://zio.dev/contributor-guidelines).
 
 ## Code of Conduct
 
-See the [Code of Conduct](https://zio.dev/about/code-of-conduct)
+See the [Code of Conduct](https://zio.dev/code-of-conduct)
 
 ## Support
 

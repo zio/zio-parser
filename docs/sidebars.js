@@ -5,7 +5,13 @@ const sidebars = {
       label: "ZIO Parser",
       collapsed: false,
       link: { type: "doc", id: "index" },
-      items: [ ]
+      items: [
+        "syntax",
+        "regex",
+        "printing",
+        "errors",
+        "example-json"
+      ]
     }
   ]
 };

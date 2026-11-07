@@ -44,5 +44,10 @@ Pretty print the parsing errors:
 println(digitSyntax.parseString("Hello").left.map(_.pretty).merge)
 ```
 
-[//]: # (TODO: Add example section)
-[//]: # (## Example)
+## Where to Go Next
+
+- [Building Syntaxes](syntax.md): primitives, sequencing, alternatives, repetition and mapping.
+- [Regex](regex.md): matching whole tokens efficiently.
+- [Printing and Invertible Syntaxes](printing.md): printing values back with the same syntax.
+- [Error Handling](errors.md): error types, naming syntaxes and pretty printing errors.
+- [Example: a JSON Syntax](example-json.md): a complete parser and printer.

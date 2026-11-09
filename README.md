@@ -17,7 +17,7 @@ Library for constructing parsers and pretty printers based on invertible syntax 
 Start by adding `zio-parser` as a dependency to your project:
   
 ```scala
-libraryDependencies += "dev.zio" %% "zio-parser" % "0.1.11"
+libraryDependencies += "dev.zio" %% "zio-parser" % "0.1.12"
 ```
 
 ## Getting Started
@@ -49,8 +49,13 @@ println(digitSyntax.parseString("Hello").left.map(_.pretty).merge)
 //
 ```
 
-[//]: # (TODO: Add example section)
-[//]: # (## Example)
+## Where to Go Next
+
+- [Building Syntaxes](docs/syntax.md): primitives, sequencing, alternatives, repetition and mapping.
+- [Regex](docs/regex.md): matching whole tokens efficiently.
+- [Printing and Invertible Syntaxes](docs/printing.md): printing values back with the same syntax.
+- [Error Handling](docs/errors.md): error types, naming syntaxes and pretty printing errors.
+- [Example: a JSON Syntax](docs/example-json.md): a complete parser and printer.
 
 ## Documentation
 

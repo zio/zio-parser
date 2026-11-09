@@ -46,8 +46,11 @@ println(digitSyntax.parseString("Hello").left.map(_.pretty).merge)
 
 ## Where to Go Next
 
-- [Building Syntaxes](syntax.md): primitives, sequencing, alternatives, repetition and mapping.
-- [Regex](regex.md): matching whole tokens efficiently.
-- [Printing and Invertible Syntaxes](printing.md): printing values back with the same syntax.
+- [Tutorial: Parse and Print a Config Language](tutorial.md): build a parser and printer step by step. Start here if you are new to parser combinators.
+- [How-To Guides](how-to-whitespace-and-comments.md): whitespace and comments, nested data, readable error messages, streaming output and performance.
+- [Printing and Invertible Syntaxes](printing.md): the idea behind one syntax that both parses and prints.
+- [Syntax reference](syntax.md): primitives, sequencing, alternatives, repetition and mapping.
+- [Regex reference](regex.md): matching whole tokens efficiently.
+- [Parser reference](reference-parser.md) and [Printer reference](reference-printer.md): the core types and their combinators.
 - [Error Handling](errors.md): error types, naming syntaxes and pretty printing errors.
-- [Example: a JSON Syntax](example-json.md): a complete parser and printer.
+- [Example: a JSON Syntax](example-json.md) and [Example: a GraphQL Parser](example-caliban.md): complete grammars for real formats.

@@ -41,6 +41,8 @@ Every syntax exposes its two halves as `asParser` and `asPrinter`, but you norma
 | `Syntax.string(s, value)`                  | `Result` | Matches the exact string `s` and results in `value` |
 | `Syntax.succeed(v)` / `Syntax.fail(e)`     |          | Always succeed with `v` / always fail with `e`    |
 | `Syntax.end`                               | `Unit`   | Succeeds only at the end of the input             |
+| `Syntax.index`                            | `Int`    | Produces the current position in the input. Prints nothing          |
+| `Syntax.any[T]`                           | `T`      | Matches any single element of type `T`, for any input type         |
 
 ```scala mdoc:silent
 val comma: Syntax[String, Char, Char, Unit]       = Syntax.char(',')
@@ -158,7 +160,7 @@ Because a syntax works in both directions, a mapping needs a function for each d
 | `transformTo(to, from, failure)` | `from` is a `PartialFunction`. If it is not defined for a value, printing fails with `failure`    |
 | `asPrinted(result, value)`       | Always parses to `result`, and prints `value` when asked to print `result`                        |
 | `as(value)`                      | For `Unit` syntaxes: result in `value` when parsing                                               |
-| `of[CaseClass]` / `to[CaseClass]` | Converts a tuple result to a case class (and back for printing with `of`)                         |
+| `of[CaseClass]`                  | Converts a tuple result to a case class, and back when printing                  |
 | `filter(p, failure)`             | Fails with `failure` when the value does not satisfy `p`                                          |
 
 ```scala mdoc:silent

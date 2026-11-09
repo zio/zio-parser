@@ -67,18 +67,18 @@ The name stack lists the innermost name first, and then the names around it. In 
 
 ## Errors in Multi-Line Input
 
-For a file with one point per line, we repeat `point` with a newline between points. The `pretty` message then shows the lines around the error, not the whole file:
+For a file with one point per line, each line is a point followed by a newline. A repetition stops at the first line it cannot read, so `Syntax.end` is what reports the failure. Its position is where reading stopped. The `pretty` message then shows the lines around that position, not the whole file:
 
 ```scala mdoc:silent
 val points: Syntax[String, Char, Char, Chunk[(Int, Int)]] =
-  point.repeatWithSep(Syntax.char('\n'))
+  (point <~ Syntax.char('\n')).repeat0 <~ Syntax.end
 ```
 
 ```scala mdoc
-points.parseString("1,2\n3,4\n5;6\n7,8").left.map(_.pretty).merge
+points.parseString("1,2\n3,4\n5;6\n7,8\n").left.map(_.pretty).merge
 ```
 
-The output shows up to two lines before and after the failing line, marks `...` where lines were left out, and puts a caret under the failing column.
+The output shows up to two lines before and after the position, marks `...` where lines were left out, and puts a caret under the position.
 
 :::tip
 Name each syntax that a user writes, such as a field, a value or a section. A single character, such as a separator, is often clear enough without a name, but a name makes the message more precise.

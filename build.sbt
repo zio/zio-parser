@@ -202,5 +202,5 @@ lazy val docs = project
     projectStage                               := ProjectStage.Development,
     ScalaUnidoc / unidoc / unidocProjectFilter := inProjects(zioParserJVM)
   )
-  .dependsOn(zioParserJVM)
+  .dependsOn(zioParserJVM, calibanParser)
   .enablePlugins(WebsitePlugin)

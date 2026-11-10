@@ -90,16 +90,16 @@ jobs:
         scala-project:
         - ++2.12.20 calibanParser
         - ++2.13.15 calibanParser
-        - ++3.3.4 calibanParser
+        - ++3.3.9 calibanParser
         - ++2.12.20 zioParserJS
         - ++2.13.15 zioParserJS
-        - ++3.3.4 zioParserJS
+        - ++3.3.9 zioParserJS
         - ++2.12.20 zioParserJVM
         - ++2.13.15 zioParserJVM
-        - ++3.3.4 zioParserJVM
+        - ++3.3.9 zioParserJVM
         - ++2.12.20 zioParserNative
         - ++2.13.15 zioParserNative
-        - ++3.3.4 zioParserNative
+        - ++3.3.9 zioParserNative
     steps:
     - name: Install libuv
       run: sudo apt-get update && sudo apt-get install -y libuv1-dev

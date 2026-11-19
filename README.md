@@ -10,55 +10,40 @@ Library for constructing parsers and pretty printers based on invertible syntax 
 
 ## Introduction
 
-[![Zymposium - ZIO Parser](https://i.ytimg.com/vi/DEPpL9LBiyA/maxresdefault.jpg)](https://www.youtube.com/watch?v=DEPpL9LBiyA)
+ZIO Parser describes a grammar once, as a `Syntax`, and uses that description in both directions: it parses text into values and prints values back to text. Because one value drives both, a parser and its pretty printer cannot drift apart.
+
+The library gives you small building blocks (characters, strings, regexes), operators to combine them, and error values that say where and why a parse failed.
 
 ## Installation
 
-Start by adding `zio-parser` as a dependency to your project:
-  
+Add ZIO Parser to your `build.sbt`. It is published for Scala 2.12, 2.13 and 3.
+
+On the JVM, use `%%`:
+
 ```scala
-libraryDependencies += "dev.zio" %% "zio-parser" % "0.1.12"
+libraryDependencies ++= Seq(
+  // ZIO Parser: syntaxes, parsers, printers and regexes (JVM)
+  "dev.zio" %% "zio-parser" % "0.1.12"
+)
 ```
 
-## Getting Started
+On Scala.js and Scala Native, use `%%%`:
 
 ```scala
-import zio.parser.*
-```
-
-Declare your parsing syntax:
-
-```scala
-val digitSyntax: Syntax[String, Char, Char, Char] = Syntax.digit
-```
-
-Parse your string:
-
-```scala
-val result: Either[StringParserError[String], Char] = digitSyntax.parseString("1")
-// result: Either[StringParserError[String], Char] = Right('1')
-```
-
-Pretty print the parsing errors:
-
-```scala
-println(digitSyntax.parseString("Hello").left.map(_.pretty).merge)
-// Hello
-// ^
-// error: Failure at position 0: not a digit
-//
+libraryDependencies ++= Seq(
+  // ZIO Parser: syntaxes, parsers, printers and regexes (Scala.js and Scala Native)
+  "dev.zio" %%% "zio-parser" % "0.1.12"
+)
 ```
 
 ## Where to Go Next
 
-- [Tutorial: Parse and Print a Config Language](docs/tutorial.md): build a parser and printer step by step. Start here if you are new to parser combinators.
-- [How-To Guides](docs/how-to-whitespace-and-comments.md): whitespace and comments, nested data, readable error messages, streaming output and performance.
+- [Getting Started](docs/getting-started.md): parse and print your first value.
 - [Printing and Invertible Syntaxes](docs/printing.md): the idea behind one syntax that both parses and prints.
-- [Syntax reference](docs/syntax.md): primitives, sequencing, alternatives, repetition and mapping.
-- [Regex reference](docs/regex.md): matching whole tokens efficiently.
-- [Parser reference](docs/reference-parser.md) and [Printer reference](docs/reference-printer.md): the core types and their combinators.
-- [Error Handling](docs/errors.md): error types, naming syntaxes and pretty printing errors.
-- [Example: a JSON Syntax](docs/example-json.md) and [Example: a GraphQL Parser](docs/example-caliban.md): complete grammars for real formats.
+- [Syntax](docs/syntax.md), [Regex](docs/regex.md), [Error Handling](docs/errors.md), [Parser Reference](docs/reference-parser.md) and [Printer Reference](docs/reference-printer.md): the API.
+- [Tutorial: Parse and Print a Config Language](docs/tutorial.md), [Example: a JSON Syntax](docs/example-json.md) and [Example: a GraphQL Parser](docs/example-caliban.md): step-by-step learning.
+- [How-to Guides](docs/how-to-whitespace-and-comments.md): whitespace and comments, nested data, readable error messages, streaming output and performance.
+- [Resources](docs/resources.md): talks and further reading.
 
 ## Documentation
 

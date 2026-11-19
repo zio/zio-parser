@@ -1,7 +1,7 @@
 ---
 id: index
 title: "Introduction to ZIO Parser"
-sidebar_label: "ZIO Parser"
+sidebar_label: "Introduction"
 ---
 
 Library for constructing parsers and pretty printers based on invertible syntax descriptions
@@ -10,47 +10,37 @@ Library for constructing parsers and pretty printers based on invertible syntax 
 
 ## Introduction
 
-[![Zymposium - ZIO Parser](https://i.ytimg.com/vi/DEPpL9LBiyA/maxresdefault.jpg)](https://www.youtube.com/watch?v=DEPpL9LBiyA)
+ZIO Parser describes a grammar once, as a `Syntax`, and uses that description in both directions: it parses text into values and prints values back to text. Because one value drives both, a parser and its pretty printer cannot drift apart.
+
+The library gives you small building blocks (characters, strings, regexes), operators to combine them, and error values that say where and why a parse failed.
 
 ## Installation
 
-Start by adding `zio-parser` as a dependency to your project:
-  
+Add ZIO Parser to your `build.sbt`. It is published for Scala 2.12, 2.13 and 3.
+
+On the JVM, use `%%`:
+
 ```scala
-libraryDependencies += "dev.zio" %% "zio-parser" % "@VERSION@"
+libraryDependencies ++= Seq(
+  // ZIO Parser: syntaxes, parsers, printers and regexes (JVM)
+  "dev.zio" %% "zio-parser" % "@VERSION@"
+)
 ```
 
-## Getting Started
+On Scala.js and Scala Native, use `%%%`:
 
-```scala mdoc
-import zio.parser.*
-```
-
-Declare your parsing syntax:
-
-```scala mdoc:silent
-val digitSyntax: Syntax[String, Char, Char, Char] = Syntax.digit
-```
-
-Parse your string:
-
-```scala mdoc
-val result: Either[StringParserError[String], Char] = digitSyntax.parseString("1")
-```
-
-Pretty print the parsing errors:
-
-```scala mdoc
-println(digitSyntax.parseString("Hello").left.map(_.pretty).merge)
+```scala
+libraryDependencies ++= Seq(
+  // ZIO Parser: syntaxes, parsers, printers and regexes (Scala.js and Scala Native)
+  "dev.zio" %%% "zio-parser" % "@VERSION@"
+)
 ```
 
 ## Where to Go Next
 
-- [Tutorial: Parse and Print a Config Language](tutorial.md): build a parser and printer step by step. Start here if you are new to parser combinators.
-- [How-To Guides](how-to-whitespace-and-comments.md): whitespace and comments, nested data, readable error messages, streaming output and performance.
+- [Getting Started](getting-started.md): parse and print your first value.
 - [Printing and Invertible Syntaxes](printing.md): the idea behind one syntax that both parses and prints.
-- [Syntax reference](syntax.md): primitives, sequencing, alternatives, repetition and mapping.
-- [Regex reference](regex.md): matching whole tokens efficiently.
-- [Parser reference](reference-parser.md) and [Printer reference](reference-printer.md): the core types and their combinators.
-- [Error Handling](errors.md): error types, naming syntaxes and pretty printing errors.
-- [Example: a JSON Syntax](example-json.md) and [Example: a GraphQL Parser](example-caliban.md): complete grammars for real formats.
+- [Syntax](syntax.md), [Regex](regex.md), [Error Handling](errors.md), [Parser Reference](reference-parser.md) and [Printer Reference](reference-printer.md): the API.
+- [Tutorial: Parse and Print a Config Language](tutorial.md), [Example: a JSON Syntax](example-json.md) and [Example: a GraphQL Parser](example-caliban.md): step-by-step learning.
+- [How-to Guides](how-to-whitespace-and-comments.md): whitespace and comments, nested data, readable error messages, streaming output and performance.
+- [Resources](resources.md): talks and further reading.

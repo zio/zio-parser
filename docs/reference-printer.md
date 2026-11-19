@@ -29,6 +29,7 @@ For combinators that take a `Syntax` as an argument, see the [Syntax reference](
 | `asPrinted(matches, value)`         | Accepts `matches` as the value to print, and prints `value` instead                      |
 | `widenWith(narrow, failure)`        | Prints a parent type, using `narrow` to find the subtype to print, and fails with `failure` otherwise |
 | `mapError(f)`                       | Transforms the error type                                                                |
+| `from[CaseClass]`                   | Prints a case class through a printer of its tuple. Needs a `TupleConversion` for the case class |
 
 ## Combining Printers
 
@@ -87,4 +88,4 @@ A `Target[Output]` receives output elements one at a time, so a printer can writ
 The library ships two targets:
 
 - `zio.parser.target.ChunkTarget` collects the output in memory. `result` returns the output as a `Chunk`. `print(value)` uses it internally.
-- `zio.parser.target.ZStreamTarget` pushes the output into a queue, and its `stream` field reads the queue as a `ZStream`. See [How To: Print to a ZStream](how-to-stream-printing.md).
+- `zio.parser.target.ZStreamTarget` pushes the output into a queue, and its `stream` field reads the queue as a `ZStream`. See [How to Print to a ZStream](how-to-stream-printing.md).

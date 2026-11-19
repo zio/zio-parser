@@ -1,6 +1,6 @@
 ---
 id: how-to-stream-printing
-title: "How To: Print to a ZStream"
+title: "How to Print to a ZStream"
 ---
 
 Printing with `printString` builds the whole result in memory. When the output is large, or when another part of your program wants to consume it as it is produced, you can print into a `ZStream` instead. This guide shows how to use `ZStreamTarget` to do that.
@@ -23,7 +23,7 @@ import zio.parser.target.ZStreamTarget
 
 ## Creating the Target
 
-`ZStreamTarget` needs a `zio` runtime to run its queue operations. The companion object creates one, and returns it as an effect. In an example like this one, we run that effect directly:
+`ZStreamTarget` needs a `zio` runtime to run its queue operations. The companion object's `apply` is an effect that captures the runtime of the fiber that runs it, and returns the target. In an example like this one, we run that effect directly:
 
 ```scala mdoc:silent
 val target: ZStreamTarget[Any, Char] = Unsafe.unsafe { implicit unsafe =>

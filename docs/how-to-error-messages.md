@@ -1,6 +1,6 @@
 ---
 id: how-to-error-messages
-title: "How To: Get Readable Error Messages"
+title: "How to Get Readable Error Messages"
 ---
 
 A parse error is only useful if it says what was expected and where. This guide shows how to name the parts of a grammar so that errors describe the failing part, and how to show the position of an error in a multi-line input.

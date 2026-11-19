@@ -29,6 +29,7 @@ For combinators that take a `Syntax` as an argument, see the [Syntax reference](
 | `asPrinted(matches, value)`         | Accepts `matches` as the value to print, and prints `value` instead                      |
 | `widenWith(narrow, failure)`        | Prints a parent type, using `narrow` to find the subtype to print, and fails with `failure` otherwise |
 | `mapError(f)`                       | Transforms the error type                                                                |
+| `from[CaseClass]`                   | Prints a case class through a printer of its tuple. Needs a `TupleConversion` for the case class |
 
 ## Combining Printers
 

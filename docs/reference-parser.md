@@ -33,6 +33,8 @@ For combinators that take a `Syntax` or `Printer` as an argument, see the [Synta
 | `transformOption(to)`            | Transforms the result. `to` returns an `Option`, and `None` fails the parser             |
 | `filter(condition, failure)`     | Fails with `failure` when the result does not satisfy `condition`                        |
 | `string`                         | Converts a `Chunk[Char]` result into a `String`                                           |
+| `to[CaseClass]`                  | Maps a tuple result to a case class. Needs a `TupleConversion` for the case class       |
+| `strip`                          | Removes all name information to make parsing faster. Failure messages become less detailed |
 | `flatten`                        | Joins a `Chunk[String]` result into one `String`. Available only when the result is a `Chunk[String]` |
 | `mapError(f)`                    | Transforms the error type                                                                |
 

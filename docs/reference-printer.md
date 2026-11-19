@@ -87,4 +87,4 @@ A `Target[Output]` receives output elements one at a time, so a printer can writ
 The library ships two targets:
 
 - `zio.parser.target.ChunkTarget` collects the output in memory. `result` returns the output as a `Chunk`. `print(value)` uses it internally.
-- `zio.parser.target.ZStreamTarget` pushes the output into a queue, and its `stream` field reads the queue as a `ZStream`. See [How To: Print to a ZStream](how-to-stream-printing.md).
+- `zio.parser.target.ZStreamTarget` pushes the output into a queue, and its `stream` field reads the queue as a `ZStream`. See [How to Print to a ZStream](how-to-stream-printing.md).

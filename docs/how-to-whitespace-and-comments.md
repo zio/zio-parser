@@ -1,6 +1,6 @@
 ---
 id: how-to-whitespace-and-comments
-title: "How To: Parse Whitespace and Comments"
+title: "How to Parse Whitespace and Comments"
 ---
 
 Real input is rarely tight. People put spaces around separators, break lines in odd places and leave comments. This guide shows how to accept all of that when parsing, while keeping control of what the printer writes.

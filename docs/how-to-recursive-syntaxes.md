@@ -1,6 +1,6 @@
 ---
 id: how-to-recursive-syntaxes
-title: "How To: Parse Nested Data"
+title: "How to Parse Nested Data"
 ---
 
 Many formats nest: a list can contain lists, a directory can contain directories, an expression can contain expressions. This guide shows how to describe such data with one recursive syntax that both parses and prints.

@@ -1,6 +1,6 @@
 ---
 id: how-to-stream-printing
-title: "How To: Print to a ZStream"
+title: "How to Print to a ZStream"
 ---
 
 Printing with `printString` builds the whole result in memory. When the output is large, or when another part of your program wants to consume it as it is produced, you can print into a `ZStream` instead. This guide shows how to use `ZStreamTarget` to do that.

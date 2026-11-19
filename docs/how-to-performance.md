@@ -1,6 +1,6 @@
 ---
 id: how-to-performance
-title: "How To: Tune Parser Performance"
+title: "How to Tune Parser Performance"
 ---
 
 A parser can be fast enough for most inputs without any tuning. When it is not, a few choices in how you write the syntax make a large difference. This guide covers the choices that matter most, and how to check their effect with a measurement.

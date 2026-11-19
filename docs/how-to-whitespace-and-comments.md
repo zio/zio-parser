@@ -104,7 +104,7 @@ spacedNumbers.parseString("1 , 2  # two\n, 3")
 ```
 
 :::tip
-For plain spaces and tabs with no comments, `Syntax.unsafeRegexDiscard(Regex.whitespace, Chunk(' '))` skips all whitespace in one regex step, and prints one space. Regexes match faster than repeated single-character syntaxes. See the [Regex reference](regex.md).
+To skip whitespace with no comments, `Syntax.unsafeRegexDiscard(Regex.whitespace, Chunk(' '))` skips any amount of whitespace, including line breaks, in one regex step, and prints one space. Regexes match faster than repeated single-character syntaxes. See the [Regex reference](regex.md).
 :::
 
 :::caution

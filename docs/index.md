@@ -21,19 +21,15 @@ Add ZIO Parser to your `build.sbt`. It is published for Scala 2.12, 2.13 and 3.
 On the JVM, use `%%`:
 
 ```scala
-libraryDependencies ++= Seq(
-  // ZIO Parser: syntaxes, parsers, printers and regexes (JVM)
-  "dev.zio" %% "zio-parser" % "@VERSION@"
-)
+// ZIO Parser: syntaxes, parsers, printers and regexes (JVM)
+libraryDependencies += "dev.zio" %% "zio-parser" % "@VERSION@"
 ```
 
 On Scala.js and Scala Native, use `%%%`:
 
 ```scala
-libraryDependencies ++= Seq(
-  // ZIO Parser: syntaxes, parsers, printers and regexes (Scala.js and Scala Native)
-  "dev.zio" %%% "zio-parser" % "@VERSION@"
-)
+// ZIO Parser: syntaxes, parsers, printers and regexes (Scala.js and Scala Native)
+libraryDependencies += "dev.zio" %%% "zio-parser" % "@VERSION@"
 ```
 
 ## Where to Go Next

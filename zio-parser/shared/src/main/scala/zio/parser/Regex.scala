@@ -37,15 +37,17 @@ sealed trait Regex { self =>
     * this and the specified regex match at the same position.
     *
     * The length of the match currently depends on how the regex is compiled: without unbounded repetitions both sides
-    * must match the same prefix; with one, the result is the length that the specified regex matches.
+    * must match the same prefix; with an unbounded repetition in either side, the result is the length that the
+    * specified regex matches.
     */
   def &(that: Regex): Regex = And(self, that)
 
   /** Composes this regex with the specified regex using union, returning a regex that will match a prefix only if
     * either this or the specified regex match it.
     *
-    * Without unbounded repetitions the longer of the two matches is used; with one, this regex is tried first and its
-    * match is used when it matches.
+    * Without unbounded repetitions the longer of the two matches is usually used; a known exception is a nested union
+    * such as `Regex.char('a') | (Regex.string("a") | Regex.string("ab"))`, which matches one character of `"ab"`. With
+    * an unbounded repetition in either side, this regex is tried first and its match is used when it matches.
     */
   def |(that: Regex): Regex = Or(self, that)
 
@@ -97,7 +99,9 @@ object Regex {
   /** Result of [[Regex.Compiled]] `test` when the regex does not match (`-1`). */
   final val NotMatched = -1
 
-  /** Result of [[Regex.Compiled]] `test` when the input ended before the regex could finish matching (`-2`). */
+  /** Result of [[Regex.Compiled]] `test` when the input ended before the regex could finish matching (`-2`). A regex
+    * built with `atLeast` currently also returns it when too few occurrences match, before the input ends.
+    */
   final val NeedMoreInput = -2
 
   /** A regex that matches at least one letter or digit character.

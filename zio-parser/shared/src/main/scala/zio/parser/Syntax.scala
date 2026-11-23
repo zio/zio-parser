@@ -41,8 +41,9 @@ class Syntax[+Err, -In, +Out, Value] private (
     val asPrinter: Printer[Err, Out, Value]
 ) extends VersionSpecificSyntax[Err, In, Out, Value] { self =>
 
-  /** Prints `msg: value` to the standard output each time the parser produces a value. Nothing is printed when the
-    * value is discarded (for example inside `string`), and the printer is unchanged.
+  /** Prints `msg: value` to the standard output each time the parser produces a value. With the default
+    * implementation nothing is printed when the value is discarded (for example inside `string`);
+    * `ParserImplementation.StackSafe` prints it there too. The printer is unchanged.
     */
   def debug(msg: String): Syntax[Err, In, Out, Value] =
     new Syntax(
@@ -178,6 +179,11 @@ class Syntax[+Err, -In, +Out, Value] private (
     *
     * If auto-backtracking is on, this parser will backtrack before trying 'that' parser.
     *
+    * When both parsers fail, the error is a `ParserError.AllBranchesFailed` holding both failures. Currently, when both
+    * sides are `string` captures of regex-based syntaxes (such as `Syntax.char('a').string`), the two are merged into
+    * one regex: the error is then a single failure (`not 'b'` for `Syntax.char('a').string | Syntax.char('b').string`
+    * on `"c"`), and `Syntax.string("a", ()).string | Syntax.string("ab", ()).string` parses `"ab"` to `ab`.
+    *
     * {{{
     * val bool: Syntax[String, Char, Char, Boolean] =
     *   Syntax.string("true", true) | Syntax.string("false", false)
@@ -302,7 +308,9 @@ class Syntax[+Err, -In, +Out, Value] private (
     *
     * The parser tries 'stopCondition' before each element and stops at its first success; the input that
     * 'stopCondition' matched is consumed and is not part of the result. The parser also stops, without failing, when
-    * this syntax fails or the input ends. The printer prints every element of the chunk and then 'stopCondition' once.
+    * this syntax fails or the input ends. Input that a failed attempt of 'stopCondition' or of this syntax consumed
+    * also stays consumed: `Syntax.anyChar.repeatUntil(Syntax.char(';') ~ Syntax.char(';'))` parses `"a;b;;c"` to
+    * `Chunk(a,b)` and leaves `c`. The printer prints every element of the chunk and then 'stopCondition' once.
     */
   final def repeatUntil[Err2 >: Err, In2 <: In, Out2 >: Out](
       stopCondition: Syntax[Err2, In2, Out2, Unit]
@@ -384,7 +392,9 @@ class Syntax[+Err, -In, +Out, Value] private (
       Printer.anyString
     )
 
-  /** Flattens a result of parsed strings to a single string. The printer prints the string as a one-element chunk. */
+  /** Flattens a result of parsed strings to a single string. The printer passes the string to this syntax's printer
+    * as a one-element chunk.
+    */
   final def flatten(implicit
       ev1: Chunk[String] <:< Value,
       ev2: Value <:< Chunk[String]
@@ -534,8 +544,9 @@ object Syntax extends SyntaxCompanionVersionSpecific {
     new Syntax(Parser.fail(failure), Printer.Fail(failure))
 
   // Char variants
-  /** Parse or print a specific character 'value' and result in unit. The parser fails with the message `not 'c'`, where
-    * `c` is 'value'.
+  /** Parse or print a specific character 'value' and result in unit. The parser fails with the message `not 'c'`,
+    * where `c` is 'value', when the next character differs, and with `ParserError.UnexpectedEndOfInput` when the input
+    * has ended.
     *
     * {{{
     * val equals: Syntax[String, Char, Char, Unit] = Syntax.char('=')
@@ -553,7 +564,7 @@ object Syntax extends SyntaxCompanionVersionSpecific {
     regexDiscard(Regex.charIn(value), failure, Chunk(value))
 
   /** Parse or print a single character and fail if it is 'value'. The failure message is `cannot be 'c'`, where `c` is
-    * 'value'.
+    * 'value'; when the input has ended, the parser fails with `ParserError.UnexpectedEndOfInput`.
     */
   def notChar(value: Char): Syntax[String, Char, Char, Char] =
     notChar(value, s"cannot be '$value'")
@@ -574,8 +585,8 @@ object Syntax extends SyntaxCompanionVersionSpecific {
       Printer.regexDiscard(regex, value)
     )
 
-  /** Parse with a given regular expression and discard its results. The regex should never fail; if it does, the parser
-    * fails with `ParserError.UnknownFailure` or `ParserError.UnexpectedEndOfInput`. When printing, the chunk of
+  /** Parse with a given regular expression and discard its results. The regex should never fail; if it does, the default
+    * implementation fails with `ParserError.UnknownFailure` or `ParserError.UnexpectedEndOfInput`. When printing, the chunk of
     * characters in 'value' gets printed.
     */
   def unsafeRegexDiscard(regex: Regex, value: Chunk[Char]): Syntax[Nothing, Char, Char, Unit] =
@@ -645,7 +656,8 @@ object Syntax extends SyntaxCompanionVersionSpecific {
     )
 
   /** Syntax that parses/prints a single character that matches one of 'chars'. The failure message lists them, for
-    * example `Not the expected character (a, b)`.
+    * example `Not the expected character (a, b)`; when the input has ended, the parser fails with
+    * `ParserError.UnexpectedEndOfInput`.
     */
   def charIn(chars: Char*): Syntax[String, Char, Char, Char] =
     regexChar(Regex.charIn(chars: _*), s"Not the expected character (${chars.mkString(", ")})")
@@ -655,7 +667,8 @@ object Syntax extends SyntaxCompanionVersionSpecific {
     charIn(chars.toSeq: _*)
 
   /** Syntax that parses/prints a single character that does not match any of 'chars'. The failure message lists them,
-    * for example `One of the excluded characters (a, b)`.
+    * for example `One of the excluded characters (a, b)`; when the input has ended, the parser fails with
+    * `ParserError.UnexpectedEndOfInput`.
     */
   def charNotIn(chars: Char*): Syntax[String, Char, Char, Char] =
     regexChar(Regex.charNotIn(chars: _*), s"One of the excluded characters (${chars.mkString(", ")})")
@@ -675,8 +688,9 @@ object Syntax extends SyntaxCompanionVersionSpecific {
       Printer.anyString
     )
 
-  /** Syntax that parses/prints a specific string 'str', and results in 'value'. The parser fails with the message `Not
-    * 'str'`. The printer prints 'str' for 'value'; for any other value it currently fails with a `Printer.Failed` value
+  /** Syntax that parses/prints a specific string 'str', and results in 'value'. The parser fails with the message
+    * `Not 'str'` when the input differs from 'str', and with `ParserError.UnexpectedEndOfInput` when the input ends
+    * before 'str' is complete. The printer prints 'str' for 'value'; for any other value it currently fails with a `Printer.Failed` value
     * in the error channel instead of a `String`.
     */
   def string[Result](str: String, value: Result): Syntax[String, Char, Char, Result] =

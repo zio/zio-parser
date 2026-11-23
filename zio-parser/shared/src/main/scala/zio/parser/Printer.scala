@@ -69,7 +69,7 @@ sealed trait Printer[+Err, +Out, -Value] extends VersionSpecificPrinter[Err, Out
   ): Printer[Err2, Out2, Value] =
     zipLeft(that)
 
-  /** Print 'that' by providing the unit value to it after printing this. The result is this printer's result. */
+  /** Prints the value with this printer, then prints 'that' with the unit value. */
   final def zipLeft[Err2 >: Err, Out2 >: Out](
       that: => Printer[Err2, Out2, Unit]
   ): Printer[Err2, Out2, Value] =

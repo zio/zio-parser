@@ -10,6 +10,9 @@ import zio.{ChunkBuilder, Queue, Runtime, UIO, Unsafe, ZIO}
   * waits for it. The output of dropped captures never reaches the queue. Nothing closes the queue when printing
   * finishes, so `stream` does not end by itself: read it with `take` or a similar bound.
   *
+  * Each run of `stream` takes elements from the same queue, so elements one run reads are gone for the next, and a run
+  * that stops early, such as `take(2)`, can remove more elements than it returns.
+  *
   * {{{
   * import zio._
   * import zio.parser._

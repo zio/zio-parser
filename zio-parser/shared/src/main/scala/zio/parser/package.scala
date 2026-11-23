@@ -83,8 +83,8 @@ package object parser extends ImplicitTupleConversion {
       * This is useful in combination with the orElse (<>) operator. For example a JSON parser can be expressed by a
       * combination of parsers for the individual json type widened to Json.
       *
-      * The printer accepts a value only when its runtime class is the class of this syntax's value type, and fails with
-      * `Not a X`, where `X` is the simple name of that class, otherwise. For value types such as `Char` or `Int` the
+      * The printer accepts a value only when its runtime class is the class of this syntax's value type or a subclass
+      * of it, and fails with `Not a X`, where `X` is the simple name of that class, otherwise. For value types such as `Char` or `Int` the
       * class check currently fails for every value, so the printer always fails.
       *
       * {{{
@@ -149,7 +149,7 @@ package object parser extends ImplicitTupleConversion {
       self.transform(conversion.from, conversion.to)
 
     /** Widens the value type to `D`. The printer accepts a value only when its runtime class is the class of this
-      * syntax's value type, and fails with 'err' otherwise; for value types such as `Char` or `Int` this check
+      * syntax's value type or a subclass of it, and fails with 'err' otherwise; for value types such as `Char` or `Int` this check
       * currently fails for every value.
       *
       * `Syntax` has its own `widenWith(narrow, failure)`, which hides this one, so it is called as
@@ -187,7 +187,7 @@ package object parser extends ImplicitTupleConversion {
     ): Printer[Err2, Out2, Value] =
       zipRight(that)
 
-    /** Print Unit with this, then print that and use the second printer's result value
+    /** Prints unit with this printer, then the value with 'that' printer.
       */
     def zipRight[Err2 >: Err, Out2 >: Out, Value](
         that: => Printer[Err2, Out2, Value]
@@ -215,8 +215,7 @@ package object parser extends ImplicitTupleConversion {
     )(implicit zippableValue: PUnzippable.In[Value, Value2, ZippedValue]): Printer[Err2, Out2, ZippedValue] =
       zip(that)
 
-    /** Take a pair to be printed, print the left value with this, and the right value with 'that'. The result is a pair
-      * of both printer's results.
+    /** Take a pair to be printed, print the left value with this, and the right value with 'that'.
       */
     final def zip[Err2 >: Err, Out2 >: Out, Value2, ZippedValue](
         that: => Printer[Err2, Out2, Value2]

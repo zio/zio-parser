@@ -5,12 +5,13 @@ trait SyntaxCompanionVersionSpecific {
 
   /** Syntax that combines the syntaxes of the subtypes of a sum type `A`, in the given order. Parsing tries each in
     * turn, like `|`, and results in the first success; when all fail, the error is a nested
-    * [[Parser.ParserError.AllBranchesFailed]]. Printing uses the first syntax whose value class (from its `ClassTag`)
-    * matches the value.
+    * [[Parser.ParserError.AllBranchesFailed]] (with the exception described for `Parser#orElse`). Printing tries the
+    * syntaxes in the same order and uses the first that prints the value; a syntax whose value class (from its
+    * `ClassTag`) does not match the value fails without printing.
     *
     * Currently, on Scala 2 every value passes the class check of the first syntax, so printing a value that only a
-    * later syntax handles throws a `java.lang.ClassCastException`, unless the earlier syntaxes fail on it the way
-    * constant syntaxes such as `Syntax.string("red", Red)` do.
+    * later syntax handles throws (on the JVM, a `java.lang.ClassCastException`), unless the earlier syntaxes fail on it
+    * the way constant syntaxes such as `Syntax.string("red", Red)` do.
     *
     * {{{
     * sealed trait Color

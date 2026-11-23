@@ -3,6 +3,23 @@ package zio.parser.target
 import zio.parser.internal.Stack
 import zio.{Chunk, ChunkBuilder}
 
+/** A [[Target]] that collects the output elements in memory. `Printer#print(value)` uses it, and returns `result`.
+  *
+  * `emit` and `drop` throw a `java.lang.IllegalStateException` when the capture is not the most recent open one.
+  *
+  * {{{
+  * val target = new ChunkTarget[Int]
+  * target.write(1)
+  * val kept = target.capture()
+  * target.write(2)
+  * target.emit(kept)
+  * val dropped = target.capture()
+  * target.write(3)
+  * target.drop(dropped)
+  *
+  * target.result // Chunk(1,2)
+  * }}}
+  */
 class ChunkTarget[Output] extends Target[Output] {
   private val builder: ChunkBuilder[Output]        = ChunkBuilder.make()
   private val captureStack: Stack[Capture]         = Stack()
@@ -10,6 +27,7 @@ class ChunkTarget[Output] extends Target[Output] {
 
   override type Capture = ChunkTarget.Capture[Output]
 
+  /** The output elements written so far, without the output of captures that are still open */
   def result: Chunk[Output] = builder.result()
 
   override def write(value: Output): Unit = {
@@ -51,6 +69,9 @@ class ChunkTarget[Output] extends Target[Output] {
   }
 }
 
+/** Holds the capture token type of [[ChunkTarget]]. */
 object ChunkTarget {
+
+  /** A capture group of a [[ChunkTarget]]: 'subBuilder' collects the output written while the capture is open */
   case class Capture[Output](subBuilder: ChunkBuilder[Output])
 }

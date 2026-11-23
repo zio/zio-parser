@@ -93,7 +93,8 @@ sealed trait Parser[+Err, -In, +Result] extends VersionSpecificParser[Err, In, R
     zip(that)
 
   /** Concatenates this parser with 'that' parser. In case both parsers succeed, the results are combined: a `Unit`
-    * result is dropped, and a result that is already a tuple is extended, so `a ~ b ~ c` results in a flat triple.
+    * result is dropped, and a left result that is already a tuple is extended, so `a ~ b ~ c` results in a flat
+    * triple; a tuple on the right stays one element.
     *
     * {{{
     * (Parser.letter ~ Parser.char('=') ~ Parser.digit).parseString("x=5") // Right((x,5))
@@ -120,8 +121,9 @@ sealed trait Parser[+Err, -In, +Result] extends VersionSpecificParser[Err, In, R
 
   /** Repeats this parser exactly `n` times. It stops after `n` items and fails if there are fewer.
     *
-    * Currently, with [[ParserImplementation.StackSafe]] the upper limit is not applied unless this parser is built with
-    * `regexChar` (as `Parser.digit` is): `Parser.digit.map(_.asDigit).exactly(2)` reads all four digits of "1234".
+    * Currently, with [[ParserImplementation.StackSafe]] the upper limit is not applied unless this parser is itself a
+    * `regexChar` or `unsafeRegexChar` parser (such as `Parser.digit` or `Parser.anyChar`):
+    * `Parser.digit.map(_.asDigit).exactly(2)` reads all four digits of "1234".
     *
     * {{{
     * Parser.digit.exactly(3).string.parseString("2024") // Right(202)
@@ -185,6 +187,10 @@ sealed trait Parser[+Err, -In, +Result] extends VersionSpecificParser[Err, In, R
     * If auto-backtracking is on, this parser will backtrack before trying 'that' parser. With auto-backtracking off,
     * 'that' is tried only when this parser failed without consuming input; otherwise this parser's failure is the
     * result.
+    *
+    * Currently, when both sides are `string` captures of regex parsers, the optimizer merges them into one regex and
+    * the error is a single failure: `(Parser.char('a').string | Parser.char('b').string).parseString("c")` fails with
+    * `Failure(List(),0,not 'b')`.
     *
     * {{{
     * val answer = Parser.string("yes", true) | Parser.string("no", false)
@@ -334,7 +340,8 @@ sealed trait Parser[+Err, -In, +Result] extends VersionSpecificParser[Err, In, R
   /** Maps the custom error values with the given function 'f'. Only [[Parser.ParserError.Failure]] errors hold one
     * (also inside [[Parser.ParserError.AllBranchesFailed]]); the other cases are kept as they are.
     *
-    * Currently, with [[ParserImplementation.StackSafe]] a successful parse throws a `java.lang.NullPointerException`.
+    * Currently, on the JVM, with [[ParserImplementation.StackSafe]] a successful parse throws a
+    * `java.lang.NullPointerException`.
     *
     * {{{
     * Parser.digit.mapError(msg => msg.length).parseString("x") // Left(StringParserError(x,Failure(List(),0,11)))
@@ -507,7 +514,8 @@ sealed trait Parser[+Err, -In, +Result] extends VersionSpecificParser[Err, In, R
   /** Strips all the name information from this parser to improve performance but reduces the failure message's
     * verbosity.
     *
-    * Currently, names inside the right-hand side of a `zip` (`~`) are kept.
+    * Currently, names inside the right-hand side of a `zip` (`~`), and inside the parsers that a `flatMap` function
+    * returns, are kept.
     */
   def strip: Parser[Err, In, Result] = {
     val strippedNodes = Parser.OptimizerState(
@@ -1528,8 +1536,8 @@ object Parser {
 
   /** Parser that executes a regular expression on the input but discards its result, and fails with 'failure' if the
     * regex fails. When the regex needs more input than there is, the error is
-    * [[Parser.ParserError.UnexpectedEndOfInput]]; currently that is also the error when a repetition in the regex
-    * matches fewer times than its minimum.
+    * [[Parser.ParserError.UnexpectedEndOfInput]]; currently that is also the error when an unbounded repetition in
+    * the regex (`atLeast`, as in `Regex.digits`) matches fewer times than its minimum, even when other input follows.
     */
   def regexDiscard[Err](regex: Regex, failure: Err): Parser[Err, Char, Unit] =
     Parser.SkipRegex(regex, Some(failure))
@@ -1560,8 +1568,8 @@ object Parser {
     Parser.ParseRegexLastChar(regex, None)
 
   /** Parser that executes a regular expression on the input and results in the chunk of the parsed characters, or fails
-    * with 'failure'. As with `regexDiscard`, a regex that needs more input fails with
-    * [[Parser.ParserError.UnexpectedEndOfInput]] instead.
+    * with 'failure'. As with `regexDiscard`, the error is [[Parser.ParserError.UnexpectedEndOfInput]] instead when the
+    * regex needs more input or an unbounded repetition in it matches too few times.
     *
     * {{{
     * Parser.regex(Regex.digits, "no digits").map(_.mkString).parseString("2024!") // Right(2024)
@@ -1644,9 +1652,9 @@ object Parser {
   /** Parser built from `Regex.whitespace`, which matches zero or more whitespace characters, resulting in the last
     * character of the match.
     *
-    * Currently, when no whitespace follows, it results in the character before the current position, or throws a
-    * `java.lang.StringIndexOutOfBoundsException` at the start of the input. `Syntax.whitespace` matches exactly one
-    * whitespace character.
+    * Currently, when no whitespace follows, it results in the character before the current position, or, on the JVM,
+    * throws a `java.lang.StringIndexOutOfBoundsException` at the start of the input. `Syntax.whitespace` matches
+    * exactly one whitespace character.
     */
   lazy val whitespace: Parser[String, Char, Char] = regexChar(Regex.whitespace, "not a whitespace")
 
@@ -1732,7 +1740,8 @@ object Parser {
 
     /** Unknown parser error, without a custom failure value. The unsafe regex parsers (`Parser.unsafeRegex`,
       * `Parser.unsafeRegexChar`, `Parser.unsafeRegexDiscard`) produce it when their regex does not match, with the
-      * default implementation.
+      * default implementation. Printers built with `asPrinted` (such as the printer of `Syntax.string`) also use it:
+      * printing any other value currently fails with `Printer.Failed(UnknownFailure(List(),0))` as the error value.
       *
       * {{{
       * Parser.unsafeRegex(Regex.string("GET")).parseString("PUT")
@@ -1746,9 +1755,9 @@ object Parser {
       */
     final case class UnknownFailure(nameStack: List[String], position: Int) extends ParserError[Nothing]
 
-    /** The input stream ended before the parser finished. Regex-based parsers also report it when a repetition in the
-      * regex matched fewer times than its minimum, and repeated parsers can report it when they read fewer items than
-      * required.
+    /** The input stream ended before the parser finished. Regex-based parsers also report it when an unbounded
+      * repetition in the regex (`atLeast`) matched fewer times than its minimum, and repeated parsers can report it
+      * when they read fewer items than required.
       *
       * {{{
       * Parser.string("true", true).parseString("tr") // Left(StringParserError(tr,UnexpectedEndOfInput(List())))
@@ -1771,9 +1780,10 @@ object Parser {
 
     /** All branches failed in a sequence of orElse or orElseEither parsers.
       *
-      * Every failed branch's failure is preserved.
+      * Every failed branch's failure is preserved, except that currently `a.string | b.string` of two regex parsers is
+      * merged into one regex that fails with a single error.
       *
-      * The error of `a | b | c` is `AllBranchesFailed(AllBranchesFailed(a, b), c)`.
+      * Otherwise the error of `a | b | c` is `AllBranchesFailed(AllBranchesFailed(a, b), c)`.
       *
       * {{{
       * (Parser.char('a') | Parser.char('b')).parseString("c")
@@ -1793,6 +1803,9 @@ final case class StringParserError[+Err](input: String, error: ParserError[Err])
     * [[Parser.ParserError.UnknownFailure]] or [[Parser.ParserError.NotConsumedAll]] it shows up to two lines of input
     * before and after the failing line, a caret under the failing position and an `error:` line; other errors are
     * printed as a single line, such as "Unexpected end of input".
+    *
+    * Currently, when the error position is past the last non-empty line (for example at the end of an input that ends
+    * with a newline), only the input lines are printed, without the caret and the `error:` line.
     */
   def pretty: String = {
     val sb = new StringBuilder

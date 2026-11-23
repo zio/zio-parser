@@ -5,8 +5,8 @@ import zio.parser.internal.PrinterImpl
 import zio.parser.target.{ChunkTarget, Target}
 import zio.{=!=, Chunk}
 
-/** A Printer takes a value of type 'Value' and either produces a stream of 'Out' elements, or fails with a custom
-  * error of type 'Err'.
+/** A Printer takes a value of type 'Value' and either produces a stream of 'Out' elements, or fails with a custom error
+  * of type 'Err'.
   *
   * Parsers can be combined with Printers to get Syntax, or a Parser and a Printer can be built simultaneously by using
   * the combinators of Syntax. Every syntax has its printer in `asPrinter`; a printer can also be built on its own from
@@ -410,8 +410,8 @@ object Printer {
   def exactly[Err, Out](value: Out, failure: Err)(implicit ev: Out =!= Char): Printer[Err, Out, Out] =
     any.filter(_ == value, failure)
 
-  /** Printer that emits the input except if it is equals to 'value', in which case it fails with the message
-    * `cannot be 'v'`, where `v` is 'value'.
+  /** Printer that emits the input except if it is equals to 'value', in which case it fails with the message `cannot be
+    * 'v'`, where `v` is 'value'.
     */
   def except[Out](value: Out)(implicit ev: Out =!= Char): Printer[String, Out, Out] =
     except(value, s"cannot be '$value'")

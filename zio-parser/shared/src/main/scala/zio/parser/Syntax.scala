@@ -503,9 +503,9 @@ class Syntax[+Err, -In, +Out, Value] private (
     )
 }
 
-/** Constructors of [[Syntax]] values: single characters (`char`, `charIn`, `digit`, `letter`, ...), strings
-  * (`string`, `anyString`), regex-based syntaxes (`regex`, `regexChar`, `regexDiscard`) and syntaxes that consume
-  * nothing (`succeed`, `fail`, `unit`, `index`, `end`).
+/** Constructors of [[Syntax]] values: single characters (`char`, `charIn`, `digit`, `letter`, ...), strings (`string`,
+  * `anyString`), regex-based syntaxes (`regex`, `regexChar`, `regexDiscard`) and syntaxes that consume nothing
+  * (`succeed`, `fail`, `unit`, `index`, `end`).
   *
   * {{{
   * val keyword: Syntax[String, Char, Char, Unit] = Syntax.string("let", ())
@@ -534,8 +534,8 @@ object Syntax extends SyntaxCompanionVersionSpecific {
     new Syntax(Parser.fail(failure), Printer.Fail(failure))
 
   // Char variants
-  /** Parse or print a specific character 'value' and result in unit. The parser fails with the message `not 'c'`,
-    * where `c` is 'value'.
+  /** Parse or print a specific character 'value' and result in unit. The parser fails with the message `not 'c'`, where
+    * `c` is 'value'.
     *
     * {{{
     * val equals: Syntax[String, Char, Char, Unit] = Syntax.char('=')
@@ -565,8 +565,8 @@ object Syntax extends SyntaxCompanionVersionSpecific {
   /** Parse with a given regular expression and discard its results. If the regex fails, fail with 'failure'. When
     * printing, the chunk of characters in 'value' gets printed.
     *
-    * When the compiled regex reports that it needs more input, the parser fails with
-    * `ParserError.UnexpectedEndOfInput` instead of 'failure'.
+    * When the compiled regex reports that it needs more input, the parser fails with `ParserError.UnexpectedEndOfInput`
+    * instead of 'failure'.
     */
   def regexDiscard[Err](regex: Regex, failure: Err, value: Chunk[Char]): Syntax[Err, Char, Char, Unit] =
     new Syntax(
@@ -607,10 +607,9 @@ object Syntax extends SyntaxCompanionVersionSpecific {
   /** Syntax that executes a regular expression on the input and results in the chunk of the parsed characters, or fails
     * with 'failure'.
     *
-    * When the compiled regex reports that it needs more input, the parser fails with
-    * `ParserError.UnexpectedEndOfInput` instead of 'failure'. The printer prints the input chunk if the regex matches
-    * at its start, and fails with 'failure' otherwise; it currently does not check that the match covers the whole
-    * chunk.
+    * When the compiled regex reports that it needs more input, the parser fails with `ParserError.UnexpectedEndOfInput`
+    * instead of 'failure'. The printer prints the input chunk if the regex matches at its start, and fails with
+    * 'failure' otherwise; it currently does not check that the match covers the whole chunk.
     *
     * {{{
     * val identifier: Syntax[String, Char, Char, String] =
@@ -676,9 +675,9 @@ object Syntax extends SyntaxCompanionVersionSpecific {
       Printer.anyString
     )
 
-  /** Syntax that parses/prints a specific string 'str', and results in 'value'. The parser fails with the message
-    * `Not 'str'`. The printer prints 'str' for 'value'; for any other value it currently fails with a `Printer.Failed`
-    * value in the error channel instead of a `String`.
+  /** Syntax that parses/prints a specific string 'str', and results in 'value'. The parser fails with the message `Not
+    * 'str'`. The printer prints 'str' for 'value'; for any other value it currently fails with a `Printer.Failed` value
+    * in the error channel instead of a `String`.
     */
   def string[Result](str: String, value: Result): Syntax[String, Char, Char, Result] =
     regexDiscard(Regex.string(str), s"Not '$str'", Chunk.fromArray(str.toCharArray))

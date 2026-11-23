@@ -9,8 +9,8 @@ import scala.collection.immutable.BitSet
 
 /** A model of a regular expression.
   *
-  * A `Regex` is built from combinators (`Regex.char`, `Regex.string`, `Regex.anyDigit`, `~`, `|`, `atLeast`, ...),
-  * not from a pattern string. It is the building block of the character-level syntaxes such as `Syntax.digit` and
+  * A `Regex` is built from combinators (`Regex.char`, `Regex.string`, `Regex.anyDigit`, `~`, `|`, `atLeast`, ...), not
+  * from a pattern string. It is the building block of the character-level syntaxes such as `Syntax.digit` and
   * `Syntax.regex`, and can also be compiled and run on its own.
   *
   * {{{
@@ -95,7 +95,7 @@ object Regex {
   private lazy val AllCharsBitSet = BitSet((Char.MinValue to Char.MaxValue).map(_.toInt): _*)
 
   /** Result of [[Regex.Compiled]] `test` when the regex does not match (`-1`). */
-  final val NotMatched    = -1
+  final val NotMatched = -1
 
   /** Result of [[Regex.Compiled]] `test` when the input ended before the regex could finish matching (`-2`). */
   final val NeedMoreInput = -2

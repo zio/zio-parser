@@ -83,9 +83,9 @@ package object parser extends ImplicitTupleConversion {
       * This is useful in combination with the orElse (<>) operator. For example a JSON parser can be expressed by a
       * combination of parsers for the individual json type widened to Json.
       *
-      * The printer accepts a value only when its runtime class is the class of this syntax's value type, and fails
-      * with `Not a X`, where `X` is the simple name of that class, otherwise. For value types such as `Char` or `Int`
-      * the class check currently fails for every value, so the printer always fails.
+      * The printer accepts a value only when its runtime class is the class of this syntax's value type, and fails with
+      * `Not a X`, where `X` is the simple name of that class, otherwise. For value types such as `Char` or `Int` the
+      * class check currently fails for every value, so the printer always fails.
       *
       * {{{
       * import zio.parser._
@@ -203,8 +203,8 @@ package object parser extends ImplicitTupleConversion {
     def ~>(that: => Printer[Err, Out, Value]): Printer[Err, Out, Value] =
       zipRight(that)
 
-    /** Print this, then print that. That printer gets the value to be printed; this printer currently gets unit
-      * instead of the value, so use it with a printer that ignores its input.
+    /** Print this, then print that. That printer gets the value to be printed; this printer currently gets unit instead
+      * of the value, so use it with a printer that ignores its input.
       */
     def zipRight(that: => Printer[Err, Out, Value]): Printer[Err, Out, Value] =
       Printer.ZipRight(Printer.Lazy(() => self), Printer.Lazy(() => that))

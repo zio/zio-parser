@@ -93,8 +93,8 @@ sealed trait Parser[+Err, -In, +Result] extends VersionSpecificParser[Err, In, R
     zip(that)
 
   /** Concatenates this parser with 'that' parser. In case both parsers succeed, the results are combined: a `Unit`
-    * result is dropped, and a left result that is already a tuple is extended, so `a ~ b ~ c` results in a flat
-    * triple; a tuple on the right stays one element.
+    * result is dropped, and a left result that is already a tuple is extended, so `a ~ b ~ c` results in a flat triple;
+    * a tuple on the right stays one element.
     *
     * {{{
     * (Parser.letter ~ Parser.char('=') ~ Parser.digit).parseString("x=5") // Right((x,5))
@@ -1536,8 +1536,8 @@ object Parser {
 
   /** Parser that executes a regular expression on the input but discards its result, and fails with 'failure' if the
     * regex fails. When the regex needs more input than there is, the error is
-    * [[Parser.ParserError.UnexpectedEndOfInput]]; currently that is also the error when an unbounded repetition in
-    * the regex (`atLeast`, as in `Regex.digits`) matches fewer times than its minimum, even when other input follows.
+    * [[Parser.ParserError.UnexpectedEndOfInput]]; currently that is also the error when an unbounded repetition in the
+    * regex (`atLeast`, as in `Regex.digits`) matches fewer times than its minimum, even when other input follows.
     */
   def regexDiscard[Err](regex: Regex, failure: Err): Parser[Err, Char, Unit] =
     Parser.SkipRegex(regex, Some(failure))

@@ -7,9 +7,9 @@ import scala.reflect.ClassTag
   */
 trait VersionSpecificPrinter[+Err, +Out, -Value] { self: Printer[Err, Out, Value] =>
 
-  /** Combines this printer with 'that' into a printer of the union type. The side is chosen by the runtime class of
-    * the value: a value of class `Value2` is printed with 'that', any other value with this printer. Unlike `orElse`,
-    * there is no fallback to 'that' when this printer fails.
+  /** Combines this printer with 'that' into a printer of the union type. The side is chosen by the runtime class of the
+    * value: a value of class `Value2` is printed with 'that', any other value with this printer. Unlike `orElse`, there
+    * is no fallback to 'that' when this printer fails.
     */
   final def orElseU[Err2 >: Err, Out2 >: Out, Value1 <: Value, Value2: ClassTag](
       that: => Printer[Err2, Out2, Value2]

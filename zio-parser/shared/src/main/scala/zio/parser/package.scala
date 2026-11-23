@@ -84,8 +84,8 @@ package object parser extends ImplicitTupleConversion {
       * combination of parsers for the individual json type widened to Json.
       *
       * The printer accepts a value only when its runtime class is the class of this syntax's value type or a subclass
-      * of it, and fails with `Not a X`, where `X` is the simple name of that class, otherwise. For value types such as `Char` or `Int` the
-      * class check currently fails for every value, so the printer always fails.
+      * of it, and fails with `Not a X`, where `X` is the simple name of that class, otherwise. For value types such as
+      * `Char` or `Int` the class check currently fails for every value, so the printer always fails.
       *
       * {{{
       * import zio.parser._
@@ -149,8 +149,8 @@ package object parser extends ImplicitTupleConversion {
       self.transform(conversion.from, conversion.to)
 
     /** Widens the value type to `D`. The printer accepts a value only when its runtime class is the class of this
-      * syntax's value type or a subclass of it, and fails with 'err' otherwise; for value types such as `Char` or `Int` this check
-      * currently fails for every value.
+      * syntax's value type or a subclass of it, and fails with 'err' otherwise; for value types such as `Char` or `Int`
+      * this check currently fails for every value.
       *
       * `Syntax` has its own `widenWith(narrow, failure)`, which hides this one, so it is called as
       * `SyntaxOps(syntax).widenWith[D](err)`.

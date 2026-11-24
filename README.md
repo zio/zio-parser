@@ -23,7 +23,7 @@ On the JVM, use `%%`:
 ```scala
 libraryDependencies ++= Seq(
   // ZIO Parser: syntaxes, parsers, printers and regexes (JVM)
-  "dev.zio" %% "zio-parser" % "0.1.12"
+  "dev.zio" %% "zio-parser" % "0.1.13"
 )
 ```
 
@@ -32,7 +32,7 @@ On Scala.js and Scala Native, use `%%%`:
 ```scala
 libraryDependencies ++= Seq(
   // ZIO Parser: syntaxes, parsers, printers and regexes (Scala.js and Scala Native)
-  "dev.zio" %%% "zio-parser" % "0.1.12"
+  "dev.zio" %%% "zio-parser" % "0.1.13"
 )
 ```
 

@@ -8,6 +8,22 @@ import scala.annotation.nowarn
 import scala.collection.immutable.BitSet
 
 /** A model of a regular expression.
+  *
+  * A `Regex` is built from combinators (`Regex.char`, `Regex.string`, `Regex.anyDigit`, `~`, `|`, `atLeast`, ...), not
+  * from a pattern string. It is the building block of the character-level syntaxes such as `Syntax.digit` and
+  * `Syntax.regex`, and can also be compiled and run on its own.
+  *
+  * {{{
+  * val identifier: Regex =
+  *   Regex.anyLetter ~ (Regex.anyLetter | Regex.anyDigit | Regex.char('_')).atLeast(0)
+  *
+  * val compiled: Regex.Compiled = identifier.compile
+  * compiled.test(0, "user_42 = 1") // 7
+  * compiled.test(0, "42user")      // -1
+  * }}}
+  *
+  * @see
+  *   [[https://zio.dev/zio-parser/regex/ Regex]]
   */
 sealed trait Regex { self =>
   import Regex._
@@ -17,17 +33,28 @@ sealed trait Regex { self =>
     */
   def ~(that: Regex): Regex = Sequence(self, that)
 
-  /** Composes this regex with the specified regex using intersection, returning a regex that will match a prefix only
-    * if both this and the specified regex match it.
+  /** Composes this regex with the specified regex using intersection, returning a regex that will match only if both
+    * this and the specified regex match at the same position.
+    *
+    * The length of the match currently depends on how the regex is compiled: without unbounded repetitions both sides
+    * must match the same prefix; with an unbounded repetition in either side, the result is the length that the
+    * specified regex matches.
     */
   def &(that: Regex): Regex = And(self, that)
 
   /** Composes this regex with the specified regex using union, returning a regex that will match a prefix only if
     * either this or the specified regex match it.
+    *
+    * Without unbounded repetitions the longer of the two matches is usually used; a known exception is a nested union
+    * such as `Regex.char('a') | (Regex.string("a") | Regex.string("ab"))`, which matches one character of `"ab"`. With
+    * an unbounded repetition in either side, this regex is tried first and its match is used when it matches.
     */
   def |(that: Regex): Regex = Or(self, that)
 
   /** Returns a new regex that matches at least `min` occurrences of this regex.
+    *
+    * When fewer than `min` occurrences match, the compiled regex currently returns [[Regex.NeedMoreInput]], also when
+    * the input goes on with a character that does not match.
     */
   def atLeast(min: Int): Regex = Repeat(self, Some(min), None)
 
@@ -39,11 +66,12 @@ sealed trait Regex { self =>
     */
   def between(min: Int, max: Int): Regex = Repeat(self, Some(min), Some(max))
 
-  /** Compiles the regex to a form that allows efficient execution on chunks of characters.
+  /** Compiles the regex to a [[Regex.Compiled]] matcher that runs on strings and on chunks of characters.
     */
   def compile: Regex.Compiled = Parser(self)
 
-  /** If the regex is a string literal, returns the string literal.
+  /** If the regex is a string literal, returns the string literal: the characters of a regex built only from `empty`,
+    * single characters (`char`, `string`) and `~`. Returns `None` for any other regex.
     */
   def toLiteral: Option[Chunk[Char]] = toLiteralChars(self)
 
@@ -63,10 +91,17 @@ sealed trait Regex { self =>
     }
 }
 
+/** Constructors of [[Regex]] values, and the result codes of [[Regex.Compiled]].
+  */
 object Regex {
   private lazy val AllCharsBitSet = BitSet((Char.MinValue to Char.MaxValue).map(_.toInt): _*)
 
-  final val NotMatched    = -1
+  /** Result of [[Regex.Compiled]] `test` when the regex does not match (`-1`). */
+  final val NotMatched = -1
+
+  /** Result of [[Regex.Compiled]] `test` when the input ended before the regex could finish matching (`-2`). A regex
+    * built with `atLeast` currently also returns it when too few occurrences match, before the input ends.
+    */
   final val NeedMoreInput = -2
 
   /** A regex that matches at least one letter or digit character.
@@ -81,15 +116,15 @@ object Regex {
     */
   lazy val anyChar: Regex = OneOf(AllCharsBitSet)
 
-  /** A regex that matches any single digit character.
+  /** A regex that matches any single digit character, as decided by `Char.isDigit`.
     */
   lazy val anyDigit: Regex = filter(_.isDigit)
 
-  /** A regex that matches any single letter character.
+  /** A regex that matches any single letter character, as decided by `Char.isLetter`.
     */
   lazy val anyLetter: Regex = filter(_.isLetter)
 
-  /** A regex that matches any single whitespace character.
+  /** A regex that matches any single whitespace character, as decided by `Char.isWhitespace`.
     */
   lazy val anyWhitespace: Regex = filter(_.isWhitespace)
 
@@ -101,7 +136,7 @@ object Regex {
     */
   def charIn(chars: Char*): Regex = OneOf(BitSet(chars.map(_.toInt): _*))
 
-  /** A regex that matches any character except of the specified ones
+  /** A regex that matches any single character except the specified ones
     */
   def charNotIn(chars: Char*): Regex = OneOf(chars.foldLeft(AllCharsBitSet)((bs, ch) => bs - ch.toInt))
 
@@ -129,17 +164,22 @@ object Regex {
     */
   lazy val whitespace: Regex = anyWhitespace.atLeast(0)
 
+  /** A compiled regex, returned by `Regex#compile`.
+    */
   trait Compiled {
 
-    /** Tests the compiled regex against the specified character sequence. Returns the new index into the string.
+    /** Tests the compiled regex against the specified character sequence, starting at `index`. Returns the new index
+      * into the string after the match, or [[Regex.NotMatched]] or [[Regex.NeedMoreInput]].
       */
     def test(index: Int, chars: String): Int
 
-    /** Tests the compiled regex against the specified character sequence. Returns the new index into the chunk.
+    /** Tests the compiled regex against the specified character sequence, starting at `index`. Returns the new index
+      * into the chunk after the match, or [[Regex.NotMatched]] or [[Regex.NeedMoreInput]].
       */
     def test(index: Int, chars: Chunk[Char]): Int
 
-    /** Determines if the compiled regex matches the specified string.
+    /** Determines if the compiled regex matches the start of the specified string. The rest of the string is not
+      * checked: `Regex.anyLetter.compile.matches("a1")` is `true`.
       */
     final def matches(value: String): Boolean = test(0, value) >= 0
   }

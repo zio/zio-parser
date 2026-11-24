@@ -5,11 +5,20 @@ import zio.parser.internal.PrinterImpl
 import zio.parser.target.{ChunkTarget, Target}
 import zio.{=!=, Chunk}
 
-/** A Printer takes a value of type 'Value' and either produces a stream of 'Out' elements and a result value of type
-  * 'Result', or fails with a custom error of type 'Err'.
+/** A Printer takes a value of type 'Value' and either produces a stream of 'Out' elements, or fails with a custom error
+  * of type 'Err'.
   *
   * Parsers can be combined with Printers to get Syntax, or a Parser and a Printer can be built simultaneously by using
-  * the combinators of Syntax.
+  * the combinators of Syntax. Every syntax has its printer in `asPrinter`; a printer can also be built on its own from
+  * the constructors in the companion object.
+  *
+  * {{{
+  * val point: Printer[String, Char, (Char, Char)] =
+  *   (Printer.digit ~ Printer.char(',') ~ Printer.digit).between(Printer.char('('), Printer.char(')'))
+  *
+  * point.printString(('3', '7')) // Right((3,7))
+  * point.printString(('x', '7')) // Left(not a digit)
+  * }}}
   *
   * @tparam Err
   *   Custom error type
@@ -17,26 +26,34 @@ import zio.{=!=, Chunk}
   *   Element type of the output stream of printing
   * @tparam Value
   *   The type of the value to be printed
+  * @see
+  *   [[https://zio.dev/zio-parser/printing/ Printing and Invertible Syntaxes]]
   */
 sealed trait Printer[+Err, +Out, -Value] extends VersionSpecificPrinter[Err, Out, Value] { self =>
 
-  /** Maps the printer's result with function 'to' and its input value with 'from'. Both functions can fail the printer.
+  /** Converts the value to be printed with 'from' before printing it with this printer. A `Left` returned by 'from'
+    * fails the printer with that error.
+    *
+    * Errors of this printer itself are passed through unchanged, so `Err2` should be a supertype of `Err`; the compiler
+    * currently does not check this.
     */
   final def contramapEither[Err2, Value2](
       from: Value2 => Either[Err2, Value]
   ): Printer[Err2, Out, Value2] =
     Printer.ContramapEither(self, from)
 
-  /** Maps the printer's result with function 'to' and its input value with 'from'. Both functions can fail the printer.
-    * Failure is indicated by None on the error channel.
+  /** Converts the value to be printed with 'from' before printing it with this printer. When 'from' returns `None`, the
+    * printer fails with `None`.
+    *
+    * Errors of this printer itself are currently passed through as they are, not wrapped in `Some`.
     */
   final def transformOption[Value2](
       from: Value2 => Option[Value]
   ): Printer[Option[Err], Out, Value2] =
     contramapEither[Option[Err], Value2](value => from(value).toRight(None))
 
-  /** Maps the result of the printer with the function 'to', and the value to be printed with the partial function
-    * 'from'. It the partial function is not defined on the value, the printer fails with 'failure'.
+  /** Converts the value to be printed with the partial function 'from'. If the partial function is not defined on the
+    * value, the printer fails with 'failure'.
     *
     * This can be used to define separate syntaxes for subtypes, that can be later combined.
     */
@@ -52,14 +69,14 @@ sealed trait Printer[+Err, +Out, -Value] extends VersionSpecificPrinter[Err, Out
   ): Printer[Err2, Out2, Value] =
     zipLeft(that)
 
-  /** Print 'that' by providing the unit value to it after printing this. The result is this printer's result. */
+  /** Prints the value with this printer, then prints 'that' with the unit value. */
   final def zipLeft[Err2 >: Err, Out2 >: Out](
       that: => Printer[Err2, Out2, Unit]
   ): Printer[Err2, Out2, Value] =
     Printer.ZipLeft(Printer.Lazy(() => self), Printer.Lazy(() => that))
 
-  /** Specifies a filter condition 'condition' that gets checked on both the printed and the result value and in case it
-    * evaluates to false, fails with 'failure'.
+  /** Specifies a filter condition 'condition' that gets checked on the value to be printed, and in case it evaluates to
+    * false, fails with 'failure'.
     */
   final def filter[E2 >: Err, Value2 <: Value](condition: Value2 => Boolean, failure: E2): Printer[E2, Out, Value2] =
     contramapEither((d1: Value2) => if (condition(d1)) Right(d1) else Left(failure))
@@ -92,7 +109,9 @@ sealed trait Printer[+Err, +Out, -Value] extends VersionSpecificPrinter[Err, Out
   ): Printer[Err2, Out2, Either[Value, Value2]] =
     Printer.OrElseEither(Printer.Lazy(() => self), Printer.Lazy(() => that))
 
-  /** Repeats this printer for each element of the input chunk, assuming it has at least one element */
+  /** Repeats this printer for each element of the input chunk, assuming it has at least one element. An empty chunk
+    * currently prints nothing and succeeds.
+    */
   final def repeat: Printer[Err, Out, Chunk[Value]] =
     Printer.Repeat(self, 1, None)
 
@@ -107,7 +126,7 @@ sealed trait Printer[+Err, +Out, -Value] extends VersionSpecificPrinter[Err, Out
   final def * : Printer[Err, Out, Chunk[Value]] = repeat0
 
   /** Repeats this printer for each element of the input chunk, separated by the 'sep' printer (which gets Unit to be
-    * printed)
+    * printed). An empty chunk currently throws an exception instead of returning a `Left`.
     */
   final def repeatWithSep[Err2 >: Err, Out2 >: Out](
       sep: Printer[Err2, Out2, Unit]
@@ -123,13 +142,15 @@ sealed trait Printer[+Err, +Out, -Value] extends VersionSpecificPrinter[Err, Out
     (self ~ (sep ~> self).repeat0).optional
       .contramap(chunk => chunk.headOption.map(head => (head, chunk.tail)))
 
-  /** Repeat this printer for each element of the input chunk, verifying the 'stopConfition' after each. */
+  /** Repeat this printer for each element of the input chunk, then print 'stopCondition' (which gets Unit to be
+    * printed) once.
+    */
   final def repeatUntil[Err2 >: Err, Out2 >: Out](
       stopCondition: Printer[Err2, Out2, Unit]
   ): Printer[Err2, Out2, Chunk[Value]] =
     self.repeat0 <~ stopCondition
 
-  /** Print option values */
+  /** Print option values: nothing for `None`, and the content of a `Some` with this printer */
   final def optional: Printer[Err, Out, Option[Value]] =
     Printer.Optional(self)
 
@@ -153,7 +174,7 @@ sealed trait Printer[+Err, +Out, -Value] extends VersionSpecificPrinter[Err, Out
   final def mapError[Err2](f: Err => Err2): Printer[Err2, Out, Value] =
     Printer.MapError[Err, Err2, Out, Value](self, f)
 
-  /** Concatenates a chunk of string to be printed */
+  /** Prints a string with this printer of string chunks, by passing it as a one-element chunk */
   final def flatten(implicit
       ev1: Chunk[String] <:< Value
   ): Printer[Err, Out, String] =
@@ -168,7 +189,11 @@ sealed trait Printer[+Err, +Out, -Value] extends VersionSpecificPrinter[Err, Out
   ): Printer[Err2, Out, Value2] =
     contramapTo(narrow, failure)
 
-  /** Ignores the printer's result and input and use 'result' and 'value' instead */
+  /** Accepts only 'matches' as the value to be printed, and prints 'value' with this printer instead.
+    *
+    * For any other value the printer currently fails with a `Printer.Failed` value in the error channel instead of an
+    * `Err`.
+    */
   final def asPrinted[Value2](matches: Value2, value: Value): Printer[Err, Out, Value2] =
     Printer.Ignore[Err, Out, Value, Value2](self, matches, value)
 
@@ -176,7 +201,7 @@ sealed trait Printer[+Err, +Out, -Value] extends VersionSpecificPrinter[Err, Out
   final def contramap[Value2](f: Value2 => Value): Printer[Err, Out, Value2] =
     contramapEither(f.andThen(Right.apply))
 
-  /** Provide this printer it's input value */
+  /** Returns a printer that ignores its own input and prints 'value' with this printer */
   final def apply(value: Value): Printer[Err, Out, Any] =
     Printer.ProvideValue(self, value)
 
@@ -198,89 +223,142 @@ sealed trait Printer[+Err, +Out, -Value] extends VersionSpecificPrinter[Err, Out
     self.print(value).map(_.mkString)
 }
 
+/** Constructors of [[Printer]] values, and the case classes of the printer tree that the printer interpreter runs.
+  *
+  * {{{
+  * val greeting: Printer[Nothing, Char, Any] = Printer.printString("hello")
+  *
+  * greeting.printString(())   // Right(hello)
+  * Printer.anyChar.print('x') // Right(Chunk(x))
+  * }}}
+  *
+  * @see
+  *   [[https://zio.dev/zio-parser/printing/ Printing and Invertible Syntaxes]]
+  */
 object Printer {
+
+  /** Printer that prints nothing and accepts any value */
   val unit: Printer[Nothing, Nothing, Any] = Printer.Succeed(())
 
+  /** Printer node that builds 'inner' only when the printer runs */
   final case class Lazy[Err, Out, Value](inner: () => Printer[Err, Out, Value]) extends Printer[Err, Out, Value] {
+
+    /** The printer built by 'inner', computed once */
     lazy val memoized: Printer[Err, Out, Value] = inner()
   }
 
+  /** Printer node that prints nothing and succeeds for any value; 'value' is not used when printing */
   final case class Succeed(value: Any) extends Printer[Nothing, Nothing, Any]
 
+  /** Printer node that prints nothing and fails with 'failure' */
   final case class Fail[+Err](failure: Err) extends Printer[Err, Nothing, Any]
 
+  /** Holds a parser error. The printer interpreter uses it as the error value when `asPrinted` gets a value other than
+    * the one it accepts; running it as a printer currently throws a `scala.MatchError`.
+    */
   final case class Failed[+Err](failure: ParserError[Err]) extends Printer[Err, Nothing, Any]
 
+  /** Printer node that ignores its input and prints 'value' with 'printer' */
   final case class ProvideValue[Err, Out, Value](printer: Printer[Err, Out, Value], value: Value)
       extends Printer[Err, Out, Any]
 
+  /** Printer node that writes its input as one output element */
   final case class Passthrough[-Value, +Result]() extends Printer[Nothing, Result, Value]
 
+  /** Printer node that ignores its input and prints 'printAs'; 'regex' is not checked when printing */
   final case class SkipRegex(regex: Regex, printAs: Chunk[Char]) extends Printer[Nothing, Char, Unit] {
+
+    /** The compiled form of 'regex' */
     lazy val compiledRegex: Regex.Compiled = regex.compile
   }
 
+  /** Printer node that prints the input chunk of characters. With `Some(failure)` it first checks that 'regex' matches
+    * at the start of the chunk and fails with 'failure' otherwise; with `None` it prints without checking.
+    */
   final case class ParseRegex[Err](regex: Regex, onFailure: Option[Err]) extends Printer[Err, Char, Chunk[Char]] {
+
+    /** The compiled form of 'regex' */
     lazy val compiledRegex: Regex.Compiled = regex.compile
   }
 
+  /** Printer node that prints the input character. With `Some(failure)` it first checks that 'regex' matches the
+    * character and fails with 'failure' otherwise; with `None` it prints without checking.
+    */
   final case class ParseRegexLastChar[Err](regex: Regex, onFailure: Option[Err]) extends Printer[Err, Char, Char] {
+
+    /** The compiled form of 'regex' */
     lazy val compiledRegex: Regex.Compiled = regex.compile
   }
 
+  /** Printer node that converts its input with 'from' and prints the result with 'printer'; a `Left` fails printing */
   final case class ContramapEither[Err, Err2, Out, Value2, Value](
       printer: Printer[Err, Out, Value],
       from: Value2 => Either[Err2, Value]
   ) extends Printer[Err2, Out, Value2]
 
+  /** Printer node that converts its input with 'from' and prints the result with 'printer' */
   final case class Contramap[Err, Err2, Out, Value2, Value](
       printer: Printer[Err, Out, Value],
       from: Value2 => Value
   ) extends Printer[Err2, Out, Value2]
 
+  /** Printer node built by `asPrinted`: for the input 'matches' it prints 'from' with 'printer'. For any other input it
+    * currently fails with a [[Printer.Failed]] value.
+    */
   final case class Ignore[Err, Out, Value, Value2](
       printer: Printer[Err, Out, Value],
       matches: Value2,
       from: Value
   ) extends Printer[Err, Out, Value2]
 
+  /** Printer node that splits its input with 'unzipValue' and prints the two parts with 'left' and 'right' */
   final case class Zip[Err, Err2, Out, Out2, Value2, Value, ZippedValue](
       left: Printer[Err, Out, Value],
       right: Printer[Err2, Out2, Value2],
       unzipValue: ZippedValue => (Value, Value2)
   ) extends Printer[Err2, Out2, ZippedValue]
 
+  /** Printer node that prints its input with 'left', then unit with 'right' */
   final case class ZipLeft[Err, Err2, Out, Out2, Value2, Value](
       left: Printer[Err, Out, Value],
       right: Printer[Err2, Out2, Value2]
   ) extends Printer[Err2, Out2, Value]
 
+  /** Printer node that prints unit with 'left', then its input with 'right' */
   final case class ZipRight[Err, Err2, Out, Out2, Value2, Value](
       left: Printer[Err, Out, Value],
       right: Printer[Err2, Out2, Value2]
   ) extends Printer[Err2, Out2, Value2]
 
+  /** Printer node that applies 'f' to its input and prints the same input with the printer that 'f' returns */
   final case class FlatMapValue[Err, Out, Value](f: Value => Printer[Err, Out, Nothing])
       extends Printer[Err, Out, Value]
 
+  /** Printer node that prints a `Left` input with 'left' and a `Right` input with 'right' */
   final case class OrElseEither[Err, Err2, Out, Out2, Value2, Value](
       left: Printer[Err, Out, Value],
       right: Printer[Err2, Out2, Value2]
   ) extends Printer[Err2, Out2, Either[Value, Value2]]
 
+  /** Printer node that prints with 'left', and when that fails, drops its output and prints with 'right' */
   final case class OrElse[Err, Err2, Out, Out2, Value2, Value](
       left: Printer[Err, Out, Value],
       right: Printer[Err2, Out2, Value2]
   ) extends Printer[Err2, Out2, Value2]
 
+  /** Printer node that prints nothing for `None` and the content of a `Some` with 'printer' */
   final case class Optional[Err, Out, Value](printer: Printer[Err, Out, Value]) extends Printer[Err, Out, Option[Value]]
 
+  /** Printer node that prints each element of the input chunk with 'printer'. The printer interpreter currently does
+    * not check 'min' or 'max'.
+    */
   final case class Repeat[Err, Out, Value](
       printer: Printer[Err, Out, Value],
       min: Int,
       max: Option[Int]
   ) extends Printer[Err, Out, Chunk[Value]]
 
+  /** Printer node that maps the errors of 'printer' with 'mapPrinterErr' */
   final case class MapError[Err, Err2, Out, Value](
       printer: Printer[Err, Out, Value],
       mapPrinterErr: Err => Err2
@@ -289,23 +367,23 @@ object Printer {
   /** Printer that does not print anything and fails with 'failure' */
   def fail[Err](failure: Err): Printer[Err, Nothing, Any] = Fail(failure)
 
-  /** Printer that just emits its input value */
+  /** Printer that emits its input value as one output element */
   def any[T]: Printer[Nothing, T, T] = Passthrough[T, T]()
 
-  /** Printer determined by a function on the input value */
+  /** Printer determined by a function on the input value. The printer returned by 'f' prints the same input value. */
   def byValue[Err, Out, Value](f: Value => Printer[Err, Out, Nothing]): Printer[Err, Out, Value] =
     Printer.FlatMapValue[Err, Out, Value](f)
 
-  /** Printer emitting a specific value */
+  /** Printer emitting a specific value, whatever its input */
   def print[Out](value: Out): Printer[Nothing, Out, Any] =
     Printer.ProvideValue(Printer.Passthrough(), value)
 
-  /** Printer emitting a specific string to a char output */
+  /** Printer emitting a specific string to a char output, whatever its input */
   def printString(value: String): Printer[Nothing, Char, Any] =
     Printer.anyString(value)
 
   // Char variants
-  /** Printer that prints a given character and results in unit */
+  /** Printer that prints a given character for the unit value */
   def char(value: Char): Printer[String, Char, Unit] =
     regexDiscard(Regex.charIn(value), Chunk(value))
 
@@ -318,11 +396,13 @@ object Printer {
     regexChar(Regex.charNotIn(value), failure)
 
   // Generic variants
-  /** Printer that emits the given value */
+  /** Printer that emits the given value for the unit value. It is defined for output types other than `Char`. */
   def apply[Out](value: => Out)(implicit ev: Out =!= Char): Printer[String, Out, Unit] =
     exactly(value).apply(value)
 
-  /** Printer that emits the input if it is equals to 'value'. Otherwise fails */
+  /** Printer that emits the input if it is equals to 'value'. Otherwise fails with the message `not 'v'`, where `v` is
+    * 'value'.
+    */
   def exactly[Out](value: Out)(implicit ev: Out =!= Char): Printer[String, Out, Out] =
     exactly(value, s"not '$value'")
 
@@ -330,7 +410,9 @@ object Printer {
   def exactly[Err, Out](value: Out, failure: Err)(implicit ev: Out =!= Char): Printer[Err, Out, Out] =
     any.filter(_ == value, failure)
 
-  /** Printer that emits the input except if it is equals to 'value', in which case it fails */
+  /** Printer that emits the input except if it is equals to 'value', in which case it fails with the message `cannot be
+    * 'v'`, where `v` is 'value'.
+    */
   def except[Out](value: Out)(implicit ev: Out =!= Char): Printer[String, Out, Out] =
     except(value, s"cannot be '$value'")
 
@@ -338,7 +420,7 @@ object Printer {
   def except[Err, Out](value: Out, failure: Err)(implicit ev: Out =!= Char): Printer[Err, Out, Out] =
     any.filter(_ != value, failure)
 
-  /** Printer that prints the given chunk of characters in 'value' */
+  /** Printer that prints the given chunk of characters in 'value' for the unit value; 'regex' is not checked */
   def regexDiscard(regex: Regex, value: Chunk[Char]): Printer[Nothing, Char, Unit] =
     Printer.SkipRegex(regex, value)
 
@@ -346,19 +428,17 @@ object Printer {
   def regexChar[Err](regex: Regex, failure: Err): Printer[Err, Char, Char] =
     Printer.ParseRegexLastChar(regex, Some(failure))
 
-  /** Printer that prints a single character if matches the given 'regex'. The regex should never fail. */
+  /** Printer that prints a single character provided as input, without checking it against 'regex' */
   def unsafeRegexChar(regex: Regex): Printer[Nothing, Char, Char] =
     Printer.ParseRegexLastChar(regex, None)
 
-  /** Printer that prints a series of characters provided as input, if it matches the given regex. Otherwise fails with
-    * 'failure'
+  /** Printer that prints a series of characters provided as input, if the given regex matches at its start. Otherwise
+    * fails with 'failure'. It currently does not check that the match covers the whole chunk.
     */
   def regex[Err](regex: Regex, failure: Err): Printer[Err, Char, Chunk[Char]] =
     Printer.ParseRegex(regex, Some(failure))
 
-  /** Printer that prints a series of characters provided as input, if it matches the given regex. The regex should
-    * never fail.
-    */
+  /** Printer that prints a series of characters provided as input, without checking them against 'regex' */
   def unsafeRegex[Err](regex: Regex): Printer[Err, Char, Chunk[Char]] =
     Printer.ParseRegex(regex, None)
 
@@ -374,12 +454,14 @@ object Printer {
   def charNotIn(chars: Char*): Printer[String, Char, Char] =
     regexChar(Regex.charNotIn(chars: _*), s"One of the excluded characters (${chars.mkString(", ")})")
 
-  /** Printer that just prints the input string */
+  /** Printer that prints the input string as it is */
   val anyString: Printer[Nothing, Char, String] =
     unsafeRegex(Regex.anyChar.atLeast(0))
       .contramap((s: String) => Chunk.fromArray(s.toCharArray))
 
-  /** Prints a specific string 'str' and results in 'value' */
+  /** Prints a specific string 'str' when the value to be printed is 'value'. For any other value it currently fails
+    * with a `Printer.Failed` value in the error channel, although the error type is `Nothing`.
+    */
   def string[Result](str: String, value: Result): Printer[Nothing, Char, Result] =
     regexDiscard(Regex.string(str), Chunk.fromArray(str.toCharArray)).asPrinted(value, ())
 

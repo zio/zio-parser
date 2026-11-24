@@ -43,7 +43,8 @@ object ParserOp       {
     override val needsEmptyResultSlot: Boolean = !popFirst
   }
 
-  /** Pops the last stored branch position and the last result, and replaces it with the captured string as a result.
+  /** Pops the last stored branch position and the last result, and replaces it with the captured string as a result
+    * when it is a success.
     */
   final case class PushCapturedResult() extends ParserOp {
     override val needsEmptyResultSlot: Boolean = false
@@ -79,7 +80,9 @@ object ParserOp       {
     override val needsEmptyResultSlot: Boolean = true
   }
 
-  /** Match a compiled regex on the input, and push a result with the given strategy or failure on the result stack */
+  /** Match a compiled regex on the input, and push a result with the given strategy or failure on the result stack.
+    * Without failAs, a regex that does not match pushes an empty chunk as a success.
+    */
   final case class MatchRegex(regex: Regex.Compiled, pushAs: RegexResultPush, failAs: Option[Any]) extends ParserOp {
     override val needsEmptyResultSlot: Boolean = true
   }
@@ -90,7 +93,8 @@ object ParserOp       {
   }
 
   /** Pop the last result from the stack, transform it and with one of the functions and push back. It is possible to
-    * pass null to onSuccess or onFailure in which case it does not touch the result.
+    * pass null to onSuccess or onFailure in which case it does not touch the result. Currently, when the result is a
+    * success and onSuccess is null, onFailure is still called, with a null failure.
     */
   final case class TransformResult(onSuccess: Any => Any, onFailure: ParserError[Any] => ParserError[Any])
       extends ParserOp {
@@ -108,7 +112,8 @@ object ParserOp       {
   }
 
   /** Pop the last two results from the stack and if both were success, create a single value based on the given
-    * strategy and push it back. If any of them failed, push back a single failure.
+    * strategy and push it back. If any of them failed, push back a single failure. The IgnoreFirst strategies only need
+    * the last result to be a success.
     */
   final case class TransformLast2Results(strategy: PairTransformation) extends ParserOp {
     override val needsEmptyResultSlot: Boolean = false
@@ -149,7 +154,8 @@ object ParserOp       {
   }
 
   /** Pushes the last result to the top chunk builder. If the last result was successful, repush the element parser and
-    * itself. If the last result is a failure, finish building the result and check the min/max constraints.
+    * itself. If the last result is a failure, finish building the result and check the min constraint; max is not
+    * checked.
     */
   final case class ProcessRepeatedElement(parseElement: ParserOp, min: Int, max: Option[Int]) extends ParserOp {
     override val needsEmptyResultSlot: Boolean = false

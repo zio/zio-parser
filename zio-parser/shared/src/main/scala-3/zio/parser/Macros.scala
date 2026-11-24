@@ -3,7 +3,12 @@ package zio.parser
 import scala.quoted._
 import scala.reflect.ClassTag
 
+/** Macro implementations behind the Scala 3 `Syntax.oneOf`. */
 object Macros {
+
+  /** Expands `Syntax.oneOf`: widens each syntax to `A` with the `ClassTag` of its value type and combines them with
+    * `|`. Compilation fails with "Could not summon ClassTag[...]" when a value type has no `ClassTag`.
+    */
   def oneOfImpl[A: Type, I: Type, O: Type](
       syntax: Expr[Syntax[String, I, O, _ <: A]],
       syntaxes: Expr[Seq[Syntax[String, I, O, _ <: A]]]
